@@ -32,6 +32,12 @@ body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: va
 .breadcrumb b { color: var(--br-text); }
 .nav-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+/* ---------- 标签栏（TagsView，保留多开标签页） ---------- */
+.tagsbar { height: 36px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+.tagv { padding: 4px 12px; border-radius: 4px; font-size: 12px; color: var(--br-muted); cursor: pointer; border: 1px solid var(--br-border); background: var(--br-card); }
+.tagv:hover { color: var(--primary); }
+.tagv.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
 .content { padding: 16px; }
 
 /* ---------- 横幅 ---------- */
@@ -129,6 +135,12 @@ body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: va
     <div class="navbar">
       <span class="breadcrumb">首页 / <b>工作台</b></span>
       <div class="nav-right"><span>🔔</span><span>🌐</span><div class="avatar">Ad</div></div>
+    </div>
+    <div class="tagsbar">
+      <span class="tagv active">首页</span>
+      <span class="tagv">物料备案</span>
+      <span class="tagv">入库管理</span>
+      <span class="tagv">申报管理</span>
     </div>
     <div class="content">
 

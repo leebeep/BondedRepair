@@ -1,8 +1,8 @@
--- M1 菜单与权限：保税维修工作台 > 物料备案（EPD101）
+-- M1 菜单与权限：维修管理 > 物料备案（EPD101）
 -- 管理员角色(role_id=1)拥有全部权限，无需 sys_role_menu
 
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
-VALUES ('保税维修工作台', 0, 5, 'bonded', NULL, '', '', 1, 0, 'M', '0', '0', '', 'shopping', 'admin', sysdate(), '保税维修业务目录');
+VALUES ('维修管理', 0, 0, 'bonded', NULL, '', '', 1, 0, 'M', '0', '0', '', 'shopping', 'admin', sysdate(), '保税维修业务目录（顶级，排第一）');
 
 SET @dir := LAST_INSERT_ID();
 

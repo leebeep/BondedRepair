@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>效果图 3 · 新增/详情独立页面（入库单）</title>
+<style>
+:root {
+  --br-bg: #f6f8fb; --br-card: #fff; --br-border: #e8ecf1;
+  --br-text: #1e293b; --br-muted: #64748b; --br-hover: #f1f5f9;
+  --primary: #2563eb; --success: #16a34a; --warn: #d97706; --danger: #dc2626;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--br-bg); color: var(--br-text); font-size: 14px; }
+.layout { display: flex; min-height: 100vh; }
+
+/* 侧边栏 */
+.sidebar { width: 200px; background: #1e3a5f; color: #cbd5e1; flex-shrink: 0; }
+.logo { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 18px; color: #fff; font-weight: 700; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.logo-dot { width: 26px; height: 26px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.menu { padding: 10px; }
+.menu-group { font-size: 11px; color: #64748b; padding: 12px 12px 6px; letter-spacing: 1px; }
+.menu-item { padding: 10px 12px; border-radius: 8px; margin-bottom: 2px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.menu-item.active { background: var(--primary); color: #fff; }
+
+.main { flex: 1; min-width: 0; }
+.navbar { height: 56px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; padding: 0 20px; }
+.breadcrumb { color: var(--br-muted); font-size: 13px; }
+.breadcrumb b { color: var(--br-text); }
+.nav-right { margin-left: auto; display: flex; gap: 14px; color: var(--br-muted); font-size: 13px; align-items: center; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+.tagsbar { height: 36px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+.tagv { padding: 4px 12px; border-radius: 4px; font-size: 12px; color: var(--br-muted); cursor: pointer; border: 1px solid var(--br-border); background: var(--br-card); }
+.tagv:hover { color: var(--primary); }
+.tagv.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ---------- 顶部固定操作条 ---------- */
+.pagebar { position: sticky; top: 0; z-index: 10; background: var(--br-card); border-bottom: 1px solid var(--br-border); padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
+.pagebar h2 { font-size: 16px; font-weight: 600; }
+.pageno { font-size: 13px; color: var(--br-muted); font-variant-numeric: tabular-nums; }
+.pagebar .spacer { flex: 1; }
+.btn { height: 32px; padding: 0 15px; border-radius: 6px; border: 1px solid #dcdfe6; background: #fff; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .2s; color: var(--br-text); }
+.btn:hover { color: var(--primary); border-color: rgba(37,99,235,.4); background: rgba(37,99,235,.05); transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(.98); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-primary:hover { color: #fff; background: #1d4fd8; }
+.btn-danger { color: var(--danger); border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.04); margin-left: auto; }
+
+.content { padding: 16px 20px; display: grid; grid-template-columns: 168px 1fr; gap: 16px; align-items: start; }
+
+/* ---------- 锚点导航 ---------- */
+.anchors { position: sticky; top: 60px; background: var(--br-card); border: 1px solid var(--br-border); border-radius: 12px; padding: 10px 0; }
+.anchor { padding: 9px 18px; font-size: 13px; color: var(--br-muted); cursor: pointer; border-left: 2px solid transparent; }
+.anchor:hover { color: var(--primary); background: var(--br-hover); }
+.anchor.active { color: var(--primary); border-left-color: var(--primary); background: rgba(37,99,235,.06); font-weight: 600; }
+
+/* ---------- 分组表单卡片 ---------- */
+.card { background: var(--br-card); border: 1px solid var(--br-border); border-radius: 12px; margin-bottom: 16px; scroll-margin-top: 64px; }
+.card-head { padding: 13px 20px; border-bottom: 1px solid var(--br-border); display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+.card-head .idx { width: 20px; height: 20px; border-radius: 6px; background: rgba(37,99,235,.1); color: var(--primary); font-size: 12px; display: flex; align-items: center; justify-content: center; }
+.card-head .hint { margin-left: auto; font-size: 12px; color: var(--br-muted); font-weight: 400; }
+.card-body { padding: 18px 20px 6px; }
+
+.form { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 24px; }
+.field { display: flex; flex-direction: column; margin-bottom: 16px; }
+.field label { font-size: 13px; color: var(--br-muted); margin-bottom: 6px; }
+.field label b { color: var(--danger); margin-right: 2px; font-weight: 500; }
+.input { height: 32px; border: 1px solid #dcdfe6; border-radius: 6px; padding: 0 10px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #fff; }
+.input .ph { color: #a8abb2; }
+.input .arrow { color: #a8abb2; font-size: 11px; }
+.input.filled { color: var(--br-text); }
+.input.readonly { background: var(--br-hover); color: var(--br-text); cursor: default; border-color: var(--br-border); }
+
+/* ---------- 明细表格 ---------- */
+.items-toolbar { display: flex; gap: 10px; padding: 12px 20px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--br-hover); color: var(--br-muted); font-weight: 600; text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--br-border); white-space: nowrap; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--br-border); white-space: nowrap; }
+tr:hover td { background: rgba(37,99,235,.03); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+th.num { text-align: right; }
+.op { color: var(--primary); cursor: pointer; font-size: 13px; margin-right: 10px; }
+.op.danger { color: var(--danger); }
+.items-sum { display: flex; justify-content: flex-end; gap: 28px; padding: 12px 20px 16px; font-size: 13px; color: var(--br-muted); }
+.items-sum b { color: var(--br-text); font-variant-numeric: tabular-nums; }
+
+/* ---------- 状态与操作记录 ---------- */
+.tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.tag i { width: 6px; height: 6px; border-radius: 50%; }
+.tag-danger { color: var(--danger); background: rgba(220,38,38,.08); } .tag-danger i { background: var(--danger); }
+.tag-success { color: var(--success); background: rgba(22,163,74,.08); } .tag-success i { background: var(--success); }
+.tag-warn { color: var(--warn); background: rgba(217,119,6,.08); } .tag-warn i { background: var(--warn); }
+.tag-info { color: var(--br-muted); background: var(--br-hover); } .tag-info i { background: var(--br-muted); }
+.tag-primary { color: var(--primary); background: rgba(37,99,235,.08); } .tag-primary i { background: var(--primary); }
+
+.timeline { padding: 6px 20px 18px; }
+.tl-row { display: flex; gap: 14px; padding: 9px 0; font-size: 13px; }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 5px; flex-shrink: 0; }
+.tl-time { color: var(--br-muted); width: 130px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+.note { position: fixed; right: 16px; bottom: 16px; background: var(--br-card); border: 1px solid var(--br-border); border-radius: 10px; padding: 10px 16px; font-size: 12px; color: var(--br-muted); box-shadow: 0 6px 16px rgba(15,23,42,.08); z-index: 30; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-dot">保</div>保税维修平台</div>
+    <div class="menu">
+      <div class="menu-group">保税维修工作台</div>
+      <div class="menu-item">▦ 首页</div>
+      <div class="menu-item">📄 物料备案</div>
+      <div class="menu-item active">⬇ 入库管理</div>
+      <div class="menu-item">⚙ 工单发料</div>
+      <div class="menu-item">▣ 工单收料</div>
+      <div class="menu-item">⬆ 出库管理</div>
+      <div class="menu-item">▤ 库存台账</div>
+      <div class="menu-item">✉ 申报管理</div>
+      <div class="menu-group">系统管理</div>
+      <div class="menu-item">👤 用户管理</div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="navbar">
+      <span class="breadcrumb">入库管理 / <b>入库单详情</b></span>
+      <div class="nav-right"><span>🔄</span><span>🔍</span><div class="avatar">Ad</div></div>
+    </div>
+    <div class="tagsbar">
+      <span class="tagv">首页</span>
+      <span class="tagv">入库管理</span>
+      <span class="tagv active">入库单详情</span>
+      <span class="tagv">物料备案</span>
+    </div>
+
+    <!-- 顶部固定操作条 -->
+    <div class="pagebar">
+      <h2>入库单详情</h2>
+      <span class="pageno">PT2026112603</span>
+      <span class="tag tag-primary"><i></i>03-审核通过</span>
+      <span class="tag tag-info"><i></i>00-未申报</span>
+      <span class="spacer"></span>
+      <button class="btn">返回列表</button>
+      <button class="btn">打印</button>
+      <button class="btn">保存草稿</button>
+      <button class="btn btn-primary">提交申报</button>
+    </div>
+
+    <div class="content">
+      <!-- 左侧锚点导航 -->
+      <div class="anchors">
+        <div class="anchor active">1 基本信息</div>
+        <div class="anchor">2 关联单证</div>
+        <div class="anchor">3 物料明细</div>
+        <div class="anchor">4 申报信息</div>
+        <div class="anchor">5 操作记录</div>
+      </div>
+
+      <div>
+        <!-- 1 基本信息 -->
+        <div class="card" id="g1">
+          <div class="card-head"><span class="idx">1</span>基本信息<span class="hint">带 <b style="color:var(--danger)">*</b> 为申报必填项</span></div>
+          <div class="card-body">
+            <div class="form">
+              <div class="field"><label>入库单号 *</label><div class="input readonly">PT2026112603</div></div>
+              <div class="field"><label>业务类型 *</label><div class="input filled"><span>05-维修用料</span><span class="arrow">▼</span></div></div>
+              <div class="field"><label>入库时间 *</label><div class="input filled">2026-11-26 09:48</div></div>
+              <div class="field"><label>关联企业名称 *</label><div class="input filled">深圳创联科技有限公司</div></div>
+              <div class="field"><label>关联报关单类型 *</label><div class="input filled"><span>02-集卡清单</span><span class="arrow">▼</span></div></div>
+              <div class="field"><label>关联报关单编号</label><div class="input filled">E2026000512</div></div>
+              <div class="field"><label>核扣标记 *</label><div class="input filled"><span>1-正常</span><span class="arrow">▼</span></div></div>
+              <div class="field"><label>备注</label><div class="input filled">常规维修用料入库</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 关联单证 -->
+        <div class="card" id="g2">
+          <div class="card-head"><span class="idx">2</span>关联单证</div>
+          <div class="card-body">
+            <div class="form">
+              <div class="field"><label>随附单证类型</label><div class="input filled"><span>99-其他</span><span class="arrow">▼</span></div></div>
+              <div class="field"><label>随附单证编号</label><div class="input filled">ZZ2026110345</div></div>
+              <div class="field"><label>启用时间</label><div class="input readonly">—</div></div>
+              <div class="field"><label>申报批次</label><div class="input filled">B202611-001</div></div>
+              <div class="field"><label>核销周期</label><div class="input filled">HT2026-11</div></div>
+              <div class="field"><label>预录入编号</label><div class="input readonly">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 物料明细 -->
+        <div class="card" id="g3">
+          <div class="card-head"><span class="idx">3</span>物料明细（2）<span class="hint">支持行内编辑、行展开</span></div>
+          <div class="items-toolbar"><button class="btn btn-primary">＋ 添加物料</button><button class="btn">从物料备案选择</button></div>
+          <div style="padding: 12px 20px 0;">
+            <table>
+              <tr>
+                <th style="width:36px"><input type="checkbox"></th>
+                <th>物料名称</th><th>六类标记</th><th>HS 编码</th><th class="num">入库数量</th>
+                <th class="num">单价</th><th>币制</th><th>毛重</th><th>来源单号</th><th style="width:100px">操作</th>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td><td>不锈钢结构件 304</td><td>4-维修用料</td><td>7318150090</td>
+                <td class="num">1,600.00</td><td class="num">12.50</td><td>USD</td><td>1,250.00</td><td>G2026111201</td>
+                <td><span class="op">编辑</span><span class="op danger">删除</span></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td><td>精密螺丝 M2×5</td><td>4-维修用料</td><td>7318150090</td>
+                <td class="num">800.00</td><td class="num">0.35</td><td>USD</td><td>18.00</td><td>G2026111201</td>
+                <td><span class="op">编辑</span><span class="op danger">删除</span></td>
+              </tr>
+            </table>
+          </div>
+          <div class="items-sum"><span>合计数量 <b>2,400.00</b></span><span>合计金额 <b>2,280.00 USD</b></span></div>
+        </div>
+
+        <!-- 4 申报信息 -->
+        <div class="card" id="g4">
+          <div class="card-head"><span class="idx">4</span>海关申报信息</div>
+          <div class="card-body">
+            <div class="form">
+              <div class="field"><label>海关状态</label><div class="input readonly"><span class="tag tag-info"><i></i>00-未申报</span></div></div>
+              <div class="field"><label>执行策略</label><div class="input readonly">1-备案</div></div>
+              <div class="field"><label>最近申报时间</label><div class="input readonly">—</div></div>
+              <div class="field"><label>回执信息</label><div class="input readonly">—</div></div>
+              <div class="field"><label>申报人</label><div class="input readonly">—</div></div>
+              <div class="field"><label>回执时间</label><div class="input readonly">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 操作记录 -->
+        <div class="card" id="g5">
+          <div class="card-head"><span class="idx">5</span>操作记录</div>
+          <div class="timeline">
+            <div class="tl-row"><span class="tl-dot"></span><span class="tl-time">11-26 09:48</span>admin 创建入库单（草稿）</div>
+            <div class="tl-row"><span class="tl-dot"></span><span class="tl-time">11-26 10:02</span>admin 提交审核</div>
+            <div class="tl-row"><span class="tl-dot"></span><span class="tl-time">11-26 10:15</span>admin 审核通过，状态变更 03-审核通过</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="note">效果图 3 · 新增/详情独立页面（顶部固定操作条 + 分组表单 + 锚点导航）— docs/design/mockups/detail.html</div>
+</body>
+</html>

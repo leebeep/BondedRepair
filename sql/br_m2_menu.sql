@@ -31,7 +31,7 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, r
 ('发料申报', @m, 6, '', '', '', '', 1, 0, 'F', '0', '0', 'bonded:issue:declare', '#', 'admin', sysdate());
 
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
-VALUES ('工单收料', 2000, 5, 'receive', 'bonded/receive/index', '', '', 1, 0, 'C', '0', '0', 'bonded:rcv:list', 'download', 'admin', sysdate());
+VALUES ('工单收料', 2000, 5, 'receive', 'bonded/receive/index', '', '', 1, 0, 'C', '0', '0', 'bonded:rcv:list', 'goods-in', 'admin', sysdate());
 SET @m := LAST_INSERT_ID();
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time) VALUES
 ('收料查询', @m, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'bonded:rcv:query', '#', 'admin', sysdate()),

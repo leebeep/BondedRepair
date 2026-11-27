@@ -2,6 +2,8 @@
 target/
 *.class
 *.jar
+# 允许随源码提交的本地依赖 jar（如 ruoyi-admin/lib/*.jar）
+!**/lib/*.jar
 *.war
 *.ear
 *.nar

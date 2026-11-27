@@ -1,6 +1,6 @@
 -- M3 菜单与权限：出库管理 / 申报管理
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
-VALUES ('出库管理', 2000, 7, 'outbound', 'bonded/outbound/index', '', '', 1, 0, 'C', '0', '0', 'bonded:out:list', 'download', 'admin', sysdate());
+VALUES ('出库管理', 2000, 7, 'outbound', 'bonded/outbound/index', '', '', 1, 0, 'C', '0', '0', 'bonded:out:list', 'goods-out', 'admin', sysdate());
 SET @m := LAST_INSERT_ID();
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time) VALUES
 ('出库查询', @m, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'bonded:out:query', '#', 'admin', sysdate()),
