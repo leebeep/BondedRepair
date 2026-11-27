@@ -12,6 +12,7 @@ import com.ruoyi.bonded.domain.Epd101Data;
 import com.ruoyi.bonded.mapper.BrDeclareLogMapper;
 import com.ruoyi.bonded.mapper.BrMaterialMapper;
 import com.ruoyi.bonded.mapper.Epd101DataMapper;
+import com.ruoyi.bonded.service.BrPushSwitch;
 import com.ruoyi.bonded.service.IBrMaterialService;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -31,6 +32,9 @@ public class BrMaterialServiceImpl implements IBrMaterialService
 
     @Autowired
     private BrDeclareLogMapper declareLogMapper;
+
+    @Autowired
+    private BrPushSwitch pushSwitch;
 
     @Value("${br.enterpCd}")
     private String enterpCd;
@@ -70,6 +74,7 @@ public class BrMaterialServiceImpl implements IBrMaterialService
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrMaterial(BrMaterial material)
     {
         material.setVersion(StringUtils.defaultString(material.getVersion(), "1"));
@@ -79,7 +84,13 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         }
         validate(material);
         material.setCreateBy(SecurityUtils.getUsername());
-        return materialMapper.insertBrMaterial(material);
+        int rows = materialMapper.insertBrMaterial(material);
+        // 自动备案：保存即写入镜像库（服务费虚物料 markType=8 非报关对象，仅本地记账）
+        if (pushSwitch.isEnabled() && !"8".equals(material.getMarkType()))
+        {
+            declareEPD101(new Long[] { material.getId() }, "1");
+        }
+        return rows;
     }
 
     @Override
@@ -96,7 +107,13 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         }
         validate(material);
         material.setUpdateBy(SecurityUtils.getUsername());
-        return materialMapper.updateBrMaterial(material);
+        int rows = materialMapper.updateBrMaterial(material);
+        // 退单改单后自动重报备案（首报口径），保证不滞留
+        if ("3".equals(db.getDeclareStatus()) && pushSwitch.isEnabled() && !"8".equals(db.getMarkType()))
+        {
+            declareEPD101(new Long[] { material.getId() }, "1");
+        }
+        return rows;
     }
 
     @Override

@@ -88,32 +88,48 @@ public class BrReceiptPollTask
             Pto2Data row = pto2DataMapper.selectById(decl.getMirrorRowId());
             if (row == null || StringUtils.isEmpty(row.getResultStatus())) { return; }
             resultStatus = row.getResultStatus(); uuid = row.getUuid(); msg = row.getMsg(); resultTime = row.getResultTime();
-            inboundMapper.updateDeclareResult(decl.getBizId(), uuid, mapDocStatus(resultStatus),
-                    mapCustomsStatus(resultStatus), decl.getExecuteType());
+            String ds = docStatusFor(resultStatus, decl.getExecuteType());
+            if (ds != null)
+            {
+                inboundMapper.updateDeclareResult(decl.getBizId(), uuid, ds,
+                        customsFor(resultStatus, decl.getExecuteType()), decl.getExecuteType());
+            }
         }
         else if ("RRD2".equals(bizType))
         {
             Rrd2Data row = rrd2DataMapper.selectById(decl.getMirrorRowId());
             if (row == null || StringUtils.isEmpty(row.getResultStatus())) { return; }
             resultStatus = row.getResultStatus(); uuid = row.getUuid(); msg = row.getMsg(); resultTime = row.getResultTime();
-            issueMapper.updateDeclareResult(decl.getBizId(), uuid, mapDocStatus(resultStatus),
-                    mapCustomsStatus(resultStatus), decl.getExecuteType());
+            String ds = docStatusFor(resultStatus, decl.getExecuteType());
+            if (ds != null)
+            {
+                issueMapper.updateDeclareResult(decl.getBizId(), uuid, ds,
+                        customsFor(resultStatus, decl.getExecuteType()), decl.getExecuteType());
+            }
         }
         else if ("MSO2".equals(bizType))
         {
             Mso2Data row = mso2DataMapper.selectById(decl.getMirrorRowId());
             if (row == null || StringUtils.isEmpty(row.getResultStatus())) { return; }
             resultStatus = row.getResultStatus(); uuid = row.getUuid(); msg = row.getMsg(); resultTime = row.getResultTime();
-            receiveMapper.updateDeclareResult(decl.getBizId(), uuid, mapDocStatus(resultStatus),
-                    mapCustomsStatus(resultStatus), decl.getExecuteType());
+            String ds = docStatusFor(resultStatus, decl.getExecuteType());
+            if (ds != null)
+            {
+                receiveMapper.updateDeclareResult(decl.getBizId(), uuid, ds,
+                        customsFor(resultStatus, decl.getExecuteType()), decl.getExecuteType());
+            }
         }
         else if ("SDO2".equals(bizType))
         {
             Sdo2Data row = sdo2DataMapper.selectById(decl.getMirrorRowId());
             if (row == null || StringUtils.isEmpty(row.getResultStatus())) { return; }
             resultStatus = row.getResultStatus(); uuid = row.getUuid(); msg = row.getMsg(); resultTime = row.getResultTime();
-            outboundMapper.updateDeclareResult(decl.getBizId(), uuid, mapDocStatus(resultStatus),
-                    mapCustomsStatus(resultStatus), decl.getExecuteType());
+            String ds = docStatusFor(resultStatus, decl.getExecuteType());
+            if (ds != null)
+            {
+                outboundMapper.updateDeclareResult(decl.getBizId(), uuid, ds,
+                        customsFor(resultStatus, decl.getExecuteType()), decl.getExecuteType());
+            }
         }
         else
         {
@@ -157,7 +173,26 @@ public class BrReceiptPollTask
         }
     }
 
-    /** manageResult → 单据 doc_status（Y/1→05 申报通过，N/3→06 退单，其余 04） */
+    /** 单据回执映射：作废回执成功→07 已作废；作废失败不回写业务单据（仅记日志）；其余走常规映射 */
+    private String docStatusFor(String result, String execType)
+    {
+        if ("3".equals(execType))
+        {
+            return ("Y".equals(result) || "1".equals(result)) ? "07" : null;
+        }
+        return mapDocStatus(result);
+    }
+
+    private String customsFor(String result, String execType)
+    {
+        if ("3".equals(execType))
+        {
+            return ("Y".equals(result) || "1".equals(result)) ? "29" : null;
+        }
+        return mapCustomsStatus(result);
+    }
+
+    /** manageResult → 单据 doc_status（Y/1→05 申报通过，N/3→06 退单，其余 03 申报中） */
     private String mapDocStatus(String result)
     {
         switch (result)
@@ -166,7 +201,7 @@ public class BrReceiptPollTask
             case "1": return "05";
             case "N":
             case "3": return "06";
-            default: return "04";
+            default: return "03";
         }
     }
 }

@@ -12,6 +12,19 @@ WHERE parent_id = 0 AND path = 'bonded' AND menu_type = 'M';
 -- 1.1 菜单「物料备案」→「物料清单」
 UPDATE sys_menu SET menu_name = '物料清单' WHERE parent_id = 2000 AND path = 'material' AND menu_type = 'C';
 
+-- 1.2 菜单「申报管理」→「联网日志」（数据库对接模式：纯监控 + 异常处置）
+UPDATE sys_menu SET menu_name = '联网日志' WHERE parent_id = 2000 AND path = 'declare' AND menu_type = 'C';
+
+-- 1.3 联网日志新增按钮权限：联网参数配置（自动推送开关切换 / 补推 / 主动查询）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
+SELECT '联网参数配置', m.menu_id, 1, '', NULL, '', '', 1, 0, 'F', '0', '0', 'bonded:declare:edit', '#', 'admin', sysdate(), '自动推送开关/补推/主动查询'
+FROM sys_menu m WHERE m.path = 'declare' AND m.menu_type = 'C' LIMIT 1;
+
+-- 1.4 自动推送总开关（默认开）
+INSERT INTO sys_config (config_name, config_key, config_value, config_type, create_by, create_time, remark)
+SELECT '联网自动推送开关', 'br.auto.push.enabled', 'true', 'Y', 'admin', sysdate(), 'true=单据审核/物料保存自动写入镜像库；false=仅人工变更/作废/补推写入'
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'br.auto.push.enabled');
+
 -- 2. 移除「若依官网」外链菜单（menu_id=4，源自 ry_20261117.sql）
 DELETE FROM sys_role_menu WHERE menu_id = 4;
 DELETE FROM sys_menu WHERE menu_id = 4 AND menu_name = '若依官网';

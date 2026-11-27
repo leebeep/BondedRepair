@@ -40,9 +40,14 @@ export const declareOutbound = (t, ids) => request({ url: `/bonded/outbound/decl
 export const listStock = q => request({ url: '/bonded/stock/list', method: 'get', params: q })
 export const reconcileStock = q => request({ url: '/bonded/stock/reconcile', method: 'get', params: q })
 
-// 申报管理
+// 联网日志（原申报管理）
 export const declareBoard = () => request({ url: '/bonded/declare/board', method: 'get' })
 export const listDeclareLog = q => request({ url: '/bonded/declare/log', method: 'get', params: q })
+export const getPushSwitch = () => request({ url: '/bonded/declare/push-switch', method: 'get' })
+export const setPushSwitch = enabled => request({ url: '/bonded/declare/push-switch/' + enabled, method: 'put' })
+export const pushPending = () => request({ url: '/bonded/declare/push-pending', method: 'post' })
+export const queryReceipt = () => request({ url: '/bonded/declare/query-receipt', method: 'post' })
+export const syncBoard = () => request({ url: '/bonded/declare/sync-board', method: 'get' })
 
 // 首页工作台统计
 export const dashboardStats = () => request({ url: '/bonded/dashboard/stats', method: 'get' })

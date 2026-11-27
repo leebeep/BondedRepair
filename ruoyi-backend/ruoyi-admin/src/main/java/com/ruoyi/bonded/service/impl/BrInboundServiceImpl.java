@@ -15,6 +15,7 @@ import com.ruoyi.bonded.mapper.BrInboundMapper;
 import com.ruoyi.bonded.mapper.BrMaterialMapper;
 import com.ruoyi.bonded.mapper.Pto2DataMapper;
 import com.ruoyi.bonded.service.BrLedgerService;
+import com.ruoyi.bonded.service.BrPushSwitch;
 import com.ruoyi.bonded.service.IBrInboundService;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -31,6 +32,7 @@ public class BrInboundServiceImpl implements IBrInboundService
     @Autowired private Pto2DataMapper pto2DataMapper;
     @Autowired private BrDeclareLogMapper declareLogMapper;
     @Autowired private BrLedgerService ledgerService;
+    @Autowired private BrPushSwitch pushSwitch;
 
     @Override
     public List<BrInbound> selectList(BrInbound inbound)
@@ -69,7 +71,7 @@ public class BrInboundServiceImpl implements IBrInboundService
     {
         BrInbound db = inboundMapper.selectById(inbound.getId());
         if (db == null) { throw new ServiceException("入库单不存在"); }
-        if (!"01".equals(db.getDocStatus())) { throw new ServiceException("仅草稿状态可修改"); }
+        if (!"01".equals(db.getDocStatus()) && !"06".equals(db.getDocStatus())) { throw new ServiceException("仅草稿或退单状态可修改"); }
         validate(inbound, inbound.getId());
         inbound.setUpdateBy(SecurityUtils.getUsername());
         inboundMapper.update(inbound);
@@ -78,6 +80,11 @@ public class BrInboundServiceImpl implements IBrInboundService
         {
             item.setInboundId(inbound.getId());
             inboundMapper.insertItem(item);
+        }
+        // 退单改单后回草稿，重新审核时以 executeType=2 变更重报（携带原 uuid）
+        if ("06".equals(db.getDocStatus()))
+        {
+            inboundMapper.updateDeclareResult(inbound.getId(), db.getLastUuid(), "01", "00", db.getExecuteType());
         }
         return 1;
     }
@@ -108,7 +115,13 @@ public class BrInboundServiceImpl implements IBrInboundService
             ledgerService.record(item.getMaterialId(), m.getMarkType(), "IN", "br_inbound", id,
                     "g", h.getInboundNo(), null, null, item.getStorageCnt());
         }
-        return inboundMapper.updateDeclareResult(id, h.getLastUuid(), "03", h.getCustomsStatus(), "1");
+        // 审核通过；自动推送开关打开时同事务写入镜像库（首报/变更自动判定），关闭则滞留待同步由补推任务处理
+        int rows = inboundMapper.updateDeclareResult(id, h.getLastUuid(), "03", h.getCustomsStatus(), "1");
+        if (pushSwitch.isEnabled())
+        {
+            declare(new Long[] { id }, "A");
+        }
+        return rows;
     }
 
     @Override
@@ -119,16 +132,23 @@ public class BrInboundServiceImpl implements IBrInboundService
         {
             BrInbound h = inboundMapper.selectById(id);
             if (h == null) { throw new ServiceException("入库单不存在"); }
-            if ("1".equals(executeType) && !"03".equals(h.getDocStatus()))
+            // A=自动判定：已申报过（有预录入编号）走变更(2)，否则首报(1)
+            String t = executeType;
+            if ("A".equals(t)) { t = StringUtils.isNotEmpty(h.getLastUuid()) ? "2" : "1"; }
+            if ("1".equals(t) && !"03".equals(h.getDocStatus()))
             {
                 throw new ServiceException("入库单【" + h.getInboundNo() + "】未审核通过，不能申报");
             }
-            if (!"1".equals(executeType) && "01".equals(h.getDocStatus()))
+            if ("2".equals(t) && StringUtils.isEmpty(h.getLastUuid()))
             {
-                throw new ServiceException("入库单【" + h.getInboundNo() + "】未申报过，不能变更/作废");
+                throw new ServiceException("入库单【" + h.getInboundNo() + "】未申报过，不能变更");
+            }
+            if ("3".equals(t) && !"03".equals(h.getDocStatus()) && !"05".equals(h.getDocStatus()) && !"06".equals(h.getDocStatus()))
+            {
+                throw new ServiceException("入库单【" + h.getInboundNo() + "】仅申报中/申报通过/退单状态可作废");
             }
             // 变更/作废（executeType=2/3）必须携带原预录入编号（规范 §2.2.x）
-            String lastUuid = "1".equals(executeType) ? null : h.getLastUuid();
+            String lastUuid = "1".equals(t) ? null : h.getLastUuid();
             for (BrInboundItem item : inboundMapper.selectItemsByInboundId(id))
             {
                 BrMaterial m = materialMapper.selectBrMaterialById(item.getMaterialId());
@@ -142,7 +162,7 @@ public class BrInboundServiceImpl implements IBrInboundService
                     throw new ServiceException("物料【" + m.getMaterialName() + "】规格型号必填（规范 §3.2.1）");
                 }
                 Pto2Data d = new Pto2Data();
-                d.setExecuteType(executeType);
+                d.setExecuteType(t);
                 d.setTakeOrderCd(h.getInboundNo());
                 d.setRelaEntNm(h.getRelaEntNm());
                 d.setMaterialCd(m.getMaterialCd());
@@ -177,11 +197,12 @@ public class BrInboundServiceImpl implements IBrInboundService
                 log.setBizId(id);
                 log.setMirrorTable("pto2_data");
                 log.setMirrorRowId(d.getId());
-                log.setExecuteType(executeType);
+                log.setExecuteType(t);
                 log.setUuid(StringUtils.defaultString(lastUuid, ""));
                 declareLogMapper.insertBrDeclareLog(log);
             }
-            inboundMapper.updateDeclareResult(id, lastUuid, "04", "10", executeType);
+            // 写入镜像表即申报：03=已同步待回执（04 状态废弃），customs 10=待采集
+            inboundMapper.updateDeclareResult(id, lastUuid, "03", "10", t);
         }
         return ids.length;
     }

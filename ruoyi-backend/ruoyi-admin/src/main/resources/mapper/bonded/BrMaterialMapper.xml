@@ -98,7 +98,7 @@
 
     <update id="updateDeclareResult">
         update br_material
-        set uuid = #{uuid}, declare_status = #{declareStatus}, customs_status = #{customsStatus},
+        set update_time = sysdate(), uuid = #{uuid}, declare_status = #{declareStatus}, customs_status = #{customsStatus},
             execute_type = #{executeType}
         where id = #{id}
     </update>

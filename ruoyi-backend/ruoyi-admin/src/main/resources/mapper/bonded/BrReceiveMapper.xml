@@ -62,7 +62,7 @@
     </update>
 
     <update id="updateDeclareResult">
-        update br_receive set last_uuid = #{uuid}, doc_status = #{docStatus},
+        update br_receive set update_time = sysdate(), last_uuid = #{uuid}, doc_status = #{docStatus},
             customs_status = #{customsStatus}, execute_type = #{executeType} where id = #{id}
     </update>
 

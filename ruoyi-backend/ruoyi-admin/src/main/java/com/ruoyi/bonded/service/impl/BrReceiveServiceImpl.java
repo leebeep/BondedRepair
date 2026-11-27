@@ -18,6 +18,7 @@ import com.ruoyi.bonded.mapper.BrReceiveMapper;
 import com.ruoyi.bonded.mapper.BrWorkOrderMapper;
 import com.ruoyi.bonded.mapper.Mso2DataMapper;
 import com.ruoyi.bonded.service.BrLedgerService;
+import com.ruoyi.bonded.service.BrPushSwitch;
 import com.ruoyi.bonded.service.BrWorkOrderService;
 import com.ruoyi.bonded.service.IBrReceiveService;
 import com.ruoyi.common.exception.ServiceException;
@@ -40,6 +41,7 @@ public class BrReceiveServiceImpl implements IBrReceiveService
     @Autowired private Mso2DataMapper mso2DataMapper;
     @Autowired private BrDeclareLogMapper declareLogMapper;
     @Autowired private BrLedgerService ledgerService;
+    @Autowired private BrPushSwitch pushSwitch;
     @Autowired private BrWorkOrderService workOrderService;
 
     @Override
@@ -84,7 +86,7 @@ public class BrReceiveServiceImpl implements IBrReceiveService
     {
         BrReceive db = receiveMapper.selectById(receive.getId());
         if (db == null) { throw new ServiceException("收料单不存在"); }
-        if (!"01".equals(db.getDocStatus())) { throw new ServiceException("仅草稿状态可修改"); }
+        if (!"01".equals(db.getDocStatus()) && !"06".equals(db.getDocStatus())) { throw new ServiceException("仅草稿或退单状态可修改"); }
         validate(receive, receive.getId());
         if (StringUtils.isNotEmpty(receive.getWorkNo()))
         {
@@ -100,6 +102,10 @@ public class BrReceiveServiceImpl implements IBrReceiveService
         {
             item.setReceiveId(receive.getId());
             receiveMapper.insertItem(item);
+        }
+        if ("06".equals(db.getDocStatus()))
+        {
+            receiveMapper.updateDeclareResult(receive.getId(), db.getLastUuid(), "01", "00", db.getExecuteType());
         }
         return 1;
     }
@@ -130,7 +136,12 @@ public class BrReceiveServiceImpl implements IBrReceiveService
             ledgerService.record(item.getMaterialId(), m.getMarkType(), "RCV", "br_receive", id,
                     "i", h.getReceiveNo(), wo.getWorkNo(), wo.getBatchNo(), item.getMaterialNum());
         }
-        receiveMapper.updateDeclareResult(id, h.getLastUuid(), "03", h.getCustomsStatus(), "1");
+        // 审核通过；自动推送开关打开时同事务写入镜像库，关闭则滞留待同步由补推任务处理
+        int rows = receiveMapper.updateDeclareResult(id, h.getLastUuid(), "03", h.getCustomsStatus(), "1");
+        if (pushSwitch.isEnabled())
+        {
+            declare(new Long[] { id }, "A");
+        }
         // 收齐校验：已修复+残次品 >= 实际投入 → 工单转已收齐
         if ("02".equals(wo.getOrderStatus()))
         {
@@ -152,16 +163,23 @@ public class BrReceiveServiceImpl implements IBrReceiveService
         {
             BrReceive h = receiveMapper.selectById(id);
             if (h == null) { throw new ServiceException("收料单不存在"); }
-            if ("1".equals(executeType) && !"03".equals(h.getDocStatus()))
+            // A=自动判定：已申报过（有预录入编号）走变更(2)，否则首报(1)
+            String t = executeType;
+            if ("A".equals(t)) { t = StringUtils.isNotEmpty(h.getLastUuid()) ? "2" : "1"; }
+            if ("1".equals(t) && !"03".equals(h.getDocStatus()))
             {
                 throw new ServiceException("收料单【" + h.getReceiveNo() + "】未审核通过，不能申报");
             }
-            if (!"1".equals(executeType) && "01".equals(h.getDocStatus()))
+            if ("2".equals(t) && StringUtils.isEmpty(h.getLastUuid()))
             {
-                throw new ServiceException("收料单【" + h.getReceiveNo() + "】未申报过，不能变更/作废");
+                throw new ServiceException("收料单【" + h.getReceiveNo() + "】未申报过，不能变更");
+            }
+            if ("3".equals(t) && !"03".equals(h.getDocStatus()) && !"05".equals(h.getDocStatus()) && !"06".equals(h.getDocStatus()))
+            {
+                throw new ServiceException("收料单【" + h.getReceiveNo() + "】仅申报中/申报通过/退单状态可作废");
             }
             // 变更/作废（executeType=2/3）必须携带原预录入编号（规范 §2.2.x）
-            String lastUuid = "1".equals(executeType) ? null : h.getLastUuid();
+            String lastUuid = "1".equals(t) ? null : h.getLastUuid();
             BrWorkOrder wo = workOrderMapper.selectById(h.getWorkOrderId());
             for (BrReceiveItem item : receiveMapper.selectItemsByReceiveId(id))
             {
@@ -177,7 +195,7 @@ public class BrReceiveServiceImpl implements IBrReceiveService
                     throw new ServiceException("明细物料未备案通过，不能申报: " + (m == null ? item.getMaterialId() : m.getMaterialName()));
                 }
                 Mso2Data d = new Mso2Data();
-                d.setExecuteType(executeType);
+                d.setExecuteType(t);
                 d.setReturnMaterialNo(h.getReceiveNo());
                 d.setReturnTime(h.getReceiveTime());
                 d.setWorkNo(wo.getWorkNo());
@@ -199,11 +217,11 @@ public class BrReceiveServiceImpl implements IBrReceiveService
                 log.setBizId(id);
                 log.setMirrorTable("mso2_data");
                 log.setMirrorRowId(d.getId());
-                log.setExecuteType(executeType);
+                log.setExecuteType(t);
                 log.setUuid(StringUtils.defaultString(lastUuid, ""));
                 declareLogMapper.insertBrDeclareLog(log);
             }
-            receiveMapper.updateDeclareResult(id, lastUuid, "04", "10", executeType);
+            receiveMapper.updateDeclareResult(id, lastUuid, "03", "10", t);
         }
         return ids.length;
     }

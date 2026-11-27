@@ -53,7 +53,7 @@
         where id = #{id}
     </update>
     <update id="updateDeclareResult">
-        update br_outbound set last_uuid = #{uuid}, doc_status = #{docStatus}, customs_status = #{customsStatus}, execute_type = #{executeType} where id = #{id}
+        update br_outbound set update_time = sysdate(), last_uuid = #{uuid}, doc_status = #{docStatus}, customs_status = #{customsStatus}, execute_type = #{executeType} where id = #{id}
     </update>
     <delete id="deleteByIds">
         update br_outbound set del_flag = '2' where id in

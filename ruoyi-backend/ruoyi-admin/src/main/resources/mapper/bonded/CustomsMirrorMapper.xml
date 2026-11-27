@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.CustomsMirrorMapper">
+
+    <!-- 五张镜像表回执字段同构，客户端写回与主动查询覆盖共用；只更新回执字段，不动业务字段 -->
+
+    <update id="updateReceiptEpd101">
+        update epd101_data set result_status = #{resultStatus}, msg = #{msg}, result_time = #{resultTime} where uuid = #{uuid}
+    </update>
+
+    <update id="updateReceiptPto2">
+        update pto2_data set result_status = #{resultStatus}, msg = #{msg}, result_time = #{resultTime} where uuid = #{uuid}
+    </update>
+
+    <update id="updateReceiptRrd2">
+        update rrd2_data set result_status = #{resultStatus}, msg = #{msg}, result_time = #{resultTime} where uuid = #{uuid}
+    </update>
+
+    <update id="updateReceiptMso2">
+        update mso2_data set result_status = #{resultStatus}, msg = #{msg}, result_time = #{resultTime} where uuid = #{uuid}
+    </update>
+
+    <update id="updateReceiptSdo2">
+        update sdo2_data set result_status = #{resultStatus}, msg = #{msg}, result_time = #{resultTime} where uuid = #{uuid}
+    </update>
+</mapper>

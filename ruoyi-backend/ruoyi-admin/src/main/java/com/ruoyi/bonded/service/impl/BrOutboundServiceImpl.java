@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.bonded.domain.*;
 import com.ruoyi.bonded.mapper.*;
 import com.ruoyi.bonded.service.BrLedgerService;
+import com.ruoyi.bonded.service.BrPushSwitch;
 import com.ruoyi.bonded.service.IBrOutboundService;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -22,6 +23,7 @@ public class BrOutboundServiceImpl implements IBrOutboundService
     @Autowired private Sdo2DataMapper sdo2DataMapper;
     @Autowired private BrDeclareLogMapper declareLogMapper;
     @Autowired private BrLedgerService ledgerService;
+    @Autowired private BrPushSwitch pushSwitch;
 
     @Override
     public List<BrOutbound> selectList(BrOutbound outbound)
@@ -109,7 +111,13 @@ public class BrOutboundServiceImpl implements IBrOutboundService
             ledgerService.record(item.getMaterialId(), m.getMarkType(), "OUT", "br_outbound", id,
                     item.getGoodsSourceType(), item.getGoodsSourceNo(), null, null, out.negate());
         }
-        return outboundMapper.updateDeclareResult(id, h.getLastUuid(), "03", h.getCustomsStatus(), "1");
+        // 审核通过；自动推送开关打开时同事务写入镜像库（退单重报自动走变更），关闭则滞留待同步由补推任务处理
+        int rows = outboundMapper.updateDeclareResult(id, h.getLastUuid(), "03", h.getCustomsStatus(), "1");
+        if (pushSwitch.isEnabled())
+        {
+            declare(new Long[] { id }, "A");
+        }
+        return rows;
     }
 
     @Override
@@ -120,16 +128,23 @@ public class BrOutboundServiceImpl implements IBrOutboundService
         {
             BrOutbound h = outboundMapper.selectById(id);
             if (h == null) { throw new ServiceException("出库单不存在"); }
-            if ("1".equals(executeType) && !"03".equals(h.getDocStatus()))
+            // A=自动判定：已申报过（有预录入编号）走变更(2)，否则首报(1)
+            String t = executeType;
+            if ("A".equals(t)) { t = StringUtils.isNotEmpty(h.getLastUuid()) ? "2" : "1"; }
+            if ("1".equals(t) && !"03".equals(h.getDocStatus()))
             {
                 throw new ServiceException("出库单未审核通过，不能申报");
             }
-            if (!"1".equals(executeType) && "01".equals(h.getDocStatus()))
+            if ("2".equals(t) && StringUtils.isEmpty(h.getLastUuid()))
             {
-                throw new ServiceException("出库单未申报过，不能变更/作废");
+                throw new ServiceException("出库单未申报过，不能变更");
+            }
+            if ("3".equals(t) && !"03".equals(h.getDocStatus()) && !"05".equals(h.getDocStatus()) && !"06".equals(h.getDocStatus()))
+            {
+                throw new ServiceException("出库单仅申报中/申报通过/退单状态可作废");
             }
             // 变更/作废（executeType=2/3）必须携带原预录入编号（规范 §2.2.x）
-            String lastUuid = "1".equals(executeType) ? null : h.getLastUuid();
+            String lastUuid = "1".equals(t) ? null : h.getLastUuid();
             for (BrOutboundItem item : outboundMapper.selectItemsByOutboundId(id))
             {
                 BrMaterial m = materialMapper.selectBrMaterialById(item.getMaterialId());
@@ -149,7 +164,7 @@ public class BrOutboundServiceImpl implements IBrOutboundService
                     throw new ServiceException("物料【" + line.getMaterialName() + "】规格型号必填（规范 §3.5.1）");
                 }
                 Sdo2Data d = new Sdo2Data();
-                d.setExecuteType(executeType);
+                d.setExecuteType(t);
                 d.setRelaEntNm(h.getRelaEntNm());
                 d.setReleaseno(h.getOutboundNo());
                 d.setMaterialCd(line.getMaterialCd());
@@ -180,11 +195,12 @@ public class BrOutboundServiceImpl implements IBrOutboundService
                 log.setBizId(id);
                 log.setMirrorTable("sdo2_data");
                 log.setMirrorRowId(d.getId());
-                log.setExecuteType(executeType);
+                log.setExecuteType(t);
                 log.setUuid(StringUtils.defaultString(lastUuid, ""));
                 declareLogMapper.insertBrDeclareLog(log);
             }
-            outboundMapper.updateDeclareResult(id, lastUuid, "04", "10", executeType);
+            // 写入镜像表即申报：03=已同步待回执（04 废弃）
+            outboundMapper.updateDeclareResult(id, lastUuid, "03", "10", t);
         }
         return ids.length;
     }
