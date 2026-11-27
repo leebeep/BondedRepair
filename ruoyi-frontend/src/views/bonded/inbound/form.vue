@@ -41,7 +41,7 @@
             </el-table-column>
             <el-table-column label="数量" width="130"><template #default="s"><el-input-number v-model="s.row.storageCnt" :min="0.000001" :precision="6" size="small" style="width:100%" /></template></el-table-column>
             <el-table-column label="单价" width="130"><template #default="s"><el-input-number v-model="s.row.price" :min="0" :precision="6" size="small" style="width:100%" /></template></el-table-column>
-            <el-table-column label="币制" width="90"><template #default="s"><el-input v-model="s.row.currency" size="small" placeholder="502" /></template></el-table-column>
+            <el-table-column label="币制" width="130"><template #default="s"><el-select v-model="s.row.currency" filterable size="small" placeholder="请选择"><el-option v-for="c in currencies" :key="c.value" :label="c.label" :value="c.value" /></el-select></template></el-table-column>
             <el-table-column label="规格型号" width="140"><template #default="s"><el-input v-model="s.row.specificationsModels" size="small" placeholder="默认物料型号" /></template></el-table-column>
             <el-table-column label="来源" width="150">
               <template #default="s">
@@ -96,6 +96,7 @@
 <script setup name="InboundForm">
 import { getInbound, addInbound, updInbound } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
+import { currencies } from '@/utils/customsDict'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()

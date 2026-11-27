@@ -25,4 +25,9 @@ public interface IBrMaterialService
      * @param executeType 1-备案 2-变更 3-作废
      */
     public int declareEPD101(Long[] ids, String executeType);
+
+    /**
+     * 物料编号是否自动生成（参数 br.material.auto.no，未配置视为开）
+     */
+    public boolean isAutoNoEnabled();
 }

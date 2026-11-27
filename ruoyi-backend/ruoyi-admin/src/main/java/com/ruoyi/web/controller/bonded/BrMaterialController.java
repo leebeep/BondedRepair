@@ -40,6 +40,13 @@ public class BrMaterialController extends BaseController
         return getDataTable(list);
     }
 
+    /** 物料编号是否自动生成（表单据此禁用手输；参数 br.material.auto.no，默认开） */
+    @GetMapping("/cd-mode")
+    public AjaxResult cdMode()
+    {
+        return success(materialService.isAutoNoEnabled());
+    }
+
     @PreAuthorize("@ss.hasPermi('bonded:material:export')")
     @PostMapping("/export")
     public void export(HttpServletResponse response, BrMaterial material)

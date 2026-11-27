@@ -9,7 +9,7 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="物料编号" prop="materialCd">
-              <el-input v-model="form.materialCd" placeholder="企业 ERP 物料编号" />
+              <el-input v-model="form.materialCd" :disabled="cdDisabled" :placeholder="cdPlaceholder" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -21,11 +21,11 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="物料名称" prop="materialName">
-              <el-input v-model="form.materialName" placeholder="不含六类标记后缀，申报时自动拼接" />
+              <el-input v-model="form.materialName" placeholder="不含货物类型后缀，申报时自动拼接" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="六类标记" prop="markType">
+            <el-form-item label="货物类型" prop="markType">
               <el-select v-model="form.markType" placeholder="请选择" style="width: 100%">
                 <el-option v-for="d in markTypeOptions" :key="d.value" :label="d.label" :value="d.value" />
               </el-select>
@@ -45,8 +45,8 @@
           <el-col :span="12">
             <el-form-item label="是否保税" prop="isBonded">
               <el-radio-group v-model="form.isBonded">
-                <el-radio value="1">保税料件</el-radio>
-                <el-radio value="0">非保税料件</el-radio>
+                <el-radio value="1">保税</el-radio>
+                <el-radio value="0">非保税</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -72,19 +72,25 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="计量单位" prop="calcUnit">
-              <el-input v-model="form.calcUnit" placeholder="通关参数代码，如 004-个 035-千克" />
+              <el-select v-model="form.calcUnit" filterable placeholder="请选择" style="width: 100%">
+                <el-option v-for="u in customsUnits" :key="u.value" :label="u.label" :value="u.value" />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
             <el-form-item label="法定计量单位" prop="unit1">
-              <el-input v-model="form.unit1" placeholder="选填" />
+              <el-select v-model="form.unit1" filterable clearable placeholder="选填" style="width: 100%">
+                <el-option v-for="u in customsUnits" :key="u.value" :label="u.label" :value="u.value" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="法定第二单位" prop="unit2">
-              <el-input v-model="form.unit2" placeholder="选填" />
+              <el-select v-model="form.unit2" filterable clearable placeholder="选填" style="width: 100%">
+                <el-option v-for="u in customsUnits" :key="u.value" :label="u.label" :value="u.value" />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -103,16 +109,8 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="征免方式" prop="dutyMode">
-              <el-select v-model="form.dutyMode" placeholder="选填" clearable style="width: 100%">
-                <el-option label="1-照章征税" value="1" />
-                <el-option label="2-折半征税" value="2" />
-                <el-option label="3-全免" value="3" />
-                <el-option label="4-特案" value="4" />
-                <el-option label="5-免税" value="5" />
-                <el-option label="6-保证金" value="6" />
-                <el-option label="7-保函" value="7" />
-                <el-option label="8-全额退税" value="8" />
-                <el-option label="9-其他" value="9" />
+              <el-select v-model="form.dutyMode" filterable placeholder="选填" clearable style="width: 100%">
+                <el-option v-for="d in dutyModes" :key="d.value" :label="d.label" :value="d.value" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -130,21 +128,14 @@
 </template>
 
 <script setup name="MaterialForm">
-import { getMaterial, addMaterial, updateMaterial } from '@/api/bonded/material'
+import { getMaterial, addMaterial, updateMaterial, getMaterialCdMode } from '@/api/bonded/material'
+import { customsUnits } from '@/utils/customsUnits'
+import { materialMarkTypes as markTypeOptions } from '@/utils/bonded'
+import { dutyModes } from '@/utils/customsDict'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()
 const router = useRouter()
-
-const markTypeOptions = [
-  { value: '1', label: '待维修货物' },
-  { value: '2', label: '已维修货物' },
-  { value: '3', label: '无法维修货物' },
-  { value: '4', label: '维修用料件' },
-  { value: '5', label: '旧件或坏件' },
-  { value: '6', label: '边角料' },
-  { value: '8', label: '维修服务费' }
-]
 
 const form = ref({
   id: null, materialCd: null, version: '1', calcUnit: null, materialName: null, markType: null, gType: null,
@@ -152,17 +143,23 @@ const form = ref({
   totalGrossWt: null, totalNetWt: null, remark: null
 })
 
-const rules = {
-  materialCd: [{ required: true, message: '物料编号不能为空', trigger: 'blur' }],
+const rules = computed(() => ({
+  materialCd: [{ required: !autoNo.value, message: '物料编号不能为空', trigger: 'blur' }],
   materialName: [{ required: true, message: '物料名称不能为空', trigger: 'blur' }],
-  markType: [{ required: true, message: '请选择六类标记', trigger: 'change' }],
+  markType: [{ required: true, message: '请选择货物类型', trigger: 'change' }],
   gType: [{ required: true, message: '请选择料件成品标志', trigger: 'change' }],
   gModel: [{ required: true, message: '规格型号必填', trigger: 'blur' }],
-  calcUnit: [{ required: true, message: '计量单位必填', trigger: 'blur' }]
-}
+  calcUnit: [{ required: true, message: '计量单位必填', trigger: 'change' }]
+}))
 
 const id = route.params.id
 const title = ref(id ? '修改物料清单' : '新增物料清单')
+
+// 物料编号模式：自动生成（参数 br.material.auto.no，默认开）则禁用手输；编辑时编号固定
+const autoNo = ref(false)
+const cdDisabled = computed(() => !!id || autoNo.value)
+const cdPlaceholder = computed(() => (id ? '编号不可修改' : autoNo.value ? '保存后自动生成（WL+日期+流水）' : '企业 ERP 物料编号'))
+getMaterialCdMode().then(r => { autoNo.value = r.data === true })
 
 if (id) {
   getMaterial(id).then(res => {
@@ -173,9 +170,9 @@ if (id) {
 function submitForm() {
   proxy.$refs['materialRef'].validate(valid => {
     if (valid) {
-      // 规范 §2.2.1：保税料件 HS 编码/商品名称必填，非保税选填（条件校验）
+      // 规范 §2.2.1：保税货物 HS 编码/商品名称必填，非保税选填（条件校验）
       if (form.value.isBonded === '1' && (!form.value.codeTs || !form.value.gName)) {
-        proxy.$modal.msgError('保税料件必填 HS 编码与 HS 商品名称')
+        proxy.$modal.msgError('保税货物必填 HS 编码与 HS 商品名称')
         return
       }
       const req = form.value.id ? updateMaterial(form.value) : addMaterial(form.value)

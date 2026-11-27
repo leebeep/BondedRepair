@@ -10,7 +10,7 @@
         <el-descriptions-item label="收料日期">{{ form.receiveTime }}</el-descriptions-item>
         <el-descriptions-item label="申报批次号">{{ form.batchNo }}</el-descriptions-item>
         <el-descriptions-item label="维修服务费总额">{{ form.serviceFee }}</el-descriptions-item>
-        <el-descriptions-item label="服务费币制">{{ form.currency }}</el-descriptions-item>
+        <el-descriptions-item label="服务费币制">{{ currencyLabel(form.currency) }}</el-descriptions-item>
         <el-descriptions-item label="单据状态">
           <el-tag :type="{ '01': 'info', '03': 'primary', '04': 'warning', '05': 'success', '06': 'danger' }[form.docStatus]">
             {{ { '01': '草稿', '03': '审核通过', '04': '已申报', '05': '申报通过', '06': '退单' }[form.docStatus] || form.docStatus }}
@@ -45,6 +45,7 @@
 import { getReceive } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
 import { cstLabel, cstType, returnTypes } from '@/utils/bonded'
+import { currencyLabel } from '@/utils/customsDict'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()

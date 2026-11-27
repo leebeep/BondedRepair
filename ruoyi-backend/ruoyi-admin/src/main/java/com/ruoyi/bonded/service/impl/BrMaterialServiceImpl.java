@@ -1,5 +1,7 @@
 package com.ruoyi.bonded.service.impl;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,38 @@ public class BrMaterialServiceImpl implements IBrMaterialService
     @Autowired
     private BrPushSwitch pushSwitch;
 
+    /** 物料编号自动生成参数（sys_config，默认 true） */
+    public static final String AUTO_NO_KEY = "br.material.auto.no";
+
+    @Autowired
+    private com.ruoyi.system.service.ISysConfigService configService;
+
+    /** 物料编号自动生成开关（未配置视为开） */
+    public boolean isAutoNoEnabled()
+    {
+        String v = configService.selectConfigByKey(AUTO_NO_KEY);
+        return v == null || v.isEmpty() || "true".equalsIgnoreCase(v);
+    }
+
+    /** 生成物料编号：WL + yyyyMMdd + 4 位当日流水（与备案联合主键唯一性配套） */
+    private String generateMaterialCd()
+    {
+        String prefix = "WL" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String max = materialMapper.selectMaxMaterialCdByPrefix(prefix);
+        int seq = 1;
+        if (max != null && max.length() > prefix.length())
+        {
+            try
+            {
+                seq = Integer.parseInt(max.substring(prefix.length())) + 1;
+            }
+            catch (NumberFormatException ignored)
+            {
+            }
+        }
+        return prefix + String.format("%04d", seq);
+    }
+
     @Value("${br.enterpCd}")
     private String enterpCd;
 
@@ -45,17 +79,17 @@ public class BrMaterialServiceImpl implements IBrMaterialService
     @Value("${br.masterCuscd}")
     private String masterCuscd;
 
-    /** 六类标记 → 品名后缀（公告203号第七条口径） */
+    /** 货物类型（六类标记）→ 品名后缀（与前端货物类型选项文案一致，如 新能源动力电池模组（无法维修货物）） */
     public static String markSuffix(String markType)
     {
         switch (markType)
         {
-            case "1": return "（待修复）";
-            case "2": return "（已修复）";
-            case "3": return "（无法修复）";
-            case "4": return "（维修用保税料件）";
-            case "5": return "（维修替换下的旧件或坏件）";
-            case "6": return "（维修产生的边角料）";
+            case "1": return "（待维修货物）";
+            case "2": return "（已维修货物）";
+            case "3": return "（无法维修货物）";
+            case "4": return "（维修用料件）";
+            case "5": return "（旧件或坏件）";
+            case "6": return "（边角料）";
             case "8": return "维修服务费";
             default: return "";
         }
@@ -81,6 +115,18 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         if (materialMapper.selectBrMaterialByBizKey(material) != null)
         {
             throw new ServiceException("物料编号+版本号+计量单位已存在（备案联合业务主键唯一）");
+        }
+        // 物料编号：未填时按参数自动生成（br.material.auto.no，默认开）；关闭则必填
+        if (StringUtils.isEmpty(material.getMaterialCd()))
+        {
+            if (isAutoNoEnabled())
+            {
+                material.setMaterialCd(generateMaterialCd());
+            }
+            else
+            {
+                throw new ServiceException("物料编号必填（自动生成已关闭，可在 系统管理-参数设置 br.material.auto.no 调整）");
+            }
         }
         validate(material);
         material.setCreateBy(SecurityUtils.getUsername());
@@ -170,7 +216,7 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         return count;
     }
 
-    /** 构造 EPD101 镜像行（品名自动拼接六类标记后缀） */
+    /** 构造 EPD101 镜像行（品名自动拼接货物类型后缀） */
     private Epd101Data buildEpd101(BrMaterial m, String executeType)
     {
         Epd101Data d = new Epd101Data();
@@ -232,11 +278,11 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         {
             if (StringUtils.isEmpty(m.getCodeTs()))
             {
-                throw new ServiceException("保税料件必填 HS 编码（规范 §2.2.1）");
+                throw new ServiceException("保税货物必填 HS 编码（规范 §2.2.1）");
             }
             if (StringUtils.isEmpty(m.getgName()))
             {
-                throw new ServiceException("保税料件必填 HS 商品名称（规范 §2.2.1）");
+                throw new ServiceException("保税货物必填 HS 商品名称（规范 §2.2.1）");
             }
         }
         if (StringUtils.isEmpty(m.getgModel()))

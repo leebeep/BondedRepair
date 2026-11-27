@@ -53,7 +53,7 @@
             </el-table-column>
             <el-table-column label="出库数量" width="150"><template #default="s"><el-input-number v-model="s.row.deliveryCnt" :min="0.000001" :precision="6" size="small" style="width:100%" /></template></el-table-column>
             <el-table-column label="单价" width="130"><template #default="s"><el-input-number v-model="s.row.price" :min="0" :precision="6" size="small" style="width:100%" /></template></el-table-column>
-            <el-table-column label="币制" width="90"><template #default="s"><el-input v-model="s.row.currency" size="small" placeholder="502" /></template></el-table-column>
+            <el-table-column label="币制" width="130"><template #default="s"><el-select v-model="s.row.currency" filterable size="small" placeholder="请选择"><el-option v-for="c in currencies" :key="c.value" :label="c.label" :value="c.value" /></el-select></template></el-table-column>
             <el-table-column label="规格型号" width="140"><template #default="s"><el-input v-model="s.row.specificationsModels" size="small" placeholder="默认物料型号" /></template></el-table-column>
             <el-table-column label="出库说明" width="140"><template #default="s"><el-input v-model="s.row.busiDesc" size="small" placeholder="99-其他时必填" /></template></el-table-column>
             <el-table-column label="操作" width="70" align="center" fixed="right"><template #default="s"><el-button link type="danger" @click="form.items.splice(s.$index,1)">删</el-button></template></el-table-column>
@@ -74,6 +74,7 @@
 import { getOutbound, addOutbound, updOutbound } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
 import { outboundBusiTypes as busiTypes } from '@/utils/bonded'
+import { currencies } from '@/utils/customsDict'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()

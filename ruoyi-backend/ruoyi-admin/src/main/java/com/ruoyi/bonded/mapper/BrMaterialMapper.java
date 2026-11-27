@@ -28,4 +28,7 @@ public interface BrMaterialMapper
 
     /** 采集超时：待采集超 24 小时置 90 */
     public int markCollectTimeout(@Param("hours") int hours);
+
+    /** 按前缀查最大物料编号（自动编号流水用） */
+    public String selectMaxMaterialCdByPrefix(@Param("prefix") String prefix);
 }

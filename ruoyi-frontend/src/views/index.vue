@@ -171,7 +171,7 @@ const navs = [
   { label: '工单收料', icon: 'Box', path: '/bonded/receive' },
   { label: '出库管理', icon: 'Upload', path: '/bonded/outbound' },
   { label: '库存台账', icon: 'DataLine', path: '/bonded/stock' },
-  { label: '申报管理', icon: 'Message', path: '/bonded/declare' },
+  { label: '联网日志', icon: 'Message', path: '/bonded/declare' },
   { label: '用户管理', icon: 'User', path: '/system/user' }
 ]
 

@@ -15,7 +15,7 @@
         </el-row>
         <el-row>
           <el-col :span="12"><el-form-item label="维修服务费总额"><el-input-number v-model="form.serviceFee" :min="0" :precision="2" style="width: 100%" placeholder="服务费行金额来源" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="服务费币制"><el-input v-model="form.currency" placeholder="如 142" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="服务费币制"><el-select v-model="form.currency" filterable clearable placeholder="请选择" style="width: 100%"><el-option v-for="c in currencies" :key="c.value" :label="c.label" :value="c.value" /></el-select></el-form-item></el-col>
         </el-row>
         <el-form-item label="收料明细" required>
           <el-table :data="form.items" size="small" border style="width: 100%">
@@ -52,6 +52,7 @@
 import { getReceive, addReceive, updReceive } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
 import { returnTypes } from '@/utils/bonded'
+import { currencies } from '@/utils/customsDict'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()

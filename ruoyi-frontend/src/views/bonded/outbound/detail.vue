@@ -37,7 +37,9 @@
         </el-table-column>
         <el-table-column label="出库数量" prop="deliveryCnt" width="110" align="right" />
         <el-table-column label="单价" prop="price" width="110" align="right" />
-        <el-table-column label="币制" prop="currency" width="80" align="center" />
+        <el-table-column label="币制" width="110" align="center">
+          <template #default="s">{{ currencyLabel(s.row.currency) }}</template>
+        </el-table-column>
         <el-table-column label="规格型号" prop="specificationsModels" width="140" show-overflow-tooltip />
         <el-table-column label="出库说明" prop="busiDesc" width="140" show-overflow-tooltip />
       </el-table>
@@ -52,6 +54,7 @@
 import { getOutbound } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
 import { cstLabel, cstType, outboundBusiTypes as busiTypes } from '@/utils/bonded'
+import { currencyLabel } from '@/utils/customsDict'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()

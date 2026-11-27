@@ -8,7 +8,7 @@
         <el-form-item label="物料名称" prop="materialName">
           <el-input v-model="queryParams.materialName" placeholder="请输入物料名称" clearable style="width: 180px" @keyup.enter="handleQuery" />
         </el-form-item>
-        <el-form-item label="六类标记" prop="markType">
+        <el-form-item label="货物类型" prop="markType">
           <el-select v-model="queryParams.markType" placeholder="全部" clearable style="width: 200px">
             <el-option v-for="d in markTypeOptions" :key="d.value" :label="d.label" :value="d.value" />
           </el-select>
@@ -47,15 +47,19 @@
     <el-table v-loading="loading" :data="materialList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="物料编号" prop="materialCd" width="140" show-overflow-tooltip />
-      <el-table-column label="物料名称" prop="materialName" show-overflow-tooltip min-width="160" />
-      <el-table-column label="六类标记" width="170">
+      <el-table-column label="物料名称" show-overflow-tooltip min-width="160">
+        <template #default="scope">{{ materialNameWithMark(scope.row.materialName, scope.row.markType) }}</template>
+      </el-table-column>
+      <el-table-column label="货物类型" width="170">
         <template #default="scope">{{ markLabel(scope.row.markType) }}</template>
       </el-table-column>
       <el-table-column label="料件/成品" prop="gType" width="90" align="center">
         <template #default="scope">{{ { I: '料件', E: '成品', S: '半成品' }[scope.row.gType] }}</template>
       </el-table-column>
       <el-table-column label="HS编码" prop="codeTs" width="120" />
-      <el-table-column label="计量单位" prop="calcUnit" width="90" align="center" />
+      <el-table-column label="计量单位" width="120" align="center">
+        <template #default="scope">{{ customsUnitLabel(scope.row.calcUnit) }}</template>
+      </el-table-column>
       <el-table-column label="保税" prop="isBonded" width="70" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.isBonded === '1' ? 'primary' : 'info'">{{ scope.row.isBonded === '1' ? '保税' : '非保税' }}</el-tag>
@@ -90,19 +94,11 @@
 
 <script setup name="Material">
 import { listMaterial, delMaterial, declareMaterial } from '@/api/bonded/material'
+import { customsUnitLabel } from '@/utils/customsUnits'
+import { materialMarkTypes as markTypeOptions, materialNameWithMark } from '@/utils/bonded'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
-
-const markTypeOptions = [
-  { value: '1', label: '待维修货物' },
-  { value: '2', label: '已维修货物' },
-  { value: '3', label: '无法维修货物' },
-  { value: '4', label: '维修用料件' },
-  { value: '5', label: '旧件或坏件' },
-  { value: '6', label: '边角料' },
-  { value: '8', label: '维修服务费' }
-]
 
 const customsStatusMap = {
   '00': { label: '未申报', type: 'info' },

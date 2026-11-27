@@ -7,7 +7,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 /**
  * 物料主数据对象 br_material
  *
- * 六类标记 mark_type: 1-待修复 2-已修复 3-无法修复 4-维修用料 5-旧件坏件 6-边角料 8-维修服务费
+ * 货物类型(六类标记) mark_type: 1-待修复 2-已修复 3-无法修复 4-维修用料 5-旧件坏件 6-边角料 8-维修服务费
  */
 public class BrMaterial extends BaseEntity
 {
@@ -27,8 +27,8 @@ public class BrMaterial extends BaseEntity
     @Excel(name = "物料名称")
     private String materialName;
 
-    /** 六类标记 1-待修复 2-已修复 3-无法修复 4-维修用料 5-旧件坏件 6-边角料 8-维修服务费 */
-    @Excel(name = "六类标记")
+    /** 货物类型（六类标记）1-待修复 2-已修复 3-无法修复 4-维修用料 5-旧件坏件 6-边角料 8-维修服务费 */
+    @Excel(name = "货物类型")
     private String markType;
 
     /** I-料件 E-成品 S-半成品 */

@@ -159,8 +159,9 @@
     }
 
     // 伪元素高亮不得覆盖文字/图标（主题色遮罩层修复）
+    // 注意：排除展开箭头，其 position:absolute（右侧定位）不能被覆盖
     .el-menu-item > *,
-    .el-sub-menu__title > * {
+    .el-sub-menu__title > *:not(.el-sub-menu__icon-arrow) {
       position: relative;
       z-index: 1;
     }

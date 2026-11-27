@@ -48,3 +48,21 @@ export const declareResultMap = {
 }
 export function declResultLabel(s) { return declareResultMap[s]?.label || s || '-' }
 export function declResultType(s) { return declareResultMap[s]?.type || 'info' }
+// 货物类型（六类标记）选项与品名后缀（与后端 markSuffix 口径一致）
+export const materialMarkTypes = [
+  { value: '1', label: '待维修货物', suffix: '待维修货物' },
+  { value: '2', label: '已维修货物', suffix: '已维修货物' },
+  { value: '3', label: '无法维修货物', suffix: '无法维修货物' },
+  { value: '4', label: '维修用料件', suffix: '维修用料件' },
+  { value: '5', label: '旧件或坏件', suffix: '旧件或坏件' },
+  { value: '6', label: '边角料', suffix: '边角料' },
+  { value: '8', label: '维修服务费', suffix: '维修服务费' }
+]
+/** 物料名称展示：拼接货物类型括号后缀（如 新能源动力电池模组（无法维修货物）） */
+export function materialNameWithMark(name, markType) {
+  if (!name) return name
+  const t = materialMarkTypes.find(t => t.value === markType)
+  const suffix = t?.suffix
+  if (!suffix || name.endsWith('（' + suffix + '）')) return name
+  return name + '（' + suffix + '）'
+}

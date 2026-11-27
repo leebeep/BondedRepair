@@ -7,18 +7,18 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="物料编号">{{ form.materialCd }}</el-descriptions-item>
         <el-descriptions-item label="版本号">{{ form.version }}</el-descriptions-item>
-        <el-descriptions-item label="物料名称">{{ form.materialName }}</el-descriptions-item>
-        <el-descriptions-item label="六类标记">{{ markLabel(form.markType) }}</el-descriptions-item>
+        <el-descriptions-item label="物料名称">{{ materialNameWithMark(form.materialName, form.markType) }}</el-descriptions-item>
+        <el-descriptions-item label="货物类型">{{ markLabel(form.markType) }}</el-descriptions-item>
         <el-descriptions-item label="料件成品标志">{{ { I: 'I-料件', E: 'E-成品', S: 'S-半成品' }[form.gType] }}</el-descriptions-item>
         <el-descriptions-item label="是否保税">
-          <el-tag :type="form.isBonded === '1' ? 'primary' : 'info'">{{ form.isBonded === '1' ? '保税料件' : '非保税料件' }}</el-tag>
+          <el-tag :type="form.isBonded === '1' ? 'primary' : 'info'">{{ form.isBonded === '1' ? '保税' : '非保税' }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="HS编码">{{ form.codeTs }}</el-descriptions-item>
         <el-descriptions-item label="HS商品名称">{{ form.gName }}</el-descriptions-item>
         <el-descriptions-item label="规格型号">{{ form.gModel }}</el-descriptions-item>
-        <el-descriptions-item label="计量单位">{{ form.calcUnit }}</el-descriptions-item>
-        <el-descriptions-item label="法定计量单位">{{ form.unit1 }}</el-descriptions-item>
-        <el-descriptions-item label="法定第二单位">{{ form.unit2 }}</el-descriptions-item>
+        <el-descriptions-item label="计量单位">{{ customsUnitLabel(form.calcUnit) }}</el-descriptions-item>
+        <el-descriptions-item label="法定计量单位">{{ form.unit1 ? customsUnitLabel(form.unit1) : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="法定第二单位">{{ form.unit2 ? customsUnitLabel(form.unit2) : '-' }}</el-descriptions-item>
         <el-descriptions-item label="货物毛重">{{ form.totalGrossWt }}</el-descriptions-item>
         <el-descriptions-item label="货物净重">{{ form.totalNetWt }}</el-descriptions-item>
         <el-descriptions-item label="征免方式">{{ dutyLabel(form.dutyMode) }}</el-descriptions-item>
@@ -44,6 +44,9 @@
 
 <script setup name="MaterialDetail">
 import { getMaterial } from '@/api/bonded/material'
+import { customsUnitLabel } from '@/utils/customsUnits'
+import { materialNameWithMark } from '@/utils/bonded'
+import { dutyModeLabel } from '@/utils/customsDict'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()
@@ -87,7 +90,7 @@ function markLabel(markType) {
 }
 
 function dutyLabel(dutyMode) {
-  return dutyMap[dutyMode] || dutyMode
+  return dutyModeLabel(dutyMode)
 }
 
 getMaterial(route.params.id).then(res => {

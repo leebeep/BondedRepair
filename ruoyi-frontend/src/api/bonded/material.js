@@ -50,3 +50,11 @@ export function declareMaterial(executeType, ids) {
     method: 'post'
   })
 }
+
+// 物料编号是否自动生成（参数 br.material.auto.no）
+export function getMaterialCdMode() {
+  return request({
+    url: '/bonded/material/cd-mode',
+    method: 'get'
+  })
+}

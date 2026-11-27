@@ -22,6 +22,6 @@ public interface BrStockLedgerMapper
     public BigDecimal selectSourceBalance(@Param("materialId") Long materialId,
             @Param("goodsSourceType") String goodsSourceType, @Param("goodsSourceNo") String goodsSourceNo);
 
-    /** 按六类标记聚合流水（对账公式四项），batchNo/workNo 可选 */
+    /** 按货物类型（六类标记）聚合流水（对账公式四项），batchNo/workNo 可选 */
     public List<StockReconcileRow> selectMarkTypeSummary(@Param("batchNo") String batchNo, @Param("workNo") String workNo);
 }

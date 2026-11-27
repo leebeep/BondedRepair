@@ -4,13 +4,13 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
- * 库存对账汇总行（按六类标记聚合台账流水）
+ * 库存对账汇总行（按货物类型/六类标记聚合台账流水）
  */
 public class StockReconcileRow implements Serializable
 {
     private static final long serialVersionUID = 1L;
 
-    /** 六类标记 1/2/3/4/5/6/8 */
+    /** 货物类型（六类标记）1/2/3/4/5/6/8 */
     private String markType;
 
     /** 收入合计（IN，正） */

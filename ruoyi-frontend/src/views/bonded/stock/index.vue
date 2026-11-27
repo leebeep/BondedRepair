@@ -10,7 +10,7 @@
               <el-option label="收料" value="RCV" /><el-option label="出库" value="OUT" />
             </el-select>
           </el-form-item>
-          <el-form-item label="六类标记">
+          <el-form-item label="货物类型">
             <el-select v-model="queryParams.markType" clearable placeholder="全部" style="width: 150px">
               <el-option v-for="d in markTypes" :key="d.value" :label="d.label" :value="d.value" />
             </el-select>
@@ -20,7 +20,7 @@
         <el-table v-loading="loading" :data="rows">
           <el-table-column label="时间" prop="createTime" width="160" />
           <el-table-column label="物料" prop="materialName" show-overflow-tooltip />
-          <el-table-column label="六类标记" width="150">
+          <el-table-column label="货物类型" width="150">
             <template #default="s">{{ markTypes.find(d => d.value === s.row.markType)?.label || s.row.markType }}</template>
           </el-table-column>
           <el-table-column label="环节" prop="bizType" width="90" align="center">
