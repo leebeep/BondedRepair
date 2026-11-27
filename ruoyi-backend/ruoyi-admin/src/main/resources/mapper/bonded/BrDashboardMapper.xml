@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.bonded.mapper.BrDashboardMapper">
 
-    <!-- 物料备案按备案状态计数 -->
+    <!-- 物料清单按备案状态计数 -->
     <select id="selectMaterialByStatus" resultType="java.util.HashMap">
         select ifnull(declare_status, '0') as k, count(*) as cnt
         from br_material

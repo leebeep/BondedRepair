@@ -39,7 +39,7 @@ public class BrDashboardController extends BaseController
     {
         Map<String, Object> data = new HashMap<>();
 
-        // 1. 物料备案：总数 + 各备案状态数量
+        // 1. 物料清单：总数 + 各备案状态数量
         List<Map<String, Object>> matRows = dashboardMapper.selectMaterialByStatus();
         Map<String, Object> material = new HashMap<>();
         material.put("total", sumCnt(matRows));

@@ -9,6 +9,9 @@ UPDATE sys_menu
 SET menu_name = '维修管理', order_num = 0, remark = '保税维修业务目录（顶级，排第一）'
 WHERE parent_id = 0 AND path = 'bonded' AND menu_type = 'M';
 
+-- 1.1 菜单「物料备案」→「物料清单」
+UPDATE sys_menu SET menu_name = '物料清单' WHERE parent_id = 2000 AND path = 'material' AND menu_type = 'C';
+
 -- 2. 移除「若依官网」外链菜单（menu_id=4，源自 ry_20261117.sql）
 DELETE FROM sys_role_menu WHERE menu_id = 4;
 DELETE FROM sys_menu WHERE menu_id = 4 AND menu_name = '若依官网';

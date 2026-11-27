@@ -18,7 +18,7 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 
 /**
- * 物料备案服务实现
+ * 物料清单服务实现
  */
 @Service
 public class BrMaterialServiceImpl implements IBrMaterialService

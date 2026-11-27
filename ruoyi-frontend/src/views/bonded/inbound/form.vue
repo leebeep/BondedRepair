@@ -2,9 +2,9 @@
   <div class="app-container">
     <el-card shadow="never">
       <template #header>
-        <span>{{ title }}</span>
+        <div class="card-header-row"><span>{{ title }}</span><el-button link type="primary" icon="Back" @click="cancel">返回列表</el-button></div>
       </template>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="130px" style="max-width: 1100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="130px">
         <el-row>
           <el-col :span="12"><el-form-item label="入库单号" prop="inboundNo"><el-input v-model="form.inboundNo" /></el-form-item></el-col>
           <el-col :span="12">
@@ -86,7 +86,7 @@
         <el-alert type="info" :closable="false" show-icon title="规范 §3.2.1：关联申报单证类型=01 径予放行申明时，品牌类型/监管方式/启抵国/原产国必填；保税商品第一法定数量必填" />
       </el-form>
     </el-card>
-    <el-row justify="center" class="mt16">
+    <el-row justify="end" class="mt16">
       <el-button type="primary" @click="submitForm">确 定</el-button>
       <el-button @click="cancel">取 消</el-button>
     </el-row>

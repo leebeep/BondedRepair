@@ -2,7 +2,7 @@
   <div class="app-container" v-loading="loading">
     <el-card shadow="never">
       <template #header>
-        <span>物料备案详情</span>
+        <span>物料清单详情</span>
       </template>
       <el-descriptions :column="2" border>
         <el-descriptions-item label="物料编号">{{ form.materialCd }}</el-descriptions-item>
@@ -36,7 +36,7 @@
         <el-descriptions-item label="备注" :span="2">{{ form.remark }}</el-descriptions-item>
       </el-descriptions>
     </el-card>
-    <el-row justify="center" class="mt16">
+    <el-row justify="end" class="mt16">
       <el-button @click="cancel">返 回</el-button>
     </el-row>
   </div>

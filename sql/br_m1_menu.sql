@@ -1,4 +1,4 @@
--- M1 菜单与权限：维修管理 > 物料备案（EPD101）
+-- M1 菜单与权限：维修管理 > 物料清单（EPD101）
 -- 管理员角色(role_id=1)拥有全部权限，无需 sys_role_menu
 
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
@@ -7,7 +7,7 @@ VALUES ('维修管理', 0, 0, 'bonded', NULL, '', '', 1, 0, 'M', '0', '0', '', '
 SET @dir := LAST_INSERT_ID();
 
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
-VALUES ('物料备案', @dir, 1, 'material', 'bonded/material/index', '', '', 1, 0, 'C', '0', '0', 'bonded:material:list', 'form', 'admin', sysdate(), '料件成品备案 EPD101');
+VALUES ('物料清单', @dir, 1, 'material', 'bonded/material/index', '', '', 1, 0, 'C', '0', '0', 'bonded:material:list', 'form', 'admin', sysdate(), '料件成品清单 EPD101');
 
 SET @menu := LAST_INSERT_ID();
 

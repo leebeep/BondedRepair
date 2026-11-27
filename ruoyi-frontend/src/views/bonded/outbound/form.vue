@@ -2,9 +2,9 @@
   <div class="app-container">
     <el-card shadow="never">
       <template #header>
-        <span>{{ title }}</span>
+        <div class="card-header-row"><span>{{ title }}</span><el-button link type="primary" icon="Back" @click="cancel">返回列表</el-button></div>
       </template>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="150px" style="max-width: 1100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="150px">
         <el-row>
           <el-col :span="12"><el-form-item label="出库单号" prop="outboundNo"><el-input v-model="form.outboundNo" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="关联企业名称"><el-input v-model="form.relaEntNm" /></el-form-item></el-col>
@@ -63,7 +63,7 @@
         <el-alert type="info" :closable="false" show-icon title="出库数量不得超过来源单据余额；业务类型 05（复运回境内区外）必须同单出库维修服务费库存行（数量 0.1，服务费行按被维修商品口径申报）；业务类型 99 时出库说明必填（规范 §3.5.1）" />
       </el-form>
     </el-card>
-    <el-row justify="center" class="mt16">
+    <el-row justify="end" class="mt16">
       <el-button type="primary" @click="submitForm">确 定</el-button>
       <el-button @click="cancel">取 消</el-button>
     </el-row>

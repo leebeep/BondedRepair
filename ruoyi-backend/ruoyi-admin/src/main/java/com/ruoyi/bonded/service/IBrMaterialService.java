@@ -4,7 +4,7 @@ import java.util.List;
 import com.ruoyi.bonded.domain.BrMaterial;
 
 /**
- * 物料备案服务接口
+ * 物料清单服务接口
  */
 public interface IBrMaterialService
 {

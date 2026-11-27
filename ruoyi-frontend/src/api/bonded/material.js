@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-// 查询物料备案列表
+// 查询物料清单列表
 export function listMaterial(query) {
   return request({
     url: '/bonded/material/list',
@@ -9,7 +9,7 @@ export function listMaterial(query) {
   })
 }
 
-// 查询物料备案详细
+// 查询物料清单详细
 export function getMaterial(id) {
   return request({
     url: '/bonded/material/' + id,
@@ -17,7 +17,7 @@ export function getMaterial(id) {
   })
 }
 
-// 新增物料备案
+// 新增物料清单
 export function addMaterial(data) {
   return request({
     url: '/bonded/material',
@@ -26,7 +26,7 @@ export function addMaterial(data) {
   })
 }
 
-// 修改物料备案
+// 修改物料清单
 export function updateMaterial(data) {
   return request({
     url: '/bonded/material',
@@ -35,7 +35,7 @@ export function updateMaterial(data) {
   })
 }
 
-// 删除物料备案
+// 删除物料清单
 export function delMaterial(id) {
   return request({
     url: '/bonded/material/' + id,

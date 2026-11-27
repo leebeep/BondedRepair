@@ -42,7 +42,7 @@
         <el-table-column label="出库说明" prop="busiDesc" width="140" show-overflow-tooltip />
       </el-table>
     </el-card>
-    <el-row justify="center" class="mt16">
+    <el-row justify="end" class="mt16">
       <el-button @click="cancel">返 回</el-button>
     </el-row>
   </div>

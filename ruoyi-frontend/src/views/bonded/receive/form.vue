@@ -2,9 +2,9 @@
   <div class="app-container">
     <el-card shadow="never">
       <template #header>
-        <span>{{ title }}</span>
+        <div class="card-header-row"><span>{{ title }}</span><el-button link type="primary" icon="Back" @click="cancel">返回列表</el-button></div>
       </template>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px" style="max-width: 1000px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-row>
           <el-col :span="12"><el-form-item label="收料单号" prop="receiveNo"><el-input v-model="form.receiveNo" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="工单号" prop="workNo"><el-input v-model="form.workNo" placeholder="如 WO-2026-001，不存在将自动建档" /></el-form-item></el-col>
@@ -41,7 +41,7 @@
         <el-alert type="info" :closable="false" show-icon title="填写维修服务费总额后自动追加 returnType=8 服务费行（数量固定 0.1，按被维修商品编码与名称+（已修复）+维修服务费口径申报）；工单号由本单录入并自动建档（内部支撑数据）" />
       </el-form>
     </el-card>
-    <el-row justify="center" class="mt16">
+    <el-row justify="end" class="mt16">
       <el-button type="primary" @click="submitForm">确 定</el-button>
       <el-button @click="cancel">取 消</el-button>
     </el-row>

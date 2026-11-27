@@ -112,47 +112,57 @@
       }
     }
 
-    // theme-dark 深色主题
+    // theme-dark 深色主题（实底高亮，不用半透明遮罩，避免盖住文字）
     &.theme-dark {
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.4);
       border-right: none;
 
+      // 激活项：主题色实底 + 白字
       .el-menu-item.is-active {
-        position: relative;
+        background-color: var(--el-color-primary, #2563eb) !important;
+        color: #fff !important;
 
-        &::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-color: var(--current-color-dark-bg, rgba(64, 158, 255, 0.2));
-          pointer-events: none;
-          z-index: 1;
+        &:hover {
+          background-color: var(--el-color-primary, #2563eb) !important;
+        }
+
+        .svg-icon {
+          color: #fff !important;
         }
       }
 
+      // 含激活子项的父级标题：白字
       .el-sub-menu.is-active > .el-sub-menu__title {
-        color: var(--current-color, #409eff) !important;
+        color: #fff !important;
+
+        .svg-icon {
+          color: #fff !important;
+        }
       }
 
+      // 悬停：实底浅蓝灰 + 白字
       .el-menu-item:not(.is-active),
       .submenu-title-noDropdown,
       .el-sub-menu__title {
-        position: relative;
-
-        &::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-color: transparent;
-          pointer-events: none;
-          z-index: 1;
-          transition: background-color 0.2s;
-        }
-
-        &:hover::before {
-          background-color: var(--current-color-dark-bg, rgba(64, 158, 255, 0.2));
+        &:hover {
+          background-color: vars.$menuHover !important;
+          color: #fff !important;
         }
       }
+
+      .nest-menu .el-sub-menu > .el-sub-menu__title,
+      .el-sub-menu .el-menu-item {
+        &:hover {
+          background-color: vars.$menuHover !important;
+        }
+      }
+    }
+
+    // 伪元素高亮不得覆盖文字/图标（主题色遮罩层修复）
+    .el-menu-item > *,
+    .el-sub-menu__title > * {
+      position: relative;
+      z-index: 1;
     }
     
     // theme-light 浅色主题

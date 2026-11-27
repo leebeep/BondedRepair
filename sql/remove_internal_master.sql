@@ -10,7 +10,7 @@ DELETE FROM sys_menu WHERE menu_name = '委托方档案';
 DELETE FROM sys_menu WHERE perms LIKE 'bonded:wo:%';
 DELETE FROM sys_menu WHERE menu_name = '维修工单' AND menu_type = 'C';
 
--- 菜单排序：物料备案 → 入库 → 发料 → 收料 → 出库 → 库存台账 → 申报管理
+-- 菜单排序：物料清单 → 入库 → 发料 → 收料 → 出库 → 库存台账 → 申报管理
 UPDATE sys_menu SET order_num = 2 WHERE parent_id = 2000 AND menu_name = '入库管理';
 UPDATE sys_menu SET order_num = 3 WHERE parent_id = 2000 AND menu_name = '工单发料';
 UPDATE sys_menu SET order_num = 4 WHERE parent_id = 2000 AND menu_name = '工单收料';

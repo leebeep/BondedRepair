@@ -2,9 +2,9 @@
   <div class="app-container">
     <el-card shadow="never">
       <template #header>
-        <span>{{ title }}</span>
+        <div class="card-header-row"><span>{{ title }}</span><el-button link type="primary" icon="Back" @click="cancel">返回列表</el-button></div>
       </template>
-      <el-form ref="materialRef" :model="form" :rules="rules" label-width="120px" style="max-width: 900px">
+      <el-form ref="materialRef" :model="form" :rules="rules" label-width="120px">
         <el-divider content-position="left">基础信息</el-divider>
         <el-row>
           <el-col :span="12">
@@ -122,7 +122,7 @@
         </el-form-item>
       </el-form>
     </el-card>
-    <el-row justify="center" class="mt16">
+    <el-row justify="end" class="mt16">
       <el-button type="primary" @click="submitForm">确 定</el-button>
       <el-button @click="cancel">取 消</el-button>
     </el-row>
@@ -162,7 +162,7 @@ const rules = {
 }
 
 const id = route.params.id
-const title = ref(id ? '修改物料备案' : '新增物料备案')
+const title = ref(id ? '修改物料清单' : '新增物料清单')
 
 if (id) {
   getMaterial(id).then(res => {

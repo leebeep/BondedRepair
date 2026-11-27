@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
  */
 public interface BrDashboardMapper
 {
-    /** 物料备案按备案状态分组计数（declare_status -> cnt） */
+    /** 物料清单按备案状态分组计数（declare_status -> cnt） */
     public List<Map<String, Object>> selectMaterialByStatus();
 
     /** 维修工单按工单状态分组计数（order_status -> cnt） */

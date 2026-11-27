@@ -22,7 +22,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 
 /**
- * 物料备案（EPD101）Controller
+ * 物料清单（EPD101）Controller
  */
 @RestController
 @RequestMapping("/bonded/material")
@@ -46,7 +46,7 @@ public class BrMaterialController extends BaseController
     {
         List<BrMaterial> list = materialService.selectBrMaterialList(material);
         ExcelUtil<BrMaterial> util = new ExcelUtil<BrMaterial>(BrMaterial.class);
-        util.exportExcel(response, list, "物料备案数据");
+        util.exportExcel(response, list, "物料清单数据");
     }
 
     @PreAuthorize("@ss.hasPermi('bonded:material:query')")
@@ -57,7 +57,7 @@ public class BrMaterialController extends BaseController
     }
 
     @PreAuthorize("@ss.hasPermi('bonded:material:add')")
-    @Log(title = "物料备案", businessType = BusinessType.INSERT)
+    @Log(title = "物料清单", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody BrMaterial material)
     {
@@ -65,7 +65,7 @@ public class BrMaterialController extends BaseController
     }
 
     @PreAuthorize("@ss.hasPermi('bonded:material:edit')")
-    @Log(title = "物料备案", businessType = BusinessType.UPDATE)
+    @Log(title = "物料清单", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody BrMaterial material)
     {
@@ -73,7 +73,7 @@ public class BrMaterialController extends BaseController
     }
 
     @PreAuthorize("@ss.hasPermi('bonded:material:remove')")
-    @Log(title = "物料备案", businessType = BusinessType.DELETE)
+    @Log(title = "物料清单", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {
@@ -84,7 +84,7 @@ public class BrMaterialController extends BaseController
      * 提交 EPD101 申报（1-备案 2-变更 3-作废）
      */
     @PreAuthorize("@ss.hasPermi('bonded:material:declare')")
-    @Log(title = "物料备案申报", businessType = BusinessType.EXPORT)
+    @Log(title = "物料清单申报", businessType = BusinessType.EXPORT)
     @PostMapping("/declare/{executeType}/{ids}")
     public AjaxResult declare(@PathVariable("executeType") String executeType, @PathVariable Long[] ids)
     {

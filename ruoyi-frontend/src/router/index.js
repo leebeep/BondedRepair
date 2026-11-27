@@ -174,7 +174,7 @@ export const dynamicRoutes = [
         path: 'index/:id?',
         component: () => import('@/views/bonded/material/form'),
         name: 'MaterialForm',
-        meta: { title: '物料备案录入', activeMenu: '/bonded/material', noCache: true }
+        meta: { title: '物料清单录入', activeMenu: '/bonded/material', noCache: true }
       }
     ]
   },
@@ -188,7 +188,7 @@ export const dynamicRoutes = [
         path: 'index/:id(\\d+)',
         component: () => import('@/views/bonded/material/detail'),
         name: 'MaterialDetail',
-        meta: { title: '物料备案详情', activeMenu: '/bonded/material', noCache: true }
+        meta: { title: '物料清单详情', activeMenu: '/bonded/material', noCache: true }
       }
     ]
   },

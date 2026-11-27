@@ -155,7 +155,7 @@ const kpis = computed(() => {
   const f = stats.value.flow
   const stockTotal = (stats.value.stockCards || []).reduce((s, c) => s + Number(c.balance || 0), 0)
   return [
-    { key: 'material', icon: 'Document', tone: 'blue', title: '物料备案', value: m.total ?? '-', sub: `待申报 ${byStatus['0'] || 0} · 通过 ${byStatus['2'] || 0}`, path: '/bonded/material' },
+    { key: 'material', icon: 'Document', tone: 'blue', title: '物料清单', value: m.total ?? '-', sub: `待申报 ${byStatus['0'] || 0} · 通过 ${byStatus['2'] || 0}`, path: '/bonded/material' },
     { key: 'workorder', icon: 'Tickets', tone: 'cyan', title: '维修工单', value: w.active ?? '-', sub: `累计 ${w.total ?? 0} 单`, path: '/bonded/issue' },
     { key: 'in', icon: 'Download', tone: 'green', title: '入库单', value: f.IN?.total ?? '-', sub: `今日 ${f.IN?.today || 0} · 待审 ${f.IN?.pendingAudit || 0}`, path: '/bonded/inbound' },
     { key: 'out', icon: 'Upload', tone: 'orange', title: '出库单', value: f.OUT?.total ?? '-', sub: `今日 ${f.OUT?.today || 0} · 退单 ${f.OUT?.back || 0}`, path: '/bonded/outbound' },
@@ -165,7 +165,7 @@ const kpis = computed(() => {
 })
 
 const navs = [
-  { label: '物料备案', icon: 'Document', path: '/bonded/material' },
+  { label: '物料清单', icon: 'Document', path: '/bonded/material' },
   { label: '入库管理', icon: 'Download', path: '/bonded/inbound' },
   { label: '工单发料', icon: 'SetUp', path: '/bonded/issue' },
   { label: '工单收料', icon: 'Box', path: '/bonded/receive' },

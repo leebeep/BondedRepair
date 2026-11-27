@@ -2,9 +2,9 @@
   <div class="app-container">
     <el-card shadow="never">
       <template #header>
-        <span>{{ title }}</span>
+        <div class="card-header-row"><span>{{ title }}</span><el-button link type="primary" icon="Back" @click="cancel">返回列表</el-button></div>
       </template>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px" style="max-width: 1100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-row>
           <el-col :span="12"><el-form-item label="发料单号" prop="issueNo"><el-input v-model="form.issueNo" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="工单号" prop="workNo"><el-input v-model="form.workNo" placeholder="如 WO-2026-001，不存在将自动建档" /></el-form-item></el-col>
@@ -45,7 +45,7 @@
         <el-alert type="info" :closable="false" show-icon title="审核时校验来源单据可发余额；工单号由本单录入并自动建档（内部支撑数据，随 RRD2 报文 work_no 报送）" />
       </el-form>
     </el-card>
-    <el-row justify="center" class="mt16">
+    <el-row justify="end" class="mt16">
       <el-button type="primary" @click="submitForm">确 定</el-button>
       <el-button @click="cancel">取 消</el-button>
     </el-row>

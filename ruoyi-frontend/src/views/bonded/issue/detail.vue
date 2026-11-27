@@ -35,7 +35,7 @@
         <el-table-column label="单价" prop="price" width="120" align="right" />
       </el-table>
     </el-card>
-    <el-row justify="center" class="mt16">
+    <el-row justify="end" class="mt16">
       <el-button @click="cancel">返 回</el-button>
     </el-row>
   </div>
