@@ -48,21 +48,42 @@ export const declareResultMap = {
 }
 export function declResultLabel(s) { return declareResultMap[s]?.label || s || '-' }
 export function declResultType(s) { return declareResultMap[s]?.type || 'info' }
-// 货物类型（六类标记）选项与品名后缀（与后端 markSuffix 口径一致）
+// 货物类型（六类标记）选项与品名后缀（与规范 v1.4 / 样例数据、后端 markSuffix 一致）
 export const materialMarkTypes = [
-  { value: '1', label: '待维修货物', suffix: '待维修货物' },
-  { value: '2', label: '已维修货物', suffix: '已维修货物' },
-  { value: '3', label: '无法维修货物', suffix: '无法维修货物' },
-  { value: '4', label: '维修用料件', suffix: '维修用料件' },
-  { value: '5', label: '旧件或坏件', suffix: '旧件或坏件' },
-  { value: '6', label: '边角料', suffix: '边角料' },
+  { value: '1', label: '待维修货物', suffix: '待修复' },
+  { value: '2', label: '已维修货物', suffix: '已修复' },
+  { value: '3', label: '无法维修货物', suffix: '无法修复' },
+  { value: '4', label: '维修用料件', suffix: '维修用保税料件' },
+  { value: '5', label: '旧件或坏件', suffix: '维修替换下的旧件或坏件' },
+  { value: '6', label: '边角料', suffix: '维修产生的边角料' },
   { value: '8', label: '维修服务费', suffix: '维修服务费' }
 ]
-/** 物料名称展示：拼接货物类型括号后缀（如 新能源动力电池模组（无法维修货物）） */
+/** 物料名称展示：拼接货物类型标记；服务费直接拼“维修服务费”，其余用括号 */
 export function materialNameWithMark(name, markType) {
   if (!name) return name
   const t = materialMarkTypes.find(t => t.value === markType)
   const suffix = t?.suffix
-  if (!suffix || name.endsWith('（' + suffix + '）')) return name
-  return name + '（' + suffix + '）'
+  if (!suffix) return name
+  if (markType === '8') return name.endsWith(suffix) ? name : name + suffix
+  return name.endsWith('（' + suffix + '）') ? name : name + '（' + suffix + '）'
+}
+
+// 业务状态（doc_status）：02/04 当前实现不会写入，03 为审核通过（申报中由海关状态体现）
+export const docStatusMap = {
+  '01': { label: '草稿', type: 'info' },
+  '02': { label: '待审核', type: 'warning' },
+  '03': { label: '审核通过', type: 'primary' },
+  '05': { label: '申报通过', type: 'success' },
+  '06': { label: '退单', type: 'danger' },
+  '07': { label: '已作废', type: 'info' }
+}
+export const docStatusOptions = Object.entries(docStatusMap).map(([value, v]) => ({ value, label: v.label }))
+const declaringCustomsStatus = ['10', '20', '21']
+export function docStatusLabel(status, customsStatus) {
+  if (status === '03' && declaringCustomsStatus.includes(customsStatus)) return '申报中'
+  return docStatusMap[status]?.label || status || '-'
+}
+export function docStatusType(status, customsStatus) {
+  if (status === '03' && declaringCustomsStatus.includes(customsStatus)) return 'warning'
+  return docStatusMap[status]?.type || 'info'
 }

@@ -24,4 +24,7 @@ public interface BrStockLedgerMapper
 
     /** 按货物类型（六类标记）聚合流水（对账公式四项），batchNo/workNo 可选 */
     public List<StockReconcileRow> selectMarkTypeSummary(@Param("batchNo") String batchNo, @Param("workNo") String workNo);
+
+    /** 指定单据的全部流水（退单重审冲销用） */
+    public List<BrStockLedger> selectByBiz(@Param("bizTable") String bizTable, @Param("bizId") Long bizId);
 }

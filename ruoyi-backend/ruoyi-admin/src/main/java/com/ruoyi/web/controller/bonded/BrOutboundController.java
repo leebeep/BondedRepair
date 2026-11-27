@@ -43,6 +43,14 @@ public class BrOutboundController extends BaseController
         return success(outboundService.selectById(id));
     }
 
+    /** 下一张出库单号（默认自动生成，前缀经 参数设置 br.outbound.no.prefix 修改） */
+    @PreAuthorize("@ss.hasPermi('bonded:out:add')")
+    @GetMapping("/nextNo")
+    public AjaxResult nextNo()
+    {
+        return AjaxResult.success("操作成功", outboundService.nextOutboundNo());
+    }
+
     @PreAuthorize("@ss.hasPermi('bonded:out:add')")
     @Log(title = "出库单", businessType = BusinessType.INSERT)
     @PostMapping

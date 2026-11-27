@@ -35,6 +35,28 @@ public class BrReceiveServiceImpl implements IBrReceiveService
 {
     private static final BigDecimal SERVICE_FEE_QTY = new BigDecimal("0.1");
 
+    /** 收料单号自动生成前缀参数（sys_config，可在 参数设置 中修改） */
+    public static final String RECEIVE_NO_PREFIX_KEY = "br.receive.no.prefix";
+    public static final String DEFAULT_RECEIVE_NO_PREFIX = "RC";
+
+    @Autowired private com.ruoyi.system.service.ISysConfigService configService;
+
+    @Override
+    public String nextReceiveNo()
+    {
+        String prefix = configService.selectConfigByKey(RECEIVE_NO_PREFIX_KEY);
+        if (prefix == null || prefix.isEmpty()) { prefix = DEFAULT_RECEIVE_NO_PREFIX; }
+        String head = prefix + new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
+        String max = receiveMapper.selectMaxReceiveNoByPrefix(head);
+        int seq = 1;
+        if (max != null && max.length() > head.length())
+        {
+            try { seq = Integer.parseInt(max.substring(head.length())) + 1; }
+            catch (NumberFormatException ignored) { }
+        }
+        return head + String.format("%03d", seq);
+    }
+
     @Autowired private BrReceiveMapper receiveMapper;
     @Autowired private BrWorkOrderMapper workOrderMapper;
     @Autowired private BrMaterialMapper materialMapper;
@@ -129,11 +151,38 @@ public class BrReceiveServiceImpl implements IBrReceiveService
         if (h == null) { throw new ServiceException("收料单不存在"); }
         if (!"01".equals(h.getDocStatus()) && !"02".equals(h.getDocStatus())) { throw new ServiceException("收料单【" + h.getReceiveNo() + "】已审核"); }
         BrWorkOrder wo = workOrderMapper.selectById(h.getWorkOrderId());
+        if (wo == null) { throw new ServiceException("收料单关联的工单不存在"); }
+        // 样例集 00 §0.2：已修复/残次品收料不得超过工单实际投入（发料 - 未使用收料）
+        // 汇总口径仅含已审核（03/05）单据，当前单据尚未入账，需手工累加本次收料量后再校验
+        BigDecimal issued = workOrderMapper.sumIssuedRepairQty(wo.getWorkNo());
+        BigDecimal priorUnused = workOrderMapper.sumUnusedRepairQty(wo.getWorkNo());
+        BigDecimal priorReceived = workOrderMapper.sumReceivedRepairQty(wo.getWorkNo());
+        BigDecimal curReturn = BigDecimal.ZERO;
+        BigDecimal curUnused = BigDecimal.ZERO;
+        for (BrReceiveItem item : receiveMapper.selectItemsByReceiveId(id))
+        {
+            if ("5".equals(item.getReturnType()) || "a".equals(item.getReturnType()))
+            {
+                curReturn = curReturn.add(item.getMaterialNum());
+            }
+            else if ("1".equals(item.getReturnType()))
+            {
+                curUnused = curUnused.add(item.getMaterialNum());
+            }
+        }
+        BigDecimal receivedTotal = priorReceived.add(curReturn);
+        BigDecimal unusedTotal = priorUnused.add(curUnused);
+        if (receivedTotal.compareTo(issued.subtract(unusedTotal)) > 0)
+        {
+            throw new ServiceException("工单【" + wo.getWorkNo() + "】已修复/残次品收料数量超过实际投入（已收 "
+                    + receivedTotal + "，本次 " + curReturn + "，实际投入 " + issued.subtract(unusedTotal) + "）");
+        }
         List<BrReceiveItem> items = receiveMapper.selectItemsByReceiveId(id);
         for (BrReceiveItem item : items)
         {
             BrMaterial m = materialMapper.selectBrMaterialById(item.getMaterialId());
-            ledgerService.record(item.getMaterialId(), m.getMarkType(), "RCV", "br_receive", id,
+            if (m == null) { throw new ServiceException("收料明细物料不存在: " + item.getMaterialId()); }
+            ledgerService.record(item.getMaterialId(), m.getMarkType(), "RCV", "br_receive", id, h.getReceiveNo(),
                     "i", h.getReceiveNo(), wo.getWorkNo(), wo.getBatchNo(), item.getMaterialNum());
         }
         // 审核通过；自动推送开关打开时同事务写入镜像库，关闭则滞留待同步由补推任务处理
@@ -142,12 +191,12 @@ public class BrReceiveServiceImpl implements IBrReceiveService
         {
             declare(new Long[] { id }, "A");
         }
-        // 收齐校验：已修复+残次品 >= 实际投入 → 工单转已收齐
+        // 收齐校验：已修复+残次品 >= 实际投入 → 工单转已收齐（当前单据已入账，直接取最新汇总）
         if ("02".equals(wo.getOrderStatus()))
         {
-            BigDecimal invested = workOrderMapper.sumIssuedRepairQty(wo.getWorkNo());
-            BigDecimal received = workOrderMapper.sumReceivedRepairQty(wo.getWorkNo());
-            if (received.compareTo(invested) >= 0)
+            BigDecimal nowReceived = workOrderMapper.sumReceivedRepairQty(wo.getWorkNo());
+            BigDecimal nowUnused = workOrderMapper.sumUnusedRepairQty(wo.getWorkNo());
+            if (nowReceived.compareTo(issued.subtract(nowUnused)) >= 0)
             {
                 workOrderMapper.updateOrderStatus(wo.getId(), "03");
             }
@@ -184,15 +233,16 @@ public class BrReceiveServiceImpl implements IBrReceiveService
             for (BrReceiveItem item : receiveMapper.selectItemsByReceiveId(id))
             {
                 BrMaterial m = materialMapper.selectBrMaterialById(item.getMaterialId());
+                if (m == null) { throw new ServiceException("明细物料不存在: " + item.getMaterialId()); }
                 // 样例集 00 注2：服务费行(returnType=8)按被维修商品口径申报，materialCd/名称/版本/单位/保税标志均取被维修商品
                 BrMaterial line = m;
                 if ("8".equals(m.getMarkType()))
                 {
                     line = repairedMaterialOf(wo);
                 }
-                else if (m == null || !"2".equals(m.getDeclareStatus()))
+                else if (!"2".equals(m.getDeclareStatus()))
                 {
-                    throw new ServiceException("明细物料未备案通过，不能申报: " + (m == null ? item.getMaterialId() : m.getMaterialName()));
+                    throw new ServiceException("明细物料未备案通过，不能申报: " + m.getMaterialName());
                 }
                 Mso2Data d = new Mso2Data();
                 d.setExecuteType(t);
@@ -290,6 +340,10 @@ public class BrReceiveServiceImpl implements IBrReceiveService
         if (receive.getItems() == null || receive.getItems().isEmpty()) { throw new ServiceException("收料明细不能为空"); }
         for (BrReceiveItem item : receive.getItems())
         {
+            if (materialMapper.selectBrMaterialById(item.getMaterialId()) == null)
+            {
+                throw new ServiceException("收料明细物料不存在: " + item.getMaterialId());
+            }
             String rt = item.getReturnType();
             if (!"1".equals(rt) && !"5".equals(rt) && !"6".equals(rt) && !"7".equals(rt)
                     && !"8".equals(rt) && !"9".equals(rt) && !"a".equals(rt))

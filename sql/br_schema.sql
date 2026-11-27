@@ -299,6 +299,7 @@ CREATE TABLE br_outbound (
   rela_customs_form_type VARCHAR(2) NOT NULL COMMENT '03/04/05/06/99',
   rela_customs_form_num  VARCHAR(60) NULL,
   calculating_record_no  VARCHAR(60) NULL,
+  batch_no      VARCHAR(60) NULL COMMENT '申报批次号',
   in_out_time   DATETIME NOT NULL,
   doc_status    VARCHAR(2) NOT NULL DEFAULT '01',
   customs_status VARCHAR(2) NULL DEFAULT '00',

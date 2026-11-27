@@ -26,6 +26,8 @@ export const updReceive = d => request({ url: '/bonded/receive', method: 'put', 
 export const delReceive = id => request({ url: '/bonded/receive/' + id, method: 'delete' })
 export const auditReceive = id => request({ url: '/bonded/receive/audit/' + id, method: 'post' })
 export const declareReceive = (t, ids) => request({ url: `/bonded/receive/declare/${t}/${ids}`, method: 'post' })
+export const nextReceiveNo = () => request({ url: '/bonded/receive/nextNo', method: 'get' })
+export const queryWorkOrder = workNo => request({ url: '/bonded/receive/workOrder/' + encodeURIComponent(workNo), method: 'get' })
 
 // 出库单
 export const listOutbound = q => request({ url: '/bonded/outbound/list', method: 'get', params: q })
@@ -35,10 +37,13 @@ export const updOutbound = d => request({ url: '/bonded/outbound', method: 'put'
 export const delOutbound = id => request({ url: '/bonded/outbound/' + id, method: 'delete' })
 export const auditOutbound = id => request({ url: '/bonded/outbound/audit/' + id, method: 'post' })
 export const declareOutbound = (t, ids) => request({ url: `/bonded/outbound/declare/${t}/${ids}`, method: 'post' })
+export const nextOutboundNo = () => request({ url: '/bonded/outbound/nextNo', method: 'get' })
 
-// 库存台账与对账
+// 库存台账
 export const listStock = q => request({ url: '/bonded/stock/list', method: 'get', params: q })
-export const reconcileStock = q => request({ url: '/bonded/stock/reconcile', method: 'get', params: q })
+
+// 物料库存详情（物料编号唯一）
+export const getMaterialStock = id => request({ url: '/bonded/stock/material/' + id, method: 'get' })
 
 // 联网日志（原申报管理）
 export const declareBoard = () => request({ url: '/bonded/declare/board', method: 'get' })

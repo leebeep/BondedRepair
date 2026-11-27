@@ -12,8 +12,16 @@ public class BrInboundItem
     private Long id;
     private Long inboundId;
     private Long materialId;
+    /** 物料编号(关联查询) */
+    private String materialCd;
     /** 物料名称(关联查询) */
     private String materialName;
+    /** 计量单位(关联查询，展示用) */
+    private String calcUnit;
+    /** 法定计量单位1(关联查询，展示用) */
+    private String unit1;
+    /** 法定计量单位2(关联查询，展示用) */
+    private String unit2;
     private BigDecimal storageCnt;
     private BigDecimal price;
     private String currency;

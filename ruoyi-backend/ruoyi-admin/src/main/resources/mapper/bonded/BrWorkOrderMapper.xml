@@ -91,10 +91,19 @@
         delete from br_work_order_item where work_order_id = #{workOrderId}
     </delete>
 
+    <select id="selectRepairItemSummary" resultType="BrWorkOrderItem">
+        select i.material_id, sum(i.issue_qty) as plan_qty
+        from br_issue_item i
+        join br_issue h on h.id = i.issue_id and h.del_flag = '0'
+        join br_material m on m.id = i.material_id and m.mark_type = '1'
+        where h.work_order_id = #{workOrderId}
+        group by i.material_id
+    </select>
+
     <select id="sumIssuedRepairQty" parameterType="String" resultType="java.math.BigDecimal">
         select ifnull(sum(i.issue_qty), 0)
         from br_issue_item i
-        join br_issue h on h.id = i.issue_id and h.del_flag = '0'
+        join br_issue h on h.id = i.issue_id and h.del_flag = '0' and h.doc_status in ('03', '05')
         join br_work_order w on w.id = h.work_order_id
         join br_material m on m.id = i.material_id
         where w.work_no = #{workNo} and m.mark_type = '1'
@@ -103,8 +112,16 @@
     <select id="sumReceivedRepairQty" parameterType="String" resultType="java.math.BigDecimal">
         select ifnull(sum(t.material_num), 0)
         from br_receive_item t
-        join br_receive h on h.id = t.receive_id and h.del_flag = '0'
+        join br_receive h on h.id = t.receive_id and h.del_flag = '0' and h.doc_status in ('03', '05')
         join br_work_order w on w.id = h.work_order_id
         where w.work_no = #{workNo} and t.return_type in ('5', 'a')
+    </select>
+
+    <select id="sumUnusedRepairQty" parameterType="String" resultType="java.math.BigDecimal">
+        select ifnull(sum(t.material_num), 0)
+        from br_receive_item t
+        join br_receive h on h.id = t.receive_id and h.del_flag = '0' and h.doc_status in ('03', '05')
+        join br_work_order w on w.id = h.work_order_id
+        where w.work_no = #{workNo} and t.return_type = '1'
     </select>
 </mapper>

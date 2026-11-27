@@ -72,7 +72,7 @@
     </delete>
 
     <select id="selectItemsByIssueId" resultType="BrIssueItem">
-        select t.*, m.material_name from br_issue_item t
+        select t.*, m.material_name, m.material_cd, m.version, m.calc_unit, m.is_bonded, m.g_model, m.mark_type from br_issue_item t
         left join br_material m on m.id = t.material_id
         where t.issue_id = #{issueId}
     </select>

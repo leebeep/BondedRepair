@@ -28,6 +28,9 @@ public interface BrWorkOrderMapper
 
     public int deleteItemsByWorkOrderId(@Param("workOrderId") Long workOrderId);
 
+    /** 工单发料明细按物料汇总（仅待维修货物 markType=1，planQty=发料数量合计） */
+    public List<BrWorkOrderItem> selectRepairItemSummary(@Param("workOrderId") Long workOrderId);
+
     /** 工单状态更新 */
     public int updateOrderStatus(@Param("id") Long id, @Param("orderStatus") String orderStatus);
 
@@ -36,4 +39,7 @@ public interface BrWorkOrderMapper
 
     /** 工单已收的已修复+残次品数量合计 */
     public java.math.BigDecimal sumReceivedRepairQty(@Param("workNo") String workNo);
+
+    /** 工单未使用料件收料合计（returnType=1） */
+    public java.math.BigDecimal sumUnusedRepairQty(@Param("workNo") String workNo);
 }

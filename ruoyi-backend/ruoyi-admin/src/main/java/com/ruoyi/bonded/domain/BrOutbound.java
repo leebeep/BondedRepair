@@ -24,6 +24,8 @@ public class BrOutbound extends BaseEntity
     private String relaCustomsFormType;
     private String relaCustomsFormNum;
     private String calculatingRecordNo;
+    /** 申报批次号（按批次对账） */
+    private String batchNo;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date inOutTime;
     private String docStatus;

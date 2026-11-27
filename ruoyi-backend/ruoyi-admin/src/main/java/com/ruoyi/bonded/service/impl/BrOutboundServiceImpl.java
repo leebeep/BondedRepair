@@ -24,6 +24,27 @@ public class BrOutboundServiceImpl implements IBrOutboundService
     @Autowired private BrDeclareLogMapper declareLogMapper;
     @Autowired private BrLedgerService ledgerService;
     @Autowired private BrPushSwitch pushSwitch;
+    @Autowired private com.ruoyi.system.service.ISysConfigService configService;
+
+    /** 出库单号自动生成前缀参数（sys_config，可在 参数设置 中修改） */
+    public static final String OUTBOUND_NO_PREFIX_KEY = "br.outbound.no.prefix";
+    public static final String DEFAULT_OUTBOUND_NO_PREFIX = "OUT";
+
+    @Override
+    public String nextOutboundNo()
+    {
+        String prefix = configService.selectConfigByKey(OUTBOUND_NO_PREFIX_KEY);
+        if (prefix == null || prefix.isEmpty()) { prefix = DEFAULT_OUTBOUND_NO_PREFIX; }
+        String head = prefix + new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
+        String max = outboundMapper.selectMaxOutboundNoByPrefix(head);
+        int seq = 1;
+        if (max != null && max.length() > head.length())
+        {
+            try { seq = Integer.parseInt(max.substring(head.length())) + 1; }
+            catch (NumberFormatException ignored) { }
+        }
+        return head + String.format("%03d", seq);
+    }
 
     @Override
     public List<BrOutbound> selectList(BrOutbound outbound)
@@ -45,6 +66,8 @@ public class BrOutboundServiceImpl implements IBrOutboundService
     @Transactional(rollbackFor = Exception.class)
     public int insert(BrOutbound outbound)
     {
+        // 表单不再录入出库业务单证编号：空时默认=出库单号（同 PTO2 默认=入库单号先例，规范 §2.2.x）
+        outbound.setBusiFormNum(StringUtils.defaultString(outbound.getBusiFormNum(), outbound.getOutboundNo()));
         validate(outbound, null);
         checkServiceFeeLine(outbound);
         outbound.setCreateBy(SecurityUtils.getUsername());
@@ -64,6 +87,11 @@ public class BrOutboundServiceImpl implements IBrOutboundService
         BrOutbound db = outboundMapper.selectById(outbound.getId());
         if (db == null) { throw new ServiceException("出库单不存在"); }
         if (!"01".equals(db.getDocStatus()) && !"06".equals(db.getDocStatus())) { throw new ServiceException("仅草稿/退单状态可修改"); }
+        // 表单不再录入出库业务单证编号：空时默认=原出库单号（DB 列 NOT NULL，兜底旧数据）
+        if (StringUtils.isEmpty(outbound.getBusiFormNum()))
+        {
+            outbound.setBusiFormNum(StringUtils.defaultString(outbound.getOutboundNo(), db.getOutboundNo()));
+        }
         validate(outbound, outbound.getId());
         checkServiceFeeLine(outbound);
         outbound.setUpdateBy(SecurityUtils.getUsername());
@@ -73,6 +101,10 @@ public class BrOutboundServiceImpl implements IBrOutboundService
         {
             item.setOutboundId(outbound.getId());
             outboundMapper.insertItem(item);
+        }
+        if ("06".equals(db.getDocStatus()))
+        {
+            outboundMapper.updateDeclareResult(outbound.getId(), db.getLastUuid(), "01", "00", db.getExecuteType());
         }
         return 1;
     }
@@ -98,9 +130,15 @@ public class BrOutboundServiceImpl implements IBrOutboundService
         {
             throw new ServiceException("出库单当前状态不可审核");
         }
+        // 退单(06)重审：先冲销原 OUT 流水（数量取反），再按当前明细重新记账，避免重复扣减库存
+        if ("06".equals(h.getDocStatus()))
+        {
+            ledgerService.reverseDoc("br_outbound", id);
+        }
         for (BrOutboundItem item : outboundMapper.selectItemsByOutboundId(id))
         {
             BrMaterial m = materialMapper.selectBrMaterialById(item.getMaterialId());
+            if (m == null) { throw new ServiceException("出库明细物料不存在: " + item.getMaterialId()); }
             BigDecimal available = ledgerService.sourceBalance(item.getMaterialId(), item.getGoodsSourceType(), item.getGoodsSourceNo());
             BigDecimal out = item.getDeliveryCnt().abs();
             if (available.compareTo(out) < 0)
@@ -108,8 +146,8 @@ public class BrOutboundServiceImpl implements IBrOutboundService
                 throw new ServiceException("物料【" + m.getMaterialName() + "】来源 " + item.getGoodsSourceNo()
                         + " 可出余额不足：可用 " + available + "，本次出库 " + out);
             }
-            ledgerService.record(item.getMaterialId(), m.getMarkType(), "OUT", "br_outbound", id,
-                    item.getGoodsSourceType(), item.getGoodsSourceNo(), null, null, out.negate());
+            ledgerService.record(item.getMaterialId(), m.getMarkType(), "OUT", "br_outbound", id, h.getOutboundNo(),
+                    item.getGoodsSourceType(), item.getGoodsSourceNo(), null, h.getBatchNo(), out.negate());
         }
         // 审核通过；自动推送开关打开时同事务写入镜像库（退单重报自动走变更），关闭则滞留待同步由补推任务处理
         int rows = outboundMapper.updateDeclareResult(id, h.getLastUuid(), "03", h.getCustomsStatus(), "1");
@@ -181,7 +219,7 @@ public class BrOutboundServiceImpl implements IBrOutboundService
                 d.setInOutTime(h.getInOutTime());
                 d.setBusiType(h.getBusiType());
                 d.setBusiDesc(item.getBusiDesc());
-                d.setBusiFormNum(h.getBusiFormNum());
+                d.setBusiFormNum(StringUtils.defaultString(h.getBusiFormNum(), h.getOutboundNo()));
                 d.setRelaCustomsFormType(h.getRelaCustomsFormType());
                 d.setRelaCustomsFormNum(h.getRelaCustomsFormNum());
                 d.setCalculatingRecordNo(h.getCalculatingRecordNo());

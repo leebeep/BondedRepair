@@ -13,6 +13,13 @@ public class BrOutboundItem
     private Long outboundId;
     private Long materialId;
     private String materialName;
+    /** 以下为关联物料展示字段 */
+    private String materialCd;
+    private String version;
+    private String calcUnit;
+    private String isBonded;
+    private String gModel;
+    private String markType;
     private BigDecimal deliveryCnt;
     private BigDecimal price;
     private String currency;

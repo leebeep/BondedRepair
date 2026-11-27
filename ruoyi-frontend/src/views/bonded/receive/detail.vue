@@ -6,14 +6,14 @@
       </template>
       <el-descriptions :column="2" border>
         <el-descriptions-item label="收料单号">{{ form.receiveNo }}</el-descriptions-item>
-        <el-descriptions-item label="工单号">{{ form.workNo }}</el-descriptions-item>
+        <el-descriptions-item label="维修工单号">{{ form.workNo }}</el-descriptions-item>
         <el-descriptions-item label="收料日期">{{ form.receiveTime }}</el-descriptions-item>
         <el-descriptions-item label="申报批次号">{{ form.batchNo }}</el-descriptions-item>
-        <el-descriptions-item label="维修服务费总额">{{ form.serviceFee }}</el-descriptions-item>
-        <el-descriptions-item label="服务费币制">{{ currencyLabel(form.currency) }}</el-descriptions-item>
+        <el-descriptions-item label="维修服务费总额">{{ form.serviceFee != null && Number(form.serviceFee) > 0 ? form.serviceFee : '无' }}</el-descriptions-item>
+        <el-descriptions-item label="服务费币制">{{ form.currency ? currencyLabel(form.currency) : '无' }}</el-descriptions-item>
         <el-descriptions-item label="单据状态">
-          <el-tag :type="{ '01': 'info', '03': 'primary', '04': 'warning', '05': 'success', '06': 'danger' }[form.docStatus]">
-            {{ { '01': '草稿', '03': '审核通过', '04': '已申报', '05': '申报通过', '06': '退单' }[form.docStatus] || form.docStatus }}
+          <el-tag :type="docStatusType(form.docStatus, form.customsStatus)">
+            {{ docStatusLabel(form.docStatus, form.customsStatus) }}
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="海关状态">
@@ -29,10 +29,14 @@
         <el-table-column label="收料类型" width="200">
           <template #default="s">{{ returnTypes.find(t => t.value === s.row.returnType)?.label || s.row.returnType }}</template>
         </el-table-column>
-        <el-table-column label="物料">
-          <template #default="s">{{ materialLabel(s.row.materialId) }}</template>
-        </el-table-column>
+        <el-table-column label="物料编号" width="130" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column>
+        <el-table-column label="物料名称" min-width="150" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialName') }}</template></el-table-column>
+        <el-table-column label="版本号" width="80" align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
+        <el-table-column label="计量单位" width="110" align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
+        <el-table-column label="是否保税" width="90" align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
+        <el-table-column label="规格型号" width="140" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column>
         <el-table-column label="数量" prop="materialNum" width="130" align="right" />
+        <el-table-column label="说明" width="180"><template #default="s"><span v-if="s.row.returnType === '8'" class="text-muted">系统自动生成，数量 0.1</span></template></el-table-column>
       </el-table>
     </el-card>
     <el-row justify="end" class="mt16">
@@ -44,8 +48,9 @@
 <script setup name="ReceiveDetail">
 import { getReceive } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
-import { cstLabel, cstType, returnTypes } from '@/utils/bonded'
+import { cstLabel, cstType, docStatusLabel, docStatusType, returnTypes } from '@/utils/bonded'
 import { currencyLabel } from '@/utils/customsDict'
+import { customsUnitLabel } from '@/utils/customsUnits'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()
@@ -55,9 +60,23 @@ const loading = ref(true)
 const form = ref({})
 const materials = ref([])
 
-function materialLabel(materialId) {
-  const m = materials.value.find(x => x.id === materialId)
-  return m ? m.materialName + '（' + m.materialCd + '）' : materialId
+function findMaterial(row) {
+  return materials.value.find(m => m.id === row?.materialId) || null
+}
+function itemField(row, key) {
+  const v = row?.[key] ?? findMaterial(row)?.[key]
+  return v == null || v === '' ? '-' : String(v)
+}
+function itemUnit(row) {
+  const u = row?.calcUnit ?? findMaterial(row)?.calcUnit
+  return u ? customsUnitLabel(u) : '-'
+}
+function itemBonded(row) {
+  const v = row?.isBonded ?? findMaterial(row)?.isBonded
+  return v == null || v === '' ? '-' : (v === '1' ? '保税' : '非保税')
+}
+function itemSpec(row) {
+  return row?.gModel || row?.specificationsModels || findMaterial(row)?.gModel || '-'
 }
 
 Promise.all([
@@ -73,3 +92,7 @@ function cancel() {
   proxy.$tab.closeOpenPage({ path: '/bonded/receive' })
 }
 </script>
+
+<style scoped>
+.text-muted { color: #909399; }
+</style>

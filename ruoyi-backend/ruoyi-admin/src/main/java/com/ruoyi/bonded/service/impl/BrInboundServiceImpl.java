@@ -112,7 +112,8 @@ public class BrInboundServiceImpl implements IBrInboundService
         for (BrInboundItem item : items)
         {
             BrMaterial m = materialMapper.selectBrMaterialById(item.getMaterialId());
-            ledgerService.record(item.getMaterialId(), m.getMarkType(), "IN", "br_inbound", id,
+            if (m == null) { throw new ServiceException("入库明细物料不存在: " + item.getMaterialId()); }
+            ledgerService.record(item.getMaterialId(), m.getMarkType(), "IN", "br_inbound", id, h.getInboundNo(),
                     "g", h.getInboundNo(), null, null, item.getStorageCnt());
         }
         // 审核通过；自动推送开关打开时同事务写入镜像库（首报/变更自动判定），关闭则滞留待同步由补推任务处理
@@ -212,9 +213,9 @@ public class BrInboundServiceImpl implements IBrInboundService
         if (StringUtils.isEmpty(inbound.getInboundNo())) { throw new ServiceException("入库单号必填"); }
         BrInbound exist = inboundMapper.selectByInboundNo(inbound.getInboundNo());
         if (exist != null && !exist.getId().equals(selfId)) { throw new ServiceException("入库单号已存在: " + inbound.getInboundNo()); }
-        if (!"04".equals(inbound.getBusiType()) && !"05".equals(inbound.getBusiType()))
+        if (!"04".equals(inbound.getBusiType()) && !"05".equals(inbound.getBusiType()) && !"99".equals(inbound.getBusiType()))
         {
-            throw new ServiceException("入库业务类型仅支持 04-待维修货物 / 05-维修用料");
+            throw new ServiceException("入库业务类型仅支持 04-待维修货物 / 05-维修用料 / 99-其他");
         }
         if (StringUtils.isEmpty(inbound.getRelaCustomsFormType())) { throw new ServiceException("关联申报单证类型必填"); }
         if (inbound.getItems() == null || inbound.getItems().isEmpty()) { throw new ServiceException("入库明细不能为空"); }
@@ -240,6 +241,11 @@ public class BrInboundServiceImpl implements IBrInboundService
             if ("1".equals(m.getIsBonded()) && item.getUnit1Num() == null)
             {
                 throw new ServiceException("保税商品【" + m.getMaterialName() + "】第一法定数量必填（规范 §3.2.1）");
+            }
+            // 规范 §3.2.2：busiType=99 其他 时入库说明必填
+            if ("99".equals(inbound.getBusiType()) && StringUtils.isEmpty(item.getBusiDesc()))
+            {
+                throw new ServiceException("入库业务类型=99 其他 时入库说明必填（规范 §3.2.2）");
             }
         }
     }

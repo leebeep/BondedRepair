@@ -70,7 +70,7 @@ public class BrIssueServiceImpl implements IBrIssueService
             item.setIssueId(issue.getId());
             issueMapper.insertItem(item);
         }
-        workOrderService.syncRepairItems(wo, issue.getItems());
+        workOrderService.rebuildRepairItems(wo.getId());
         workOrderMapper.updateOrderStatus(wo.getId(), "02");
         return 1;
     }
@@ -96,6 +96,12 @@ public class BrIssueServiceImpl implements IBrIssueService
             item.setIssueId(issue.getId());
             issueMapper.insertItem(item);
         }
+        // 投入明细按发料记录重建；工单号变更时旧工单一并重建，保证两侧明细一致
+        if (db.getWorkOrderId() != null && !db.getWorkOrderId().equals(issue.getWorkOrderId()))
+        {
+            workOrderService.rebuildRepairItems(db.getWorkOrderId());
+        }
+        workOrderService.rebuildRepairItems(issue.getWorkOrderId());
         if ("06".equals(db.getDocStatus()))
         {
             issueMapper.updateDeclareResult(issue.getId(), db.getLastUuid(), "01", "00", db.getExecuteType());
@@ -104,14 +110,20 @@ public class BrIssueServiceImpl implements IBrIssueService
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteByIds(Long[] ids)
     {
+        java.util.Set<Long> woIds = new java.util.HashSet<>();
         for (Long id : ids)
         {
             BrIssue db = issueMapper.selectById(id);
             if (db != null && !"01".equals(db.getDocStatus())) { throw new ServiceException("发料单【" + db.getIssueNo() + "】非草稿状态，禁止删除"); }
+            if (db != null && db.getWorkOrderId() != null) { woIds.add(db.getWorkOrderId()); }
         }
-        return issueMapper.deleteByIds(ids);
+        int rows = issueMapper.deleteByIds(ids);
+        // 删除后同步重建工单投入明细，避免残留已删发料的物料
+        for (Long woId : woIds) { workOrderService.rebuildRepairItems(woId); }
+        return rows;
     }
 
     @Override
@@ -127,13 +139,14 @@ public class BrIssueServiceImpl implements IBrIssueService
         for (BrIssueItem item : items)
         {
             BrMaterial m = materialMapper.selectBrMaterialById(item.getMaterialId());
+            if (m == null) { throw new ServiceException("发料明细物料不存在: " + item.getMaterialId()); }
             BigDecimal available = ledgerService.sourceBalance(item.getMaterialId(), item.getGoodsSourceType(), item.getGoodsSourceNo());
             if (available.compareTo(item.getIssueQty()) < 0)
             {
                 throw new ServiceException("物料【" + m.getMaterialName() + "】在来源单据 " + item.getGoodsSourceNo()
                         + " 可发余额不足：可用 " + available + "，本次发料 " + item.getIssueQty());
             }
-            ledgerService.record(item.getMaterialId(), m.getMarkType(), "ISSUE", "br_issue", id,
+            ledgerService.record(item.getMaterialId(), m.getMarkType(), "ISSUE", "br_issue", id, h.getIssueNo(),
                     item.getGoodsSourceType(), item.getGoodsSourceNo(), wo.getWorkNo(), wo.getBatchNo(),
                     item.getIssueQty().negate());
         }
@@ -219,6 +232,7 @@ public class BrIssueServiceImpl implements IBrIssueService
         if (exist != null && !exist.getId().equals(selfId)) { throw new ServiceException("发料单号已存在: " + issue.getIssueNo()); }
         if (StringUtils.isEmpty(issue.getWorkNo()) && issue.getWorkOrderId() == null) { throw new ServiceException("工单号必填"); }
         if (issue.getItems() == null || issue.getItems().isEmpty()) { throw new ServiceException("发料明细不能为空"); }
+        boolean hasRepairGoods = false;
         for (BrIssueItem item : issue.getItems())
         {
             if (!"g".equals(item.getGoodsSourceType()) && !"i".equals(item.getGoodsSourceType()))
@@ -232,6 +246,12 @@ public class BrIssueServiceImpl implements IBrIssueService
             {
                 throw new ServiceException("明细物料未备案通过");
             }
+            if ("1".equals(m.getMarkType())) { hasRepairGoods = true; }
+        }
+        // 待维修货物必须随工单发料：至少一行待维修货物(markType=1)
+        if (!hasRepairGoods)
+        {
+            throw new ServiceException("工单发料必须包含至少一行待维修货物（料标记=1）");
         }
     }
 

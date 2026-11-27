@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.BrMaterialStockMapper">
+
+    <resultMap type="BrMaterialStock" id="StockResult">
+        <id property="materialId" column="material_id"/>
+        <result property="markType" column="mark_type"/>
+        <result property="qty" column="qty"/>
+        <result property="lastBizTime" column="last_biz_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="materialCd" column="material_cd"/>
+        <result property="version" column="version"/>
+        <result property="materialName" column="material_name"/>
+        <result property="gModel" column="g_model"/>
+        <result property="codeTs" column="code_ts"/>
+        <result property="calcUnit" column="calc_unit"/>
+        <result property="isBonded" column="is_bonded"/>
+        <result property="declareStatus" column="declare_status"/>
+    </resultMap>
+
+    <!-- 原子记账：唯一键冲突时累加，行锁保证并发安全 -->
+    <update id="upsertQty">
+        insert into br_material_stock (material_id, mark_type, qty, last_biz_time, update_time)
+        values (#{materialId}, #{markType}, #{qty}, sysdate(), sysdate())
+        on duplicate key update qty = qty + #{qty}, last_biz_time = sysdate(), update_time = sysdate()
+    </update>
+
+    <select id="selectQty" parameterType="Long" resultType="java.math.BigDecimal">
+        select qty from br_material_stock where material_id = #{materialId}
+    </select>
+
+    <select id="selectByMaterialId" resultMap="StockResult">
+        select s.material_id, s.mark_type, s.qty, s.last_biz_time, s.update_time,
+               m.material_cd, m.version, m.material_name, m.g_model, m.code_ts, m.calc_unit, m.is_bonded, m.declare_status
+        from br_material_stock s
+        join br_material m on m.id = s.material_id and m.del_flag = '0'
+        where s.material_id = #{materialId}
+    </select>
+
+    <select id="selectMonthStats" resultType="java.util.HashMap">
+        select biz_type as bizType, ifnull(sum(qty), 0) as qty, count(*) as cnt
+        from br_stock_ledger
+        where material_id = #{materialId} and create_time &gt;= #{monthBegin}
+        group by biz_type
+    </select>
+</mapper>

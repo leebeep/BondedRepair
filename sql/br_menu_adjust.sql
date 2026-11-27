@@ -30,6 +30,16 @@ INSERT INTO sys_config (config_name, config_key, config_value, config_type, crea
 SELECT '物料编号自动生成', 'br.material.auto.no', 'true', 'Y', 'admin', sysdate(), 'true=新增物料未填编号时自动生成（WL+日期+4位流水）；false=编号必填手动录入'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'br.material.auto.no');
 
+-- 1.6 收料单号自动生成前缀（默认 RC；新增收料单时默认单号=前缀+yyyyMMdd+3位当日流水，可手工修改）
+INSERT INTO sys_config (config_name, config_key, config_value, config_type, create_by, create_time, remark)
+SELECT '收料单号生成前缀', 'br.receive.no.prefix', 'RC', 'Y', 'admin', sysdate(), '新增收料单默认单号前缀（前缀+yyyyMMdd+3位当日流水），可在 参数设置 中修改；留空则用默认 RC'
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'br.receive.no.prefix');
+
+-- 1.7 出库单号自动生成前缀（默认 OUT；新增出库单时默认单号=前缀+yyyyMMdd+3位当日流水，可手工修改）
+INSERT INTO sys_config (config_name, config_key, config_value, config_type, create_by, create_time, remark)
+SELECT '出库单号生成前缀', 'br.outbound.no.prefix', 'OUT', 'Y', 'admin', sysdate(), '新增出库单默认单号前缀（前缀+yyyyMMdd+3位当日流水），可在 参数设置 中修改；留空则用默认 OUT'
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'br.outbound.no.prefix');
+
 -- 2. 移除「若依官网」外链菜单（menu_id=4，源自 ry_20261117.sql）
 DELETE FROM sys_role_menu WHERE menu_id = 4;
 DELETE FROM sys_menu WHERE menu_id = 4 AND menu_name = '若依官网';

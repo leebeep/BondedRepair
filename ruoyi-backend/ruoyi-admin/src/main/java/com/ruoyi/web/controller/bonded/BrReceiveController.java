@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.bonded.domain.BrReceive;
+import com.ruoyi.bonded.service.BrWorkOrderService;
 import com.ruoyi.bonded.service.IBrReceiveService;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -28,6 +29,17 @@ public class BrReceiveController extends BaseController
     @Autowired
     private IBrReceiveService receiveService;
 
+    @Autowired
+    private BrWorkOrderService workOrderService;
+
+    /** 按维修工单号查工单（收料表单带出服务费总额/币制；不存在返回 null） */
+    @PreAuthorize("@ss.hasPermi('bonded:rcv:query')")
+    @GetMapping("/workOrder/{workNo}")
+    public AjaxResult workOrder(@PathVariable("workNo") String workNo)
+    {
+        return AjaxResult.success("操作成功", workOrderService.findByWorkNo(workNo));
+    }
+
     @PreAuthorize("@ss.hasPermi('bonded:rcv:list')")
     @GetMapping("/list")
     public TableDataInfo list(BrReceive receive)
@@ -41,6 +53,14 @@ public class BrReceiveController extends BaseController
     public AjaxResult getInfo(@PathVariable Long id)
     {
         return success(receiveService.selectById(id));
+    }
+
+    /** 下一张收料单号（默认自动生成，前缀经 参数设置 br.receive.no.prefix 修改） */
+    @PreAuthorize("@ss.hasPermi('bonded:rcv:add')")
+    @GetMapping("/nextNo")
+    public AjaxResult nextNo()
+    {
+        return AjaxResult.success("操作成功", receiveService.nextReceiveNo());
     }
 
     @PreAuthorize("@ss.hasPermi('bonded:rcv:add')")

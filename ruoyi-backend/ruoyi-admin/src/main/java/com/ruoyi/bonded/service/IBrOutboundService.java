@@ -12,6 +12,9 @@ public interface IBrOutboundService
 
     public BrOutbound selectById(Long id);
 
+    /** 下一张出库单号（前缀+日期+流水，前缀取 sys_config 参数 br.outbound.no.prefix） */
+    public String nextOutboundNo();
+
     public int insert(BrOutbound outbound);
 
     public int update(BrOutbound outbound);

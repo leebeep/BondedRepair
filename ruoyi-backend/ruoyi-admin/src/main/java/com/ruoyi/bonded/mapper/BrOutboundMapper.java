@@ -16,6 +16,9 @@ public interface BrOutboundMapper
 
     public BrOutbound selectByOutboundNo(@Param("outboundNo") String outboundNo);
 
+    /** 按前缀查最大出库单号（自动编号流水用，含逻辑删除行避免流水撞号） */
+    public String selectMaxOutboundNoByPrefix(@Param("prefix") String prefix);
+
     public int insert(BrOutbound outbound);
 
     public int update(BrOutbound outbound);

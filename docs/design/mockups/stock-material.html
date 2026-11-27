@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>效果图 · 物料库存（以物料编号为唯一）</title>
+<style>
+:root {
+  --br-bg: #f6f8fb; --br-card: #fff; --br-border: #e8ecf1;
+  --br-text: #1e293b; --br-muted: #64748b; --br-hover: #f1f5f9;
+  --primary: #2563eb; --success: #16a34a; --warn: #d97706; --danger: #dc2626;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--br-bg); color: var(--br-text); font-size: 14px; }
+.layout { display: flex; min-height: 100vh; }
+
+/* 侧边栏（同 list.html 效果图） */
+.sidebar { width: 200px; background: #1e3a5f; color: #cbd5e1; flex-shrink: 0; }
+.logo { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 18px; color: #fff; font-weight: 700; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.logo-dot { width: 26px; height: 26px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.menu { padding: 10px; }
+.menu-group { font-size: 11px; color: #64748b; padding: 12px 12px 6px; letter-spacing: 1px; }
+.menu-item { padding: 10px 12px; border-radius: 8px; margin-bottom: 2px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.menu-item.active { background: var(--primary); color: #fff; }
+
+.main { flex: 1; min-width: 0; }
+.navbar { height: 56px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; padding: 0 20px; position: sticky; top: 0; z-index: 10; }
+.breadcrumb { color: var(--br-muted); font-size: 13px; }
+.breadcrumb b { color: var(--br-text); }
+.nav-right { margin-left: auto; display: flex; gap: 14px; color: var(--br-muted); font-size: 13px; align-items: center; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+.tagsbar { height: 36px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+.tagv { padding: 4px 12px; border-radius: 4px; font-size: 12px; color: var(--br-muted); cursor: pointer; border: 1px solid var(--br-border); background: var(--br-card); }
+.tagv:hover { color: var(--primary); }
+.tagv.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.content { padding: 16px; }
+.card { background: var(--br-card); border: 1px solid var(--br-border); border-radius: 12px; margin-bottom: 16px; }
+
+/* ---------- 六类账存汇总卡片 ---------- */
+.summary { display: flex; gap: 12px; padding: 16px 20px; flex-wrap: wrap; }
+.sc { flex: 1; min-width: 130px; border: 1px solid var(--br-border); border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all .2s; background: #fff; }
+.sc:hover { border-color: rgba(37,99,235,.45); box-shadow: 0 4px 12px rgba(37,99,235,.08); transform: translateY(-1px); }
+.sc.active { border-color: var(--primary); background: rgba(37,99,235,.04); }
+.sc .k { font-size: 12px; color: var(--br-muted); display: flex; align-items: center; gap: 6px; }
+.sc .k i { width: 8px; height: 8px; border-radius: 2px; }
+.sc .v { font-size: 20px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.sc .s { font-size: 11px; color: var(--br-muted); margin-top: 2px; }
+.sc .v.zero { color: var(--br-muted); font-weight: 600; }
+
+/* ---------- 搜索区 ---------- */
+.search { padding: 16px 20px 4px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--br-muted); }
+.input { min-width: 160px; height: 32px; border: 1px solid #dcdfe6; border-radius: 6px; padding: 0 10px; font-size: 13px; color: var(--br-text); background: #fff; display: inline-flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.input .ph { color: #a8abb2; }
+.input .arrow { color: #a8abb2; font-size: 11px; }
+.btn { height: 32px; padding: 0 15px; border-radius: 6px; border: 1px solid #dcdfe6; background: #fff; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .2s; color: var(--br-text); }
+.btn:hover { color: var(--primary); border-color: rgba(37,99,235,.4); background: rgba(37,99,235,.05); transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(.98); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-primary:hover { color: #fff; background: #1d4fd8; }
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--br-muted); cursor: pointer; }
+
+/* ---------- 工具行 ---------- */
+.toolbar { padding: 14px 20px; border-bottom: 1px solid var(--br-border); display: flex; align-items: center; gap: 10px; }
+.toolbar .title { font-size: 15px; font-weight: 600; margin-right: 8px; }
+.count { font-size: 12px; color: var(--br-muted); background: var(--br-hover); padding: 2px 8px; border-radius: 10px; }
+.toolbar .spacer { flex: 1; }
+
+/* ---------- 表格 ---------- */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--br-hover); color: var(--br-muted); font-weight: 600; text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--br-border); white-space: nowrap; }
+td { padding: 12px 16px; border-bottom: 1px solid var(--br-border); white-space: nowrap; }
+tr:hover td { background: rgba(37,99,235,.03); }
+tr:last-child td { border-bottom: none; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+th.num { text-align: right; }
+.cd { font-weight: 600; color: var(--primary); cursor: pointer; }
+.cd:hover { text-decoration: underline; }
+.sub { display: block; font-size: 12px; color: var(--br-muted); font-weight: 400; margin-top: 2px; }
+.tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.tag i { width: 6px; height: 6px; border-radius: 50%; }
+.tag-danger { color: var(--danger); background: rgba(220,38,38,.08); } .tag-danger i { background: var(--danger); }
+.tag-success { color: var(--success); background: rgba(22,163,74,.08); } .tag-success i { background: var(--success); }
+.tag-warn { color: var(--warn); background: rgba(217,119,6,.08); } .tag-warn i { background: var(--warn); }
+.tag-info { color: var(--br-muted); background: var(--br-hover); } .tag-info i { background: var(--br-muted); }
+.tag-primary { color: var(--primary); background: rgba(37,99,235,.08); } .tag-primary i { background: var(--primary); }
+.tag-violet { color: #7c3aed; background: rgba(124,58,237,.08); } .tag-violet i { background: #7c3aed; }
+.qty { font-weight: 600; font-variant-numeric: tabular-nums; }
+.qty.low { color: var(--warn); }
+.qty.zero { color: var(--br-muted); font-weight: 400; }
+.plus { color: var(--success); }
+.minus { color: var(--danger); }
+.op { color: var(--primary); cursor: pointer; font-size: 13px; margin-right: 10px; white-space: nowrap; }
+.stale { font-size: 12px; color: var(--danger); }
+
+/* ---------- 分页 ---------- */
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 14px 20px; font-size: 13px; color: var(--br-muted); }
+.pg { min-width: 30px; height: 30px; border: 1px solid var(--br-border); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; background: #fff; cursor: pointer; }
+.pg.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.note { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; background: var(--br-card); border: 1px solid var(--br-border); border-radius: 10px; padding: 10px 16px; font-size: 12px; color: var(--br-muted); box-shadow: 0 6px 16px rgba(15,23,42,.08); z-index: 30; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-dot">保</div>保税维修平台</div>
+    <div class="menu">
+      <div class="menu-group">保税维修工作台</div>
+      <div class="menu-item">▦ 首页</div>
+      <div class="menu-item">📄 物料清单</div>
+      <div class="menu-item">⬇ 入库管理</div>
+      <div class="menu-item">⚙ 工单发料</div>
+      <div class="menu-item">▣ 工单收料</div>
+      <div class="menu-item">⬆ 出库管理</div>
+      <div class="menu-item active">▤ 物料库存</div>
+      <div class="menu-item">✉ 申报管理</div>
+      <div class="menu-group">系统管理</div>
+      <div class="menu-item">👤 用户管理</div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="navbar">
+      <span class="breadcrumb">保税维修工作台 / <b>物料库存</b></span>
+      <div class="nav-right"><span>🔄 刷新</span><span>🔍</span><div class="avatar">Ad</div></div>
+    </div>
+    <div class="tagsbar">
+      <span class="tagv">首页</span>
+      <span class="tagv active">物料库存</span>
+      <span class="tagv">入库管理</span>
+      <span class="tagv">物料清单</span>
+    </div>
+    <div class="content">
+
+      <!-- 六类账存汇总（点击卡片=按货物类型筛选） -->
+      <div class="card">
+        <div class="summary">
+          <div class="sc">
+            <div class="k"><i style="background:#2563eb"></i>待维修货物</div>
+            <div class="v">186.000</div><div class="s">跨 12 个物料</div>
+          </div>
+          <div class="sc">
+            <div class="k"><i style="background:#16a34a"></i>已维修货物</div>
+            <div class="v zero">0.000</div><div class="s">已全部复运出境</div>
+          </div>
+          <div class="sc">
+            <div class="k"><i style="background:#dc2626"></i>无法维修货物</div>
+            <div class="v zero">0.000</div><div class="s">已全部退运</div>
+          </div>
+          <div class="sc active">
+            <div class="k"><i style="background:#d97706"></i>维修用料件</div>
+            <div class="v">12,431.500</div><div class="s">跨 38 个物料 · 结转下期</div>
+          </div>
+          <div class="sc">
+            <div class="k"><i style="background:#64748b"></i>旧件或坏件</div>
+            <div class="v zero">0.000</div><div class="s">已全部出库</div>
+          </div>
+          <div class="sc">
+            <div class="k"><i style="background:#7c3aed"></i>边角料</div>
+            <div class="v">25.800</div><div class="s">跨 3 个物料</div>
+          </div>
+          <div class="sc">
+            <div class="k"><i style="background:#0d9488"></i>维修服务费</div>
+            <div class="v zero">0.000</div><div class="s">随复运单出库</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 搜索卡片 -->
+      <div class="card">
+        <div class="search">
+          <span class="field">物料编号<span class="input"><span class="ph">请输入物料编号</span></span></span>
+          <span class="field">物料名称<span class="input"><span class="ph">请输入物料名称</span></span></span>
+          <span class="field">货物类型<span class="input"><span>4-维修用料件</span><span class="arrow">▼</span></span></span>
+          <span class="field">保税标识<span class="input"><span>全部</span><span class="arrow">▼</span></span></span>
+          <label class="chk"><input type="checkbox" checked> 仅显示有库存</label>
+          <button class="btn btn-primary">🔍 搜索</button>
+          <button class="btn">↺ 重置</button>
+        </div>
+      </div>
+
+      <!-- 库存表卡片：物料编号为唯一行 -->
+      <div class="card">
+        <div class="toolbar">
+          <span class="title">物料库存</span><span class="count">共 54 个物料</span>
+          <span class="spacer"></span>
+          <button class="btn">⬇ 导出</button>
+          <button class="btn">⚙ 列设置</button>
+        </div>
+        <table>
+          <tr>
+            <th>物料编号 / 版本</th><th>物料名称</th><th>规格型号</th><th>单位</th>
+            <th>货物类型</th><th>保税</th><th class="num">当前结存</th>
+            <th class="num">本月入库</th><th class="num">本月发出</th><th>最近变动</th><th style="width:110px">操作</th>
+          </tr>
+          <tr>
+            <td><span class="cd">MAT-IC-0021</span><span class="sub">v1</span></td>
+            <td>主控芯片<span class="sub">IC-CTRL-7A</span></td><td>V7A-128QFP</td><td>个</td>
+            <td><span class="tag tag-warn"><i></i>4-维修用料件</span></td>
+            <td><span class="tag tag-primary"><i></i>保税</span></td>
+            <td class="num"><span class="qty">2,386.500</span></td>
+            <td class="num plus">+2,400.000</td><td class="num minus">-1,013.500</td>
+            <td>11-27 14:22</td>
+            <td><span class="op">单据清单 →</span></td>
+          </tr>
+          <tr>
+            <td><span class="cd">MAT-IC-0034</span><span class="sub">v1</span></td>
+            <td>电源管理模块<span class="sub">PWR-M09</span></td><td>M09-DC24V</td><td>个</td>
+            <td><span class="tag tag-warn"><i></i>4-维修用料件</span></td>
+            <td><span class="tag tag-primary"><i></i>保税</span></td>
+            <td class="num"><span class="qty">56.000</span></td>
+            <td class="num plus">+200.000</td><td class="num minus">-144.000</td>
+            <td>11-26 09:48</td>
+            <td><span class="op">单据清单 →</span></td>
+          </tr>
+          <tr>
+            <td><span class="cd">MAT-IC-0102</span><span class="sub">v2</span></td>
+            <td>散热硅脂<span class="sub">THP-G2</span></td><td>G2-5KG 桶装</td><td>千克</td>
+            <td><span class="tag tag-warn"><i></i>4-维修用料件</span></td>
+            <td><span class="tag tag-info"><i></i>非保税</span></td>
+            <td class="num"><span class="qty low">3.250</span></td>
+            <td class="num plus">+30.000</td><td class="num minus">-26.750</td>
+            <td>11-20 16:05<span class="stale"> ⚠ 呆滞7天+低于安全量</span></td>
+            <td><span class="op">单据清单 →</span></td>
+          </tr>
+          <tr>
+            <td><span class="cd">MAT-PRD-0008</span><span class="sub">v1</span></td>
+            <td>工控主板 A 型（客户送修）<span class="sub">MB-A3</span></td><td>A3-REV.C</td><td>块</td>
+            <td><span class="tag tag-primary"><i></i>1-待维修货物</span></td>
+            <td><span class="tag tag-primary"><i></i>保税</span></td>
+            <td class="num"><span class="qty">64.000</span></td>
+            <td class="num plus">+120.000</td><td class="num minus">-56.000</td>
+            <td>11-27 10:32</td>
+            <td><span class="op">单据清单 →</span></td>
+          </tr>
+          <tr>
+            <td><span class="cd">MAT-SCR-0003</span><span class="sub">v1</span></td>
+            <td>机壳边角料（铝）<span class="sub">SC-AL</span></td><td>AL-6061</td><td>千克</td>
+            <td><span class="tag tag-violet"><i></i>6-边角料</span></td>
+            <td><span class="tag tag-primary"><i></i>保税</span></td>
+            <td class="num"><span class="qty">25.800</span></td>
+            <td class="num plus">+31.200</td><td class="num minus">-5.400</td>
+            <td>11-18 11:20</td>
+            <td><span class="op">单据清单 →</span></td>
+          </tr>
+          <tr>
+            <td><span class="cd">MAT-PRD-0015</span><span class="sub">v1</span></td>
+            <td>变频器模块（客户送修）<span class="sub">VFD-T5</span></td><td>T5-22KW</td><td>台</td>
+            <td><span class="tag tag-primary"><i></i>1-待维修货物</span></td>
+            <td><span class="tag tag-primary"><i></i>保税</span></td>
+            <td class="num"><span class="qty zero">0.000</span></td>
+            <td class="num plus">+18.000</td><td class="num minus">-18.000</td>
+            <td>11-25 08:15</td>
+            <td><span class="op">单据清单 →</span></td>
+          </tr>
+          <tr>
+            <td><span class="cd">MAT-SVF-0008</span><span class="sub">v1</span></td>
+            <td>工控主板 A 型-维修服务费<span class="sub">虚物料 · 被维修商品 MAT-PRD-0008</span></td><td>A3-REV.C</td><td>次</td>
+            <td><span class="tag tag-info"><i></i>8-维修服务费</span></td>
+            <td><span class="tag tag-info"><i></i>—</span></td>
+            <td class="num"><span class="qty zero">0.000</span></td>
+            <td class="num plus">+0.100</td><td class="num minus">-0.100</td>
+            <td>11-25 08:15</td>
+            <td><span class="op">单据清单 →</span></td>
+          </tr>
+        </table>
+        <div class="pager">
+          <span>54 条</span><span class="pg">‹</span><span class="pg active">1</span><span class="pg">2</span><span class="pg">3</span><span class="pg">›</span>
+          <span>前往 <span class="input" style="min-width:52px;height:28px;justify-content:center">1</span> 页</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 点击「单据清单 →」新开页面（见 stock-material-detail.html） -->
+
+<div class="note">效果图 · 物料库存（以物料编号为唯一行，汇总卡片=六类账存）— docs/design/mockups/stock-material.html</div>
+</body>
+</html>

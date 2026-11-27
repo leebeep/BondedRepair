@@ -26,6 +26,13 @@ public class BrWorkOrderService
     @Autowired
     private BrWorkOrderMapper workOrderMapper;
 
+    /** 按工单号查工单（只读，供收料表单带出服务费；不存在返回 null） */
+    public BrWorkOrder findByWorkNo(String workNo)
+    {
+        if (StringUtils.isEmpty(workNo)) { return null; }
+        return workOrderMapper.selectByWorkNo(workNo);
+    }
+
     @Autowired
     private BrMaterialMapper materialMapper;
 
@@ -82,6 +89,23 @@ public class BrWorkOrderService
             wi.setWorkOrderId(wo.getId());
             wi.setMaterialId(item.getMaterialId());
             wi.setPlanQty(item.getIssueQty());
+            workOrderMapper.insertItem(wi);
+        }
+    }
+
+    /**
+     * 按发料记录重建工单投入明细：删除旧明细后，以该工单全部发料的待维修货物(markType=1)
+     * 按物料汇总（发料数量合计）重新生成，保证工单明细与发料实际记录一致。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void rebuildRepairItems(Long workOrderId)
+    {
+        if (workOrderId == null) { return; }
+        List<BrWorkOrderItem> summary = workOrderMapper.selectRepairItemSummary(workOrderId);
+        workOrderMapper.deleteItemsByWorkOrderId(workOrderId);
+        for (BrWorkOrderItem wi : summary)
+        {
+            wi.setWorkOrderId(workOrderId);
             workOrderMapper.insertItem(wi);
         }
     }

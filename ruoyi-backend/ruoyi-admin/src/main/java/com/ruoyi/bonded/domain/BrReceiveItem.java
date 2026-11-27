@@ -13,6 +13,13 @@ public class BrReceiveItem
     private Long receiveId;
     private Long materialId;
     private String materialName;
+    /** 以下为关联物料展示字段 */
+    private String materialCd;
+    private String version;
+    private String calcUnit;
+    private String isBonded;
+    private String gModel;
+    private String markType;
     /** 收料数量(服务费行固定0.1) */
     private BigDecimal materialNum;
     /** 1-未使用料件 5-已维修货物 6-维修用料件 7-坏损零部件 8-维修服务费 9-边角料 a-残次品 */

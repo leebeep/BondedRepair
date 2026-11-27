@@ -12,6 +12,9 @@ public interface IBrReceiveService
 
     public BrReceive selectById(Long id);
 
+    /** 下一张收料单号（前缀+日期+流水，前缀取 sys_config 参数 br.receive.no.prefix） */
+    public String nextReceiveNo();
+
     /** 新增（工单有服务费且未包含 returnType=8 行时自动生成服务费行） */
     public int insert(BrReceive receive);
 

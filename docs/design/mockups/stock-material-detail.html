@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>效果图 · 物料库存详情（单据清单）</title>
+<style>
+:root {
+  --br-bg: #f6f8fb; --br-card: #fff; --br-border: #e8ecf1;
+  --br-text: #1e293b; --br-muted: #64748b; --br-hover: #f1f5f9;
+  --primary: #2563eb; --success: #16a34a; --warn: #d97706; --danger: #dc2626;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--br-bg); color: var(--br-text); font-size: 14px; }
+.layout { display: flex; min-height: 100vh; }
+
+/* 侧边栏（同 list.html 效果图） */
+.sidebar { width: 200px; background: #1e3a5f; color: #cbd5e1; flex-shrink: 0; }
+.logo { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 18px; color: #fff; font-weight: 700; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.logo-dot { width: 26px; height: 26px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.menu { padding: 10px; }
+.menu-group { font-size: 11px; color: #64748b; padding: 12px 12px 6px; letter-spacing: 1px; }
+.menu-item { padding: 10px 12px; border-radius: 8px; margin-bottom: 2px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.menu-item.active { background: var(--primary); color: #fff; }
+
+.main { flex: 1; min-width: 0; }
+.navbar { height: 56px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; padding: 0 20px; position: sticky; top: 0; z-index: 10; }
+.breadcrumb { color: var(--br-muted); font-size: 13px; }
+.breadcrumb b { color: var(--br-text); }
+.back { margin-right: 12px; color: var(--br-muted); cursor: pointer; font-size: 13px; }
+.back:hover { color: var(--primary); }
+.nav-right { margin-left: auto; display: flex; gap: 14px; color: var(--br-muted); font-size: 13px; align-items: center; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+.tagsbar { height: 36px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+.tagv { padding: 4px 12px; border-radius: 4px; font-size: 12px; color: var(--br-muted); cursor: pointer; border: 1px solid var(--br-border); background: var(--br-card); }
+.tagv:hover { color: var(--primary); }
+.tagv.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.content { padding: 16px; }
+.card { background: var(--br-card); border: 1px solid var(--br-border); border-radius: 12px; margin-bottom: 16px; }
+
+/* ---------- 物料档案头 ---------- */
+.head { padding: 18px 20px; display: flex; gap: 20px; align-items: flex-start; }
+.micon { width: 52px; height: 52px; border-radius: 12px; background: rgba(217,119,6,.1); color: var(--warn); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.htitle { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hcode { color: var(--primary); }
+.htags { display: flex; gap: 6px; }
+.tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.tag i { width: 6px; height: 6px; border-radius: 50%; }
+.tag-danger { color: var(--danger); background: rgba(220,38,38,.08); } .tag-danger i { background: var(--danger); }
+.tag-success { color: var(--success); background: rgba(22,163,74,.08); } .tag-success i { background: var(--success); }
+.tag-warn { color: var(--warn); background: rgba(217,119,6,.08); } .tag-warn i { background: var(--warn); }
+.tag-info { color: var(--br-muted); background: var(--br-hover); } .tag-info i { background: var(--br-muted); }
+.tag-primary { color: var(--primary); background: rgba(37,99,235,.08); } .tag-primary i { background: var(--primary); }
+.tag-violet { color: #7c3aed; background: rgba(124,58,237,.08); } .tag-violet i { background: #7c3aed; }
+.hmeta { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 10px; font-size: 13px; color: var(--br-muted); }
+.hmeta b { color: var(--br-text); font-weight: 500; }
+.head .spacer { flex: 1; }
+
+/* ---------- 库存概况数字卡 ---------- */
+.stats { display: flex; padding: 0; }
+.stat { flex: 1; padding: 16px 20px; border-right: 1px solid var(--br-border); }
+.stat:last-child { border-right: none; }
+.stat .k { font-size: 12px; color: var(--br-muted); }
+.stat .v { font-size: 22px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.stat .v.zero { color: var(--br-muted); }
+.stat .s { font-size: 11px; color: var(--br-muted); margin-top: 3px; }
+.plus { color: var(--success); }
+.minus { color: var(--danger); }
+.main-qty { color: var(--warn); }
+
+/* ---------- 环节页签 ---------- */
+.tabs { display: flex; gap: 4px; padding: 10px 20px 0; border-bottom: 1px solid var(--br-border); }
+.tab { padding: 8px 14px; font-size: 13px; color: var(--br-muted); cursor: pointer; border-bottom: 2px solid transparent; }
+.tab:hover { color: var(--primary); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.tab .n { font-size: 11px; background: var(--br-hover); border-radius: 8px; padding: 1px 7px; margin-left: 4px; }
+.tab.active .n { background: rgba(37,99,235,.12); }
+
+/* ---------- 搜索行 ---------- */
+.search { padding: 14px 20px 6px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--br-muted); }
+.input { min-width: 150px; height: 32px; border: 1px solid #dcdfe6; border-radius: 6px; padding: 0 10px; font-size: 13px; color: var(--br-text); background: #fff; display: inline-flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.input .ph { color: #a8abb2; }
+.input .arrow { color: #a8abb2; font-size: 11px; }
+.btn { height: 32px; padding: 0 15px; border-radius: 6px; border: 1px solid #dcdfe6; background: #fff; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .2s; color: var(--br-text); }
+.btn:hover { color: var(--primary); border-color: rgba(37,99,235,.4); background: rgba(37,99,235,.05); transform: translateY(-1px); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-primary:hover { color: #fff; background: #1d4fd8; }
+
+/* ---------- 表格 ---------- */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--br-hover); color: var(--br-muted); font-weight: 600; text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--br-border); white-space: nowrap; }
+td { padding: 12px 16px; border-bottom: 1px solid var(--br-border); white-space: nowrap; }
+tr:hover td { background: rgba(37,99,235,.03); }
+tr:last-child td { border-bottom: none; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+th.num { text-align: right; }
+.docno { color: var(--primary); cursor: pointer; font-weight: 500; }
+.docno:hover { text-decoration: underline; }
+.qty { font-weight: 700; font-variant-numeric: tabular-nums; }
+.op { color: var(--primary); cursor: pointer; font-size: 13px; margin-right: 10px; }
+
+/* ---------- 分页 ---------- */
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 14px 20px; font-size: 13px; color: var(--br-muted); }
+.pg { min-width: 30px; height: 30px; border: 1px solid var(--br-border); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; background: #fff; cursor: pointer; }
+.pg.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.note { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; background: var(--br-card); border: 1px solid var(--br-border); border-radius: 10px; padding: 10px 16px; font-size: 12px; color: var(--br-muted); box-shadow: 0 6px 16px rgba(15,23,42,.08); z-index: 30; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-dot">保</div>保税维修平台</div>
+    <div class="menu">
+      <div class="menu-group">保税维修工作台</div>
+      <div class="menu-item">▦ 首页</div>
+      <div class="menu-item">📄 物料清单</div>
+      <div class="menu-item">⬇ 入库管理</div>
+      <div class="menu-item">⚙ 工单发料</div>
+      <div class="menu-item">▣ 工单收料</div>
+      <div class="menu-item">⬆ 出库管理</div>
+      <div class="menu-item active">▤ 物料库存</div>
+      <div class="menu-item">✉ 申报管理</div>
+      <div class="menu-group">系统管理</div>
+      <div class="menu-item">👤 用户管理</div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="navbar">
+      <span class="back">← 返回列表</span>
+      <span class="breadcrumb">保税维修工作台 / 物料库存 / <b>MAT-IC-0021</b></span>
+      <div class="nav-right"><span>🔄 刷新</span><div class="avatar">Ad</div></div>
+    </div>
+    <div class="tagsbar">
+      <span class="tagv">首页</span>
+      <span class="tagv">物料库存</span>
+      <span class="tagv active">MAT-IC-0021 主控芯片</span>
+    </div>
+    <div class="content">
+
+      <!-- 物料基本信息卡 -->
+      <div class="card">
+        <div class="head">
+          <div class="micon">料</div>
+          <div>
+            <div class="htitle">
+              <span class="hcode">MAT-IC-0021</span> 主控芯片
+              <span class="htags">
+                <span class="tag tag-warn"><i></i>4-维修用料件</span>
+                <span class="tag tag-primary"><i></i>保税</span>
+                <span class="tag tag-success"><i></i>备案通过</span>
+                <span class="tag tag-info"><i></i>v1</span>
+              </span>
+            </div>
+            <div class="hmeta">
+              <span>规格型号：<b>V7A-128QFP</b></span>
+              <span>计量单位：<b>个</b></span>
+              <span>HS编码：<b>8542319000</b></span>
+              <span>料件/成品：<b>I-料件</b></span>
+              <span>征免方式：<b>保税维修</b></span>
+              <span>毛/净重：<b>0.05 / 0.04 kg</b></span>
+            </div>
+          </div>
+          <span class="spacer"></span>
+          <button class="btn">⬇ 导出单据清单</button>
+        </div>
+
+        <!-- 库存概况 -->
+        <div class="stats">
+          <div class="stat">
+            <div class="k">当前结存</div>
+            <div class="v main-qty">2,386.500 <span style="font-size:12px;color:var(--br-muted);font-weight:400">个</span></div>
+            <div class="s">截至 2026-11-27 14:22</div>
+          </div>
+          <div class="stat">
+            <div class="k">本月入库（IN）</div>
+            <div class="v plus">+2,400.000</div>
+            <div class="s">入库单 2 张</div>
+          </div>
+          <div class="stat">
+            <div class="k">本月发料（ISSUE）</div>
+            <div class="v minus">-86.500</div>
+            <div class="s">发料单 5 张 · 投入工单 5 个</div>
+          </div>
+          <div class="stat">
+            <div class="k">本月收料（RCV）</div>
+            <div class="v plus">+38.000</div>
+            <div class="s">余料退回 5 张</div>
+          </div>
+          <div class="stat">
+            <div class="k">本月出库（OUT）</div>
+            <div class="v minus">-13.500</div>
+            <div class="s">出库单 1 张</div>
+          </div>
+          <div class="stat">
+            <div class="k">关联来源单据</div>
+            <div class="v">3 <span style="font-size:12px;color:var(--br-muted);font-weight:400">张在途</span></div>
+            <div class="s">入库 PT2026112603 尚有余额</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 单据清单 -->
+      <div class="card">
+        <div class="tabs">
+          <span class="tab active">全部流水 <span class="n">31</span></span>
+          <span class="tab">入库 IN <span class="n">2</span></span>
+          <span class="tab">发料 ISSUE <span class="n">5</span></span>
+          <span class="tab">收料 RCV <span class="n">5</span></span>
+          <span class="tab">出库 OUT <span class="n">1</span></span>
+        </div>
+        <div class="search">
+          <span class="field">单据编号<span class="input"><span class="ph">入库/发料/收料/出库单号</span></span></span>
+          <span class="field">来源单号<span class="input"><span class="ph">请输入来源单号</span></span></span>
+          <span class="field">工单号<span class="input"><span class="ph">请输入工单号</span></span></span>
+          <span class="field">时间范围<span class="input"><span style="min-width:180px">2026-11-01 ~ 2026-11-28</span></span></span>
+          <button class="btn btn-primary">🔍 搜索</button>
+          <button class="btn">↺ 重置</button>
+        </div>
+        <table>
+          <tr>
+            <th>变动时间</th><th>环节</th><th>单据编号</th><th>来源单号</th>
+            <th>工单号</th><th>申报批次</th><th class="num">变动数量</th><th class="num">变动后结存</th><th style="width:70px">操作</th>
+          </tr>
+          <tr>
+            <td>11-27 14:22</td>
+            <td><span class="tag tag-primary"><i></i>入库 IN</span></td>
+            <td><span class="docno">PT2026112603</span></td>
+            <td>—</td><td>—</td><td>—</td>
+            <td class="num qty plus">+1,600.000</td><td class="num">2,386.500</td>
+            <td><span class="op">查看单据</span></td>
+          </tr>
+          <tr>
+            <td>11-26 15:47</td>
+            <td><span class="tag tag-danger"><i></i>出库 OUT</span></td>
+            <td><span class="docno">OUT2026112601</span></td>
+            <td>i / RCV2026110102</td><td>WO2026110012</td><td>B202611-001</td>
+            <td class="num qty minus">-13.500</td><td class="num">786.500</td>
+            <td><span class="op">查看单据</span></td>
+          </tr>
+          <tr>
+            <td>11-26 10:05</td>
+            <td><span class="tag tag-success"><i></i>收料 RCV</span></td>
+            <td><span class="docno">RCV2026110118</span></td>
+            <td>i / RCV2026110118</td><td>WO2026110015</td><td>B202611-001</td>
+            <td class="num qty plus">+8.000</td><td class="num">800.000</td>
+            <td><span class="op">查看单据</span></td>
+          </tr>
+          <tr>
+            <td>11-26 09:48</td>
+            <td><span class="tag tag-warn"><i></i>发料 ISSUE</span></td>
+            <td><span class="docno">IS2026110121</span></td>
+            <td>g / PT2026112603</td><td>WO2026110015</td><td>B202611-001</td>
+            <td class="num qty minus">-21.000</td><td class="num">792.000</td>
+            <td><span class="op">查看单据</span></td>
+          </tr>
+          <tr>
+            <td>11-25 17:30</td>
+            <td><span class="tag tag-success"><i></i>收料 RCV</span></td>
+            <td><span class="docno">RCV2026110111</span></td>
+            <td>i / RCV2026110111</td><td>WO2026110012</td><td>B202611-001</td>
+            <td class="num qty plus">+6.500</td><td class="num">813.000</td>
+            <td><span class="op">查看单据</span></td>
+          </tr>
+          <tr>
+            <td>11-25 14:22</td>
+            <td><span class="tag tag-warn"><i></i>发料 ISSUE</span></td>
+            <td><span class="docno">IS2026110115</span></td>
+            <td>g / PT2026112603</td><td>WO2026110012</td><td>B202611-001</td>
+            <td class="num qty minus">-18.500</td><td class="num">806.500</td>
+            <td><span class="op">查看单据</span></td>
+          </tr>
+          <tr>
+            <td>11-24 11:03</td>
+            <td><span class="tag tag-primary"><i></i>入库 IN</span></td>
+            <td><span class="docno">PT2026112418</span></td>
+            <td>—</td><td>—</td><td>—</td>
+            <td class="num qty plus">+800.000</td><td class="num">825.000</td>
+            <td><span class="op">查看单据</span></td>
+          </tr>
+        </table>
+        <div class="pager">
+          <span>31 条</span><span class="pg">‹</span><span class="pg active">1</span><span class="pg">2</span><span class="pg">3</span><span class="pg">4</span><span class="pg">›</span>
+          <span>前往 <span class="input" style="min-width:52px;height:28px;justify-content:center">1</span> 页</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">效果图 · 物料库存详情（物料档案 + 库存概况 + 四环节单据清单）— docs/design/mockups/stock-material-detail.html</div>
+</body>
+</html>

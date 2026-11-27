@@ -6,10 +6,18 @@
         <id property="id" column="id"/>
         <result property="materialId" column="material_id"/>
         <result property="materialName" column="material_name"/>
+        <result property="materialCd" column="material_cd"/>
+        <result property="isBonded" column="is_bonded"/>
+        <result property="gModel" column="g_model"/>
+        <result property="codeTs" column="code_ts"/>
+        <result property="stockDays" column="stock_days"/>
         <result property="markType" column="mark_type"/>
         <result property="bizType" column="biz_type"/>
         <result property="bizTable" column="biz_table"/>
         <result property="bizId" column="biz_id"/>
+        <result property="bizNo" column="biz_no"/>
+        <result property="goodsSourceType" column="goods_source_type"/>
+        <result property="goodsSourceNo" column="goods_source_no"/>
         <result property="workNo" column="work_no"/>
         <result property="batchNo" column="batch_no"/>
         <result property="qty" column="qty"/>
@@ -18,8 +26,8 @@
     </resultMap>
 
     <insert id="insert" parameterType="BrStockLedger" useGeneratedKeys="true" keyProperty="id">
-        insert into br_stock_ledger (material_id, mark_type, biz_type, biz_table, biz_id, goods_source_type, goods_source_no, work_no, batch_no, qty, balance, create_time)
-        values (#{materialId}, #{markType}, #{bizType}, #{bizTable}, #{bizId}, #{goodsSourceType}, #{goodsSourceNo}, #{workNo}, #{batchNo}, #{qty}, #{balance}, sysdate())
+        insert into br_stock_ledger (material_id, mark_type, biz_type, biz_table, biz_id, biz_no, goods_source_type, goods_source_no, work_no, batch_no, qty, balance, create_time)
+        values (#{materialId}, #{markType}, #{bizType}, #{bizTable}, #{bizId}, #{bizNo}, #{goodsSourceType}, #{goodsSourceNo}, #{workNo}, #{batchNo}, #{qty}, #{balance}, sysdate())
     </insert>
 
     <select id="selectBalance" parameterType="Long" resultType="java.math.BigDecimal">
@@ -32,17 +40,33 @@
     </select>
 
     <select id="selectList" parameterType="BrStockLedger" resultMap="LedgerResult">
-        select l.*, m.material_name from br_stock_ledger l
+        select l.*, m.material_name, m.material_cd, m.is_bonded, m.g_model, m.code_ts,
+               (select round(timestampdiff(hour, min(l2.create_time), now()) / 24, 1)
+                from br_stock_ledger l2 where l2.material_id = l.material_id) as stock_days
+        from br_stock_ledger l
         left join br_material m on m.id = l.material_id
         <where>
             <if test="materialId != null">AND l.material_id = #{materialId}</if>
+            <if test="materialCd != null and materialCd != ''">AND m.material_cd like concat('%', #{materialCd}, '%')</if>
             <if test="materialName != null and materialName != ''">AND m.material_name like concat('%', #{materialName}, '%')</if>
+            <if test="gModel != null and gModel != ''">AND m.g_model like concat('%', #{gModel}, '%')</if>
+            <if test="codeTs != null and codeTs != ''">AND m.code_ts like concat('%', #{codeTs}, '%')</if>
             <if test="markType != null and markType != ''">AND l.mark_type = #{markType}</if>
             <if test="bizType != null and bizType != ''">AND l.biz_type = #{bizType}</if>
+            <if test="bizNo != null and bizNo != ''">AND l.biz_no like concat('%', #{bizNo}, '%')</if>
             <if test="workNo != null and workNo != ''">AND l.work_no = #{workNo}</if>
             <if test="batchNo != null and batchNo != ''">AND l.batch_no = #{batchNo}</if>
+            <if test="beginTime != null">AND l.create_time &gt;= #{beginTime}</if>
+            <if test="endTime != null">AND l.create_time &lt; date_add(#{endTime}, interval 1 day)</if>
         </where>
         order by l.id desc
+    </select>
+
+    <select id="selectByBiz" resultMap="LedgerResult">
+        select l.*, m.material_name, m.material_cd, m.is_bonded, m.g_model, m.code_ts from br_stock_ledger l
+        left join br_material m on m.id = l.material_id
+        where l.biz_table = #{bizTable} and l.biz_id = #{bizId}
+        order by l.id
     </select>
 
     <resultMap type="StockReconcileRow" id="ReconcileResult">

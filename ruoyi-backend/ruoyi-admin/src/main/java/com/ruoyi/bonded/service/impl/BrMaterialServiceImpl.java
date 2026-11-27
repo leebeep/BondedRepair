@@ -79,17 +79,17 @@ public class BrMaterialServiceImpl implements IBrMaterialService
     @Value("${br.masterCuscd}")
     private String masterCuscd;
 
-    /** 货物类型（六类标记）→ 品名后缀（与前端货物类型选项文案一致，如 新能源动力电池模组（无法维修货物）） */
+    /** 货物类型（六类标记）→ 品名后缀（规范 v1.4 / 样例数据口径，如 新能源动力电池模组（无法修复）） */
     public static String markSuffix(String markType)
     {
         switch (markType)
         {
-            case "1": return "（待维修货物）";
-            case "2": return "（已维修货物）";
-            case "3": return "（无法维修货物）";
-            case "4": return "（维修用料件）";
-            case "5": return "（旧件或坏件）";
-            case "6": return "（边角料）";
+            case "1": return "（待修复）";
+            case "2": return "（已修复）";
+            case "3": return "（无法修复）";
+            case "4": return "（维修用保税料件）";
+            case "5": return "（维修替换下的旧件或坏件）";
+            case "6": return "（维修产生的边角料）";
             case "8": return "维修服务费";
             default: return "";
         }

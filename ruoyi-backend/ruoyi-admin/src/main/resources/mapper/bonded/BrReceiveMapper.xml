@@ -7,6 +7,8 @@
         <result property="receiveNo" column="receive_no"/>
         <result property="workOrderId" column="work_order_id"/>
         <result property="workNo" column="work_no"/>
+        <result property="serviceFee" column="service_fee"/>
+        <result property="currency" column="currency"/>
         <result property="receiveTime" column="receive_time"/>
         <result property="docStatus" column="doc_status"/>
         <result property="customsStatus" column="customs_status"/>
@@ -19,7 +21,7 @@
     </resultMap>
 
     <sql id="selectVo">
-        select r.id, r.receive_no, r.work_order_id, w.work_no, r.receive_time, r.doc_status, r.customs_status,
+        select r.id, r.receive_no, r.work_order_id, w.work_no, w.service_fee, w.currency, r.receive_time, r.doc_status, r.customs_status,
                r.execute_type, r.last_uuid, r.remark, r.del_flag, r.create_by, r.create_time
         from br_receive r
         left join br_work_order w on w.id = r.work_order_id
@@ -41,6 +43,12 @@
 
     <select id="selectByReceiveNo" resultMap="ReceiveResult">
         <include refid="selectVo"/> where r.receive_no = #{receiveNo} and r.del_flag = '0'
+    </select>
+
+    <!-- 按前缀查最大收料单号（自动编号流水用，含逻辑删除行避免流水撞号） -->
+    <select id="selectMaxReceiveNoByPrefix" parameterType="String" resultType="String">
+        select max(receive_no) from br_receive
+        where receive_no like concat(#{prefix}, '%')
     </select>
 
     <insert id="insert" parameterType="BrReceive" useGeneratedKeys="true" keyProperty="id">
@@ -72,7 +80,7 @@
     </delete>
 
     <select id="selectItemsByReceiveId" resultType="BrReceiveItem">
-        select t.*, m.material_name from br_receive_item t
+        select t.*, m.material_name, m.material_cd, m.version, m.calc_unit, m.is_bonded, m.g_model, m.mark_type from br_receive_item t
         left join br_material m on m.id = t.material_id
         where t.receive_id = #{receiveId}
     </select>

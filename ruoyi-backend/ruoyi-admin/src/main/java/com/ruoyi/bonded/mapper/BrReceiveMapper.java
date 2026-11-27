@@ -16,6 +16,9 @@ public interface BrReceiveMapper
 
     public BrReceive selectByReceiveNo(@Param("receiveNo") String receiveNo);
 
+    /** 按前缀查最大收料单号（自动编号流水用，含逻辑删除行避免流水撞号） */
+    public String selectMaxReceiveNoByPrefix(@Param("prefix") String prefix);
+
     public int insert(BrReceive receive);
 
     public int update(BrReceive receive);
