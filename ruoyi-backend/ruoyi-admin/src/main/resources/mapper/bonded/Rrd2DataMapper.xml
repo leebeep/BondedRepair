@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.Rrd2DataMapper">
+
+    <insert id="insert" parameterType="Rrd2Data" useGeneratedKeys="true" keyProperty="id">
+        insert into rrd2_data (execute_type, finish_material_num, finish_material_tm, work_no, goods_source_type,
+            goods_source_no, price, material_cd, material_desc, material_version, issue_material_qty, calc_unit, is_bonded, uuid)
+        values (#{executeType}, #{finishMaterialNum}, #{finishMaterialTm}, #{workNo}, #{goodsSourceType},
+            #{goodsSourceNo}, #{price}, #{materialCd}, #{materialDesc}, #{materialVersion}, #{issueMaterialQty}, #{calcUnit}, #{isBonded}, #{uuid})
+    </insert>
+
+    <select id="selectById" parameterType="Long" resultType="Rrd2Data">
+        select * from rrd2_data where id = #{id}
+    </select>
+</mapper>

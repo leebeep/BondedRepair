@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.Pto2DataMapper">
+
+    <insert id="insert" parameterType="Pto2Data" useGeneratedKeys="true" keyProperty="id">
+        insert into pto2_data (execute_type, take_order_cd, rela_ent_nm, material_cd, material_desc, material_version,
+            specifications_models, storage_cnt, price, currency, is_bonded, calc_unit, in_out_time, busi_type,
+            busid_esc, busi_form_num, rela_customs_form_type, rela_customs_form_num, goods_source_type, goods_source_no,
+            brand_type, trade_mode_cd, unit1_num, unit2_num, arriving_country_code, end_country_code, uuid)
+        values (#{executeType}, #{takeOrderCd}, #{relaEntNm}, #{materialCd}, #{materialDesc}, #{materialVersion},
+            #{specificationsModels}, #{storageCnt}, #{price}, #{currency}, #{isBonded}, #{calcUnit}, #{inOutTime}, #{busiType},
+            #{busiDesc}, #{busiFormNum}, #{relaCustomsFormType}, #{relaCustomsFormNum}, #{goodsSourceType}, #{goodsSourceNo},
+            #{brandType}, #{tradeModeCd}, #{unit1Num}, #{unit2Num}, #{arrivingCountryCode}, #{endCountryCode}, #{uuid})
+    </insert>
+
+    <select id="selectById" parameterType="Long" resultType="Pto2Data">
+        select * from pto2_data where id = #{id}
+    </select>
+</mapper>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.Sdo2DataMapper">
+    <insert id="insert" parameterType="Sdo2Data" useGeneratedKeys="true" keyProperty="id">
+        insert into sdo2_data (execute_type, rela_ent_nm, releaseno, material_cd, material_desc, version, specifications_models, delivery_cnt, price, calc_unit, currency, is_bonded, in_out_time, busi_type, busi_desc, busi_form_num, rela_customs_form_type, rela_customs_form_num, calculating_record_no, goods_source_type, goods_source_no, uuid)
+        values (#{executeType}, #{relaEntNm}, #{releaseno}, #{materialCd}, #{materialDesc}, #{version}, #{specificationsModels}, #{deliveryCnt}, #{price}, #{calcUnit}, #{currency}, #{isBonded}, #{inOutTime}, #{busiType}, #{busiDesc}, #{busiFormNum}, #{relaCustomsFormType}, #{relaCustomsFormNum}, #{calculatingRecordNo}, #{goodsSourceType}, #{goodsSourceNo}, #{uuid})
+    </insert>
+    <select id="selectById" parameterType="Long" resultType="Sdo2Data">
+        select * from sdo2_data where id = #{id}
+    </select>
+</mapper>

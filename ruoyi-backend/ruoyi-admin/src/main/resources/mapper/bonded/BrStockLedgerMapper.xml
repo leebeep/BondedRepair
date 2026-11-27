@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.BrStockLedgerMapper">
+
+    <resultMap type="BrStockLedger" id="LedgerResult">
+        <id property="id" column="id"/>
+        <result property="materialId" column="material_id"/>
+        <result property="materialName" column="material_name"/>
+        <result property="markType" column="mark_type"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="bizTable" column="biz_table"/>
+        <result property="bizId" column="biz_id"/>
+        <result property="workNo" column="work_no"/>
+        <result property="batchNo" column="batch_no"/>
+        <result property="qty" column="qty"/>
+        <result property="balance" column="balance"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="BrStockLedger" useGeneratedKeys="true" keyProperty="id">
+        insert into br_stock_ledger (material_id, mark_type, biz_type, biz_table, biz_id, goods_source_type, goods_source_no, work_no, batch_no, qty, balance, create_time)
+        values (#{materialId}, #{markType}, #{bizType}, #{bizTable}, #{bizId}, #{goodsSourceType}, #{goodsSourceNo}, #{workNo}, #{batchNo}, #{qty}, #{balance}, sysdate())
+    </insert>
+
+    <select id="selectBalance" parameterType="Long" resultType="java.math.BigDecimal">
+        select ifnull((select balance from br_stock_ledger where material_id = #{materialId} order by id desc limit 1), 0)
+    </select>
+
+    <select id="selectSourceBalance" resultType="java.math.BigDecimal">
+        select ifnull(sum(qty), 0) from br_stock_ledger
+        where material_id = #{materialId} and goods_source_type = #{goodsSourceType} and goods_source_no = #{goodsSourceNo}
+    </select>
+
+    <select id="selectList" parameterType="BrStockLedger" resultMap="LedgerResult">
+        select l.*, m.material_name from br_stock_ledger l
+        left join br_material m on m.id = l.material_id
+        <where>
+            <if test="materialId != null">AND l.material_id = #{materialId}</if>
+            <if test="materialName != null and materialName != ''">AND m.material_name like concat('%', #{materialName}, '%')</if>
+            <if test="markType != null and markType != ''">AND l.mark_type = #{markType}</if>
+            <if test="bizType != null and bizType != ''">AND l.biz_type = #{bizType}</if>
+            <if test="workNo != null and workNo != ''">AND l.work_no = #{workNo}</if>
+            <if test="batchNo != null and batchNo != ''">AND l.batch_no = #{batchNo}</if>
+        </where>
+        order by l.id desc
+    </select>
+
+    <resultMap type="StockReconcileRow" id="ReconcileResult">
+        <result property="markType" column="mark_type"/>
+        <result property="inQty" column="in_qty"/>
+        <result property="issueQty" column="issue_qty"/>
+        <result property="rcvQty" column="rcv_qty"/>
+        <result property="outQty" column="out_qty"/>
+        <result property="balance" column="balance"/>
+    </resultMap>
+
+    <select id="selectMarkTypeSummary" resultMap="ReconcileResult">
+        select mark_type,
+            sum(case when biz_type = 'IN' then qty else 0 end)    as in_qty,
+            sum(case when biz_type = 'ISSUE' then qty else 0 end) as issue_qty,
+            sum(case when biz_type = 'RCV' then qty else 0 end)   as rcv_qty,
+            sum(case when biz_type = 'OUT' then qty else 0 end)   as out_qty,
+            sum(qty) as balance
+        from br_stock_ledger
+        <where>
+            <if test="batchNo != null and batchNo != ''">AND batch_no = #{batchNo}</if>
+            <if test="workNo != null and workNo != ''">AND work_no = #{workNo}</if>
+        </where>
+        group by mark_type
+    </select>
+</mapper>

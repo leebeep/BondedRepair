@@ -1,0 +1,48 @@
+import request from '@/utils/request'
+
+// 入库单
+export const listInbound = q => request({ url: '/bonded/inbound/list', method: 'get', params: q })
+export const getInbound = id => request({ url: '/bonded/inbound/' + id, method: 'get' })
+export const addInbound = d => request({ url: '/bonded/inbound', method: 'post', data: d })
+export const updInbound = d => request({ url: '/bonded/inbound', method: 'put', data: d })
+export const delInbound = id => request({ url: '/bonded/inbound/' + id, method: 'delete' })
+export const auditInbound = id => request({ url: '/bonded/inbound/audit/' + id, method: 'post' })
+export const declareInbound = (t, ids) => request({ url: `/bonded/inbound/declare/${t}/${ids}`, method: 'post' })
+
+// 工单发料
+export const listIssue = q => request({ url: '/bonded/issue/list', method: 'get', params: q })
+export const getIssue = id => request({ url: '/bonded/issue/' + id, method: 'get' })
+export const addIssue = d => request({ url: '/bonded/issue', method: 'post', data: d })
+export const updIssue = d => request({ url: '/bonded/issue', method: 'put', data: d })
+export const delIssue = id => request({ url: '/bonded/issue/' + id, method: 'delete' })
+export const auditIssue = id => request({ url: '/bonded/issue/audit/' + id, method: 'post' })
+export const declareIssue = (t, ids) => request({ url: `/bonded/issue/declare/${t}/${ids}`, method: 'post' })
+
+// 工单收料
+export const listReceive = q => request({ url: '/bonded/receive/list', method: 'get', params: q })
+export const getReceive = id => request({ url: '/bonded/receive/' + id, method: 'get' })
+export const addReceive = d => request({ url: '/bonded/receive', method: 'post', data: d })
+export const updReceive = d => request({ url: '/bonded/receive', method: 'put', data: d })
+export const delReceive = id => request({ url: '/bonded/receive/' + id, method: 'delete' })
+export const auditReceive = id => request({ url: '/bonded/receive/audit/' + id, method: 'post' })
+export const declareReceive = (t, ids) => request({ url: `/bonded/receive/declare/${t}/${ids}`, method: 'post' })
+
+// 出库单
+export const listOutbound = q => request({ url: '/bonded/outbound/list', method: 'get', params: q })
+export const getOutbound = id => request({ url: '/bonded/outbound/' + id, method: 'get' })
+export const addOutbound = d => request({ url: '/bonded/outbound', method: 'post', data: d })
+export const updOutbound = d => request({ url: '/bonded/outbound', method: 'put', data: d })
+export const delOutbound = id => request({ url: '/bonded/outbound/' + id, method: 'delete' })
+export const auditOutbound = id => request({ url: '/bonded/outbound/audit/' + id, method: 'post' })
+export const declareOutbound = (t, ids) => request({ url: `/bonded/outbound/declare/${t}/${ids}`, method: 'post' })
+
+// 库存台账与对账
+export const listStock = q => request({ url: '/bonded/stock/list', method: 'get', params: q })
+export const reconcileStock = q => request({ url: '/bonded/stock/reconcile', method: 'get', params: q })
+
+// 申报管理
+export const declareBoard = () => request({ url: '/bonded/declare/board', method: 'get' })
+export const listDeclareLog = q => request({ url: '/bonded/declare/log', method: 'get', params: q })
+
+// 首页工作台统计
+export const dashboardStats = () => request({ url: '/bonded/dashboard/stats', method: 'get' })

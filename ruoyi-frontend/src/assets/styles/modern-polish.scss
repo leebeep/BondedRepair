@@ -1,0 +1,140 @@
+/**
+ * 现代化视觉精修（全局 design tokens + 组件触感）
+ * 设计方向：专业蓝（enterprise navy/blue）、克制阴影、统一圆角、轻量过渡
+ */
+
+:root {
+  /* 页面基底 */
+  --br-bg: #f6f8fb;
+  --br-card: #ffffff;
+  --br-border: #e8ecf1;
+  --br-text: #1e293b;
+  --br-muted: #64748b;
+  --br-hover: #f1f5f9;
+
+  /* Element Plus 令牌微调 */
+  --el-border-radius-base: 6px;
+  --el-border-radius-small: 4px;
+  --el-font-size-base: 14px;
+}
+
+html.dark {
+  --br-bg: #101418;
+  --br-card: #1a1f26;
+  --br-border: #2b2f36;
+  --br-text: #e5e7eb;
+  --br-muted: #9ca3af;
+  --br-hover: #232a33;
+}
+
+/* ---------- 页面容器 ---------- */
+.app-container {
+  padding: 16px;
+}
+
+/* ---------- 卡片 ---------- */
+.el-card {
+  --el-card-border-radius: 12px;
+  transition: box-shadow .2s ease;
+}
+
+/* ---------- 表格 ---------- */
+.el-table {
+  --el-table-header-bg-color: var(--br-hover);
+  --el-table-header-text-color: var(--br-muted);
+  --el-table-border-color: var(--br-border);
+
+  th.el-table__cell {
+    font-weight: 600;
+  }
+
+  .el-table__row {
+    transition: background-color .15s ease;
+  }
+}
+
+/* ---------- 按钮 ---------- */
+.el-button {
+  transition: all .2s ease;
+
+  &:not(.is-text):not(.is-link):hover {
+    transform: translateY(-1px);
+  }
+
+  &:not(.is-text):not(.is-link):active {
+    transform: translateY(0) scale(.98);
+  }
+}
+
+/* ---------- 对话框 / 抽屉 ---------- */
+.el-dialog {
+  border-radius: 12px;
+
+  .el-dialog__header {
+    border-bottom: 1px solid var(--br-border);
+    margin-right: 0;
+    padding-bottom: 14px;
+  }
+}
+
+.el-drawer {
+  .el-drawer__header {
+    border-bottom: 1px solid var(--br-border);
+    margin-bottom: 0;
+    padding-bottom: 14px;
+  }
+}
+
+/* ---------- 输入 / 下拉 ---------- */
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  transition: box-shadow .2s ease;
+}
+
+/* ---------- 标签 ---------- */
+.el-tag {
+  border-radius: 4px;
+}
+
+/* ---------- 滚动条 ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(144, 147, 153, .35);
+  border-radius: 4px;
+
+  &:hover {
+    background: rgba(144, 147, 153, .55);
+  }
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- 无障碍：键盘焦点可见 ---------- */
+.el-button:focus-visible,
+.el-link:focus-visible,
+.nav-item:focus-visible,
+.kpi-card:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
+/* ---------- 动效降级 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .el-button,
+  .el-card,
+  .kpi-card {
+    transition: none !important;
+  }
+
+  .el-button:hover,
+  .el-button:active {
+    transform: none !important;
+  }
+}

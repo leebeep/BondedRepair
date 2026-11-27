@@ -1,0 +1,45 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: br-mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: br_root_2026
+      MYSQL_DATABASE: bonded_repair
+      MYSQL_USER: br_dev
+      MYSQL_PASSWORD: br_dev_2026
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --default-time-zone=+08:00
+      - --lower-case-table-names=1
+      - --max-connections=500
+    volumes:
+      - br_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pbr_root_2026"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: br-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    command: redis-server --requirepass br_dev_2026 --appendonly yes
+    volumes:
+      - br_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "br_dev_2026", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  br_mysql_data:
+  br_redis_data:

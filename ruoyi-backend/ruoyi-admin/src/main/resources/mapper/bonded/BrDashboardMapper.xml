@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.BrDashboardMapper">
+
+    <!-- 物料备案按备案状态计数 -->
+    <select id="selectMaterialByStatus" resultType="java.util.HashMap">
+        select ifnull(declare_status, '0') as k, count(*) as cnt
+        from br_material
+        where del_flag = '0'
+        group by ifnull(declare_status, '0')
+    </select>
+
+    <!-- 维修工单按工单状态计数 -->
+    <select id="selectWorkOrderByStatus" resultType="java.util.HashMap">
+        select ifnull(order_status, '01') as k, count(*) as cnt
+        from br_work_order
+        where del_flag = '0'
+        group by ifnull(order_status, '01')
+    </select>
+
+    <!-- 四类单据按单据状态计数 + 今日新增 -->
+    <select id="selectDocByStatus" resultType="java.util.HashMap">
+        select 'IN' as docType, doc_status as k, count(*) as cnt,
+               sum(case when date(create_time) = curdate() then 1 else 0 end) as todayCnt
+        from br_inbound group by doc_status
+        union all
+        select 'OUT' as docType, doc_status as k, count(*) as cnt,
+               sum(case when date(create_time) = curdate() then 1 else 0 end) as todayCnt
+        from br_outbound group by doc_status
+        union all
+        select 'ISSUE' as docType, doc_status as k, count(*) as cnt,
+               sum(case when date(create_time) = curdate() then 1 else 0 end) as todayCnt
+        from br_issue group by doc_status
+        union all
+        select 'RCV' as docType, doc_status as k, count(*) as cnt,
+               sum(case when date(create_time) = curdate() then 1 else 0 end) as todayCnt
+        from br_receive group by doc_status
+    </select>
+
+    <!-- 申报日志按回执状态计数 -->
+    <select id="selectDeclareByStatus" resultType="java.util.HashMap">
+        select ifnull(result_status, 'PENDING') as k, count(*) as cnt
+        from br_declare_log
+        group by ifnull(result_status, 'PENDING')
+    </select>
+
+    <!-- 近 7 日出入库数量趋势 -->
+    <select id="selectTrend7" resultType="java.util.HashMap">
+        select date_format(create_time, '%Y-%m-%d') as d,
+               sum(case when biz_type = 'IN' then qty else 0 end) as inQty,
+               sum(case when biz_type = 'OUT' then abs(qty) else 0 end) as outQty
+        from br_stock_ledger
+        where create_time >= date_sub(curdate(), interval 6 day)
+        group by date_format(create_time, '%Y-%m-%d')
+    </select>
+
+    <!-- 最近申报动态 -->
+    <select id="selectRecentLogs" resultType="java.util.HashMap">
+        select biz_type as bizType, ifnull(result_status, 'PENDING') as resultStatus,
+               msg, date_format(create_time, '%Y-%m-%d %H:%i') as createTime
+        from br_declare_log
+        order by id desc
+        limit #{limit}
+    </select>
+</mapper>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.BrMaterialMapper">
+
+    <resultMap type="BrMaterial" id="BrMaterialResult">
+        <id property="id" column="id"/>
+        <result property="materialCd" column="material_cd"/>
+        <result property="version" column="version"/>
+        <result property="calcUnit" column="calc_unit"/>
+        <result property="materialName" column="material_name"/>
+        <result property="markType" column="mark_type"/>
+        <result property="gType" column="g_type"/>
+        <result property="isBonded" column="is_bonded"/>
+        <result property="codeTs" column="code_ts"/>
+        <result property="gName" column="g_name"/>
+        <result property="gModel" column="g_model"/>
+        <result property="unit1" column="unit1"/>
+        <result property="unit2" column="unit2"/>
+        <result property="dutyMode" column="duty_mode"/>
+        <result property="totalGrossWt" column="total_gross_wt"/>
+        <result property="totalNetWt" column="total_net_wt"/>
+        <result property="declareStatus" column="declare_status"/>
+        <result property="uuid" column="uuid"/>
+        <result property="customsStatus" column="customs_status"/>
+        <result property="executeType" column="execute_type"/>
+        <result property="remark" column="remark"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select id, material_cd, version, calc_unit, material_name, mark_type, g_type, is_bonded, code_ts, g_name,
+               g_model, unit1, unit2, duty_mode, total_gross_wt, total_net_wt, declare_status, uuid,
+               customs_status, execute_type, remark, del_flag, create_by, create_time, update_by, update_time
+        from br_material
+    </sql>
+
+    <select id="selectBrMaterialList" parameterType="BrMaterial" resultMap="BrMaterialResult">
+        <include refid="selectVo"/>
+        where del_flag = '0'
+        <if test="materialCd != null and materialCd != ''">AND material_cd like concat('%', #{materialCd}, '%')</if>
+        <if test="materialName != null and materialName != ''">AND material_name like concat('%', #{materialName}, '%')</if>
+        <if test="markType != null and markType != ''">AND mark_type = #{markType}</if>
+        <if test="gType != null and gType != ''">AND g_type = #{gType}</if>
+        <if test="isBonded != null and isBonded != ''">AND is_bonded = #{isBonded}</if>
+        <if test="declareStatus != null and declareStatus != ''">AND declare_status = #{declareStatus}</if>
+        <if test="customsStatus != null and customsStatus != ''">AND customs_status = #{customsStatus}</if>
+        order by id desc
+    </select>
+
+    <select id="selectBrMaterialById" parameterType="Long" resultMap="BrMaterialResult">
+        <include refid="selectVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectBrMaterialByBizKey" parameterType="BrMaterial" resultMap="BrMaterialResult">
+        <include refid="selectVo"/>
+        where del_flag = '0' and material_cd = #{materialCd} and version = #{version} and calc_unit = #{calcUnit}
+        limit 1
+    </select>
+
+    <insert id="insertBrMaterial" parameterType="BrMaterial" useGeneratedKeys="true" keyProperty="id">
+        insert into br_material (material_cd, version, calc_unit, material_name, mark_type, g_type, is_bonded,
+            code_ts, g_name, g_model, unit1, unit2, duty_mode, total_gross_wt, total_net_wt,
+            declare_status, customs_status, execute_type, remark, create_by, create_time)
+        values (#{materialCd}, #{version}, #{calcUnit}, #{materialName}, #{markType}, #{gType}, #{isBonded},
+            #{codeTs}, #{gName}, #{gModel}, #{unit1}, #{unit2}, #{dutyMode}, #{totalGrossWt}, #{totalNetWt},
+            '0', '00', '1', #{remark}, #{createBy}, sysdate())
+    </insert>
+
+    <update id="updateBrMaterial" parameterType="BrMaterial">
+        update br_material
+        <set>
+            <if test="materialCd != null and materialCd != ''">material_cd = #{materialCd},</if>
+            <if test="version != null and version != ''">version = #{version},</if>
+            <if test="calcUnit != null and calcUnit != ''">calc_unit = #{calcUnit},</if>
+            <if test="materialName != null and materialName != ''">material_name = #{materialName},</if>
+            <if test="markType != null and markType != ''">mark_type = #{markType},</if>
+            <if test="gType != null and gType != ''">g_type = #{gType},</if>
+            <if test="isBonded != null and isBonded != ''">is_bonded = #{isBonded},</if>
+            <if test="codeTs != null">code_ts = #{codeTs},</if>
+            <if test="gName != null">g_name = #{gName},</if>
+            <if test="gModel != null">g_model = #{gModel},</if>
+            <if test="unit1 != null">unit1 = #{unit1},</if>
+            <if test="unit2 != null">unit2 = #{unit2},</if>
+            <if test="dutyMode != null">duty_mode = #{dutyMode},</if>
+            <if test="totalGrossWt != null">total_gross_wt = #{totalGrossWt},</if>
+            <if test="totalNetWt != null">total_net_wt = #{totalNetWt},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="updateDeclareResult">
+        update br_material
+        set uuid = #{uuid}, declare_status = #{declareStatus}, customs_status = #{customsStatus},
+            execute_type = #{executeType}
+        where id = #{id}
+    </update>
+
+    <update id="markCollectTimeout">
+        update br_material m
+        join br_declare_log l on l.biz_table = 'br_material' and l.biz_id = m.id and l.sync_flag = '0'
+        set m.customs_status = '90'
+        where m.customs_status = '10' and l.create_time &lt; date_sub(now(), interval #{hours} hour)
+    </update>
+
+    <delete id="deleteBrMaterialByIds">
+        update br_material set del_flag = '2' where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+</mapper>

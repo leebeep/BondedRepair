@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.BrInboundMapper">
+
+    <resultMap type="BrInbound" id="InboundResult">
+        <id property="id" column="id"/>
+        <result property="inboundNo" column="inbound_no"/>
+        <result property="relaEntNm" column="rela_ent_nm"/>
+        <result property="busiType" column="busi_type"/>
+        <result property="relaCustomsFormType" column="rela_customs_form_type"/>
+        <result property="relaCustomsFormNum" column="rela_customs_form_num"/>
+        <result property="inOutTime" column="in_out_time"/>
+        <result property="docStatus" column="doc_status"/>
+        <result property="customsStatus" column="customs_status"/>
+        <result property="executeType" column="execute_type"/>
+        <result property="lastUuid" column="last_uuid"/>
+        <result property="remark" column="remark"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select id, inbound_no, rela_ent_nm, busi_type, rela_customs_form_type, rela_customs_form_num,
+               in_out_time, doc_status, customs_status, execute_type, last_uuid, remark, del_flag, create_by, create_time
+        from br_inbound
+    </sql>
+
+    <select id="selectList" parameterType="BrInbound" resultMap="InboundResult">
+        <include refid="selectVo"/>
+        where del_flag = '0'
+        <if test="inboundNo != null and inboundNo != ''">AND inbound_no like concat('%', #{inboundNo}, '%')</if>
+        <if test="busiType != null and busiType != ''">AND busi_type = #{busiType}</if>
+        <if test="docStatus != null and docStatus != ''">AND doc_status = #{docStatus}</if>
+        <if test="customsStatus != null and customsStatus != ''">AND customs_status = #{customsStatus}</if>
+        order by id desc
+    </select>
+
+    <select id="selectById" resultMap="InboundResult">
+        <include refid="selectVo"/> where id = #{id}
+    </select>
+
+    <select id="selectByInboundNo" resultMap="InboundResult">
+        <include refid="selectVo"/> where inbound_no = #{inboundNo} and del_flag = '0'
+    </select>
+
+    <insert id="insert" parameterType="BrInbound" useGeneratedKeys="true" keyProperty="id">
+        insert into br_inbound (inbound_no, rela_ent_nm, busi_type, rela_customs_form_type, rela_customs_form_num,
+            in_out_time, doc_status, customs_status, execute_type, remark, create_by, create_time)
+        values (#{inboundNo}, #{relaEntNm}, #{busiType}, #{relaCustomsFormType}, #{relaCustomsFormNum},
+            #{inOutTime}, '01', '00', '1', #{remark}, #{createBy}, sysdate())
+    </insert>
+
+    <update id="update" parameterType="BrInbound">
+        update br_inbound
+        <set>
+            <if test="inboundNo != null and inboundNo != ''">inbound_no = #{inboundNo},</if>
+            <if test="relaEntNm != null">rela_ent_nm = #{relaEntNm},</if>
+            <if test="busiType != null and busiType != ''">busi_type = #{busiType},</if>
+            <if test="relaCustomsFormType != null and relaCustomsFormType != ''">rela_customs_form_type = #{relaCustomsFormType},</if>
+            <if test="relaCustomsFormNum != null">rela_customs_form_num = #{relaCustomsFormNum},</if>
+            <if test="inOutTime != null">in_out_time = #{inOutTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="updateDeclareResult">
+        update br_inbound set last_uuid = #{uuid}, doc_status = #{docStatus},
+            customs_status = #{customsStatus}, execute_type = #{executeType} where id = #{id}
+    </update>
+
+    <delete id="deleteByIds">
+        update br_inbound set del_flag = '2' where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <select id="selectItemsByInboundId" resultType="BrInboundItem">
+        select i.*, m.material_name from br_inbound_item i
+        left join br_material m on m.id = i.material_id
+        where i.inbound_id = #{inboundId}
+    </select>
+
+    <insert id="insertItem" parameterType="BrInboundItem" useGeneratedKeys="true" keyProperty="id">
+        insert into br_inbound_item (inbound_id, material_id, storage_cnt, price, currency, unit1_num, unit2_num,
+            brand_type, trade_mode_cd, arriving_country_code, end_country_code, specifications_models,
+            goods_source_type, goods_source_no, busi_desc, busi_form_num)
+        values (#{inboundId}, #{materialId}, #{storageCnt}, #{price}, #{currency}, #{unit1Num}, #{unit2Num},
+            #{brandType}, #{tradeModeCd}, #{arrivingCountryCode}, #{endCountryCode}, #{specificationsModels},
+            #{goodsSourceType}, #{goodsSourceNo}, #{busiDesc}, #{busiFormNum})
+    </insert>
+
+    <delete id="deleteItemsByInboundId">
+        delete from br_inbound_item where inbound_id = #{inboundId}
+    </delete>
+</mapper>

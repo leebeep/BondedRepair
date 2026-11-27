@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.Epd101DataMapper">
+
+    <resultMap type="Epd101Data" id="Epd101DataResult">
+        <id property="id" column="id"/>
+        <result property="executeType" column="execute_type"/>
+        <result property="dclTypecd" column="dcl_typecd"/>
+        <result property="enterpCd" column="enterp_cd"/>
+        <result property="enterpNm" column="enterp_nm"/>
+        <result property="masterCuscd" column="master_cuscd"/>
+        <result property="intProductNo" column="int_product_no"/>
+        <result property="intProductName" column="int_product_name"/>
+        <result property="version" column="version"/>
+        <result property="gType" column="g_type"/>
+        <result property="codeTs" column="code_ts"/>
+        <result property="gName" column="g_name"/>
+        <result property="gModel" column="g_model"/>
+        <result property="calcUnit" column="calc_unit"/>
+        <result property="unit1" column="unit_1"/>
+        <result property="unit2" column="unit_2"/>
+        <result property="dutyMode" column="duty_mode"/>
+        <result property="totalGrossWt" column="total_gross_wt"/>
+        <result property="totalNetWt" column="total_net_wt"/>
+        <result property="note" column="note"/>
+        <result property="isBonded" column="is_bonded"/>
+        <result property="uuid" column="uuid"/>
+        <result property="resultStatus" column="result_status"/>
+        <result property="msg" column="msg"/>
+        <result property="resultTime" column="result_time"/>
+        <result property="overTime" column="over_time"/>
+    </resultMap>
+
+    <insert id="insertEpd101Data" parameterType="Epd101Data" useGeneratedKeys="true" keyProperty="id">
+        insert into epd101_data (execute_type, dcl_typecd, enterp_cd, enterp_nm, master_cuscd, int_product_no,
+            int_product_name, version, g_type, code_ts, g_name, g_model, calc_unit, unit_1, unit_2,
+            duty_mode, total_gross_wt, total_net_wt, note, is_bonded, uuid)
+        values (#{executeType}, #{dclTypecd}, #{enterpCd}, #{enterpNm}, #{masterCuscd}, #{intProductNo},
+            #{intProductName}, #{version}, #{gType}, #{codeTs}, #{gName}, #{gModel}, #{calcUnit}, #{unit1}, #{unit2},
+            #{dutyMode}, #{totalGrossWt}, #{totalNetWt}, #{note}, #{isBonded}, #{uuid})
+    </insert>
+
+    <select id="selectEpd101DataById" parameterType="Long" resultMap="Epd101DataResult">
+        select * from epd101_data where id = #{id}
+    </select>
+</mapper>

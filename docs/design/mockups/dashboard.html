@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>效果图 1 · 保税维修工作台首页</title>
+<style>
+:root {
+  --br-bg: #f6f8fb; --br-card: #fff; --br-border: #e8ecf1;
+  --br-text: #1e293b; --br-muted: #64748b; --br-hover: #f1f5f9;
+  --primary: #2563eb; --success: #16a34a; --warn: #d97706; --danger: #dc2626;
+  --el-radius-base: 6px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--br-bg); color: var(--br-text); font-size: 14px; }
+
+.layout { display: flex; min-height: 100vh; }
+
+/* ---------- 侧边栏 ---------- */
+.sidebar { width: 200px; background: #1e3a5f; color: #cbd5e1; flex-shrink: 0; display: flex; flex-direction: column; }
+.logo { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 18px; color: #fff; font-weight: 700; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.logo-dot { width: 26px; height: 26px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.menu { padding: 10px; flex: 1; }
+.menu-group { font-size: 11px; color: #64748b; padding: 12px 12px 6px; letter-spacing: 1px; }
+.menu-item { padding: 10px 12px; border-radius: 8px; margin-bottom: 2px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background .2s; }
+.menu-item:hover { background: rgba(255,255,255,.08); }
+.menu-item.active { background: var(--primary); color: #fff; }
+
+/* ---------- 主区 ---------- */
+.main { flex: 1; min-width: 0; }
+.navbar { height: 56px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; padding: 0 20px; gap: 16px; position: sticky; top: 0; z-index: 10; }
+.breadcrumb { color: var(--br-muted); font-size: 13px; }
+.breadcrumb b { color: var(--br-text); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.content { padding: 16px; }
+
+/* ---------- 横幅 ---------- */
+.hero { display: flex; justify-content: space-between; align-items: center; padding: 24px 28px; border-radius: 12px; background: linear-gradient(120deg, #1e3a5f 0%, #2563eb 100%); color: #fff; margin-bottom: 16px; }
+.hero h2 { font-size: 22px; margin-bottom: 6px; }
+.hero p { opacity: .85; font-size: 13px; }
+.hero-brief { display: flex; gap: 36px; }
+.hero-item { text-align: center; }
+.hero-num { font-size: 26px; font-weight: 700; }
+.hero-label { font-size: 12px; opacity: .8; margin-top: 2px; }
+
+/* ---------- KPI ---------- */
+.kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 16px; }
+.kpi-card { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--br-card); border: 1px solid var(--br-border); border-radius: 12px; cursor: pointer; transition: box-shadow .2s, transform .2s; }
+.kpi-card:hover { box-shadow: 0 6px 16px rgba(15,23,42,.1); transform: translateY(-2px); }
+.kpi-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.kpi-num { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.kpi-title { font-size: 13px; margin-top: 2px; }
+.kpi-sub { font-size: 12px; color: var(--br-muted); margin-top: 2px; }
+.tone-blue { background: rgba(37,99,235,.12); color: #2563eb; }
+.tone-cyan { background: rgba(6,182,212,.12); color: #0891b2; }
+.tone-green { background: rgba(22,163,74,.12); color: #16a34a; }
+.tone-orange { background: rgba(245,158,11,.14); color: #d97706; }
+.tone-purple { background: rgba(124,58,237,.12); color: #7c3aed; }
+.tone-red { background: rgba(239,68,68,.12); color: #dc2626; }
+
+/* ---------- 快捷导航 ---------- */
+.panel { background: var(--br-card); border: 1px solid var(--br-border); border-radius: 12px; margin-bottom: 16px; }
+.panel-header { padding: 14px 20px; border-bottom: 1px solid var(--br-border); display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 15px; }
+.panel-body { padding: 16px 20px; }
+.nav-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px; border-radius: 10px; font-size: 13px; cursor: pointer; border: 1px solid transparent; transition: all .2s; }
+.nav-item:hover { background: var(--br-hover); border-color: var(--br-border); }
+.nav-item .ico { font-size: 20px; color: var(--primary); }
+
+.row2 { display: grid; grid-template-columns: 58fr 42fr; gap: 16px; }
+
+/* ---------- 趋势图 ---------- */
+.chart { display: flex; align-items: flex-end; gap: 22px; height: 250px; padding: 10px 10px 0; }
+.chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 190px; }
+.bar { width: 18px; border-radius: 4px 4px 0 0; }
+.bar-in { background: #2563eb; }
+.bar-out { background: #f59e0b; border-radius: 50%/8px; height: 6px; width: 24px; }
+.chart-date { font-size: 12px; color: var(--br-muted); }
+.legend { display: flex; gap: 16px; font-size: 12px; color: var(--br-muted); align-items: center; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+
+/* ---------- 六类账存 ---------- */
+.stock-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 4px; border-bottom: 1px dashed var(--br-border); font-size: 13px; }
+.stock-row:last-child { border-bottom: none; }
+.stock-qty { font-weight: 700; font-variant-numeric: tabular-nums; }
+.alert { color: var(--danger); }
+.tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.tag-danger { color: var(--danger); background: rgba(220,38,38,.1); }
+.tag-success { color: var(--success); background: rgba(22,163,74,.1); }
+.tag-warn { color: var(--warn); background: rgba(217,119,6,.1); }
+.tag-primary { color: var(--primary); background: rgba(37,99,235,.1); }
+.tag-info { color: var(--br-muted); background: var(--br-hover); }
+
+/* ---------- 动态行 ---------- */
+.log-row { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px dashed var(--br-border); font-size: 13px; }
+.log-row:last-child { border-bottom: none; }
+.log-msg { flex: 1; color: var(--br-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-time { color: var(--br-muted); font-size: 12px; }
+.decl-row { display: flex; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px dashed var(--br-border); font-size: 13px; }
+.decl-row:last-child { border-bottom: none; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.decl-num { margin-left: auto; font-weight: 700; }
+.link { color: var(--primary); font-size: 13px; font-weight: 400; cursor: pointer; }
+
+.note { position: fixed; right: 16px; bottom: 16px; background: var(--br-card); border: 1px solid var(--br-border); border-radius: 10px; padding: 10px 16px; font-size: 12px; color: var(--br-muted); box-shadow: 0 6px 16px rgba(15,23,42,.08); }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-dot">保</div>保税维修平台</div>
+    <div class="menu">
+      <div class="menu-group">保税维修工作台</div>
+      <div class="menu-item active">▦ 首页</div>
+      <div class="menu-item">📄 物料备案</div>
+      <div class="menu-item">⬇ 入库管理</div>
+      <div class="menu-item">⚙ 工单发料</div>
+      <div class="menu-item">▣ 工单收料</div>
+      <div class="menu-item">⬆ 出库管理</div>
+      <div class="menu-item">▤ 库存台账</div>
+      <div class="menu-item">✉ 申报管理</div>
+      <div class="menu-group">系统管理</div>
+      <div class="menu-item">👤 用户管理</div>
+      <div class="menu-item">🧩 菜单管理</div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="navbar">
+      <span class="breadcrumb">首页 / <b>工作台</b></span>
+      <div class="nav-right"><span>🔔</span><span>🌐</span><div class="avatar">Ad</div></div>
+    </div>
+    <div class="content">
+
+      <section class="hero">
+        <div><h2>下午好，admin</h2><p>2026 年 11 月 27 日 星期五 · 保税维修综合管理平台</p></div>
+        <div class="hero-brief">
+          <div class="hero-item"><div class="hero-num">7</div><div class="hero-label">进行中工单</div></div>
+          <div class="hero-item"><div class="hero-num">12</div><div class="hero-label">待回执申报</div></div>
+          <div class="hero-item"><div class="hero-num">4</div><div class="hero-label">待办单据</div></div>
+        </div>
+      </section>
+
+      <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-icon tone-blue">📄</div><div><div class="kpi-num">128</div><div class="kpi-title">物料备案</div><div class="kpi-sub">待申报 6 · 通过 104</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon tone-cyan">🎫</div><div><div class="kpi-num">7</div><div class="kpi-title">维修工单</div><div class="kpi-sub">累计 23 单</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon tone-green">⬇</div><div><div class="kpi-num">86</div><div class="kpi-title">入库单</div><div class="kpi-sub">今日 3 · 待审 2</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon tone-orange">⬆</div><div><div class="kpi-num">64</div><div class="kpi-title">出库单</div><div class="kpi-sub">今日 1 · 退单 1</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon tone-purple">✉</div><div><div class="kpi-num">12</div><div class="kpi-title">申报待回执</div><div class="kpi-sub">异常 1</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon tone-red">📈</div><div><div class="kpi-num">3,412</div><div class="kpi-title">在库总量</div><div class="kpi-sub">六类货物合计</div></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">快捷导航</div>
+        <div class="panel-body">
+          <div class="nav-grid">
+            <div class="nav-item"><span class="ico">📄</span>物料备案</div>
+            <div class="nav-item"><span class="ico">⬇</span>入库管理</div>
+            <div class="nav-item"><span class="ico">⚙</span>工单发料</div>
+            <div class="nav-item"><span class="ico">▣</span>工单收料</div>
+            <div class="nav-item"><span class="ico">⬆</span>出库管理</div>
+            <div class="nav-item"><span class="ico">▤</span>库存台账</div>
+            <div class="nav-item"><span class="ico">✉</span>申报管理</div>
+            <div class="nav-item"><span class="ico">👤</span>用户管理</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="panel">
+          <div class="panel-header">近 7 日出入库趋势
+            <div class="legend"><span><i style="background:#2563eb"></i>入库</span><span><i style="background:#f59e0b"></i>出库</span></div>
+          </div>
+          <div class="panel-body">
+            <div class="chart">
+              <div class="chart-col"><div class="bars"><div class="bar bar-in" style="height:90px"></div></div><div class="chart-date">11-21</div></div>
+              <div class="chart-col"><div class="bars"><div class="bar bar-in" style="height:150px"></div></div><div class="chart-date">11-22</div></div>
+              <div class="chart-col"><div class="bars"><div class="bar bar-in" style="height:60px"></div></div><div class="chart-date">11-23</div></div>
+              <div class="chart-col"><div class="bars"><div class="bar bar-in" style="height:170px"></div></div><div class="chart-date">11-24</div></div>
+              <div class="chart-col"><div class="bars"><div class="bar bar-in" style="height:110px"></div></div><div class="chart-date">11-25</div></div>
+              <div class="chart-col"><div class="bars"><div class="bar bar-in" style="height:130px"></div><div class="bar bar-out" style="align-self:center"></div></div><div class="chart-date">11-26</div></div>
+              <div class="chart-col"><div class="bars"><div class="bar bar-in" style="height:80px"></div><div class="bar bar-out" style="align-self:center"></div></div><div class="chart-date">11-27</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">六类货物账存 <span class="tag tag-danger">存在差异账存</span></div>
+          <div class="panel-body">
+            <div class="stock-row"><span>待维修货物</span><span class="stock-qty alert">24</span></div>
+            <div class="stock-row"><span>已维修货物</span><span class="stock-qty">0</span></div>
+            <div class="stock-row"><span>无法维修货物</span><span class="stock-qty alert">-2</span></div>
+            <div class="stock-row"><span>维修用料件</span><span class="stock-qty">1,856</span></div>
+            <div class="stock-row"><span>旧件或坏件</span><span class="stock-qty">0</span></div>
+            <div class="stock-row"><span>边角料</span><span class="stock-qty">0</span></div>
+            <div class="stock-row"><span>维修服务费</span><span class="stock-qty">1,530</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="panel">
+          <div class="panel-header">最近申报动态 <span class="link">查看全部</span></div>
+          <div class="panel-body">
+            <div class="log-row"><span class="tag tag-success">通过</span><span>入库清单</span><span class="log-msg">回执处理成功，2Y 入库成功</span><span class="log-time">11-27 13:42</span></div>
+            <div class="log-row"><span class="tag tag-primary">待回执</span><span>工单发料</span><span class="log-msg">RRD2 报文已发送，等待海关回执</span><span class="log-time">11-27 11:20</span></div>
+            <div class="log-row"><span class="tag tag-danger">退单</span><span>料件成品备案</span><span class="log-msg">HS 编码校验失败：6302600010 规格不符</span><span class="log-time">11-27 09:15</span></div>
+            <div class="log-row"><span class="tag tag-warn">转人工</span><span>出库清单</span><span class="log-msg">单证号关联校验转人工审核</span><span class="log-time">11-26 16:48</span></div>
+            <div class="log-row"><span class="tag tag-success">通过</span><span>工单收料</span><span class="log-msg">MSO2 回执处理成功</span><span class="log-time">11-26 14:02</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">申报回执概览</div>
+          <div class="panel-body">
+            <div class="decl-row"><span class="dot" style="background:#2563eb"></span>待回执<span class="decl-num">12</span></div>
+            <div class="decl-row"><span class="dot" style="background:#16a34a"></span>通过/入库成功<span class="decl-num">342</span></div>
+            <div class="decl-row"><span class="dot" style="background:#f59e0b"></span>转人工审核<span class="decl-num">5</span></div>
+            <div class="decl-row"><span class="dot" style="background:#dc2626"></span>退单/入库失败<span class="decl-num">1</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="note">效果图 1 · 保税维修工作台首页（已实现）— docs/design/mockups/dashboard.html</div>
+</body>
+</html>

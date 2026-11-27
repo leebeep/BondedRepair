@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.BrReceiveMapper">
+
+    <resultMap type="BrReceive" id="ReceiveResult">
+        <id property="id" column="id"/>
+        <result property="receiveNo" column="receive_no"/>
+        <result property="workOrderId" column="work_order_id"/>
+        <result property="workNo" column="work_no"/>
+        <result property="receiveTime" column="receive_time"/>
+        <result property="docStatus" column="doc_status"/>
+        <result property="customsStatus" column="customs_status"/>
+        <result property="executeType" column="execute_type"/>
+        <result property="lastUuid" column="last_uuid"/>
+        <result property="remark" column="remark"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select r.id, r.receive_no, r.work_order_id, w.work_no, r.receive_time, r.doc_status, r.customs_status,
+               r.execute_type, r.last_uuid, r.remark, r.del_flag, r.create_by, r.create_time
+        from br_receive r
+        left join br_work_order w on w.id = r.work_order_id
+    </sql>
+
+    <select id="selectList" parameterType="BrReceive" resultMap="ReceiveResult">
+        <include refid="selectVo"/>
+        where r.del_flag = '0'
+        <if test="receiveNo != null and receiveNo != ''">AND r.receive_no like concat('%', #{receiveNo}, '%')</if>
+        <if test="workNo != null and workNo != ''">AND w.work_no like concat('%', #{workNo}, '%')</if>
+        <if test="docStatus != null and docStatus != ''">AND r.doc_status = #{docStatus}</if>
+        <if test="customsStatus != null and customsStatus != ''">AND r.customs_status = #{customsStatus}</if>
+        order by r.id desc
+    </select>
+
+    <select id="selectById" resultMap="ReceiveResult">
+        <include refid="selectVo"/> where r.id = #{id}
+    </select>
+
+    <select id="selectByReceiveNo" resultMap="ReceiveResult">
+        <include refid="selectVo"/> where r.receive_no = #{receiveNo} and r.del_flag = '0'
+    </select>
+
+    <insert id="insert" parameterType="BrReceive" useGeneratedKeys="true" keyProperty="id">
+        insert into br_receive (receive_no, work_order_id, receive_time, doc_status, customs_status, execute_type, remark, create_by, create_time)
+        values (#{receiveNo}, #{workOrderId}, #{receiveTime}, '01', '00', '1', #{remark}, #{createBy}, sysdate())
+    </insert>
+
+    <update id="update" parameterType="BrReceive">
+        update br_receive
+        <set>
+            <if test="receiveNo != null and receiveNo != ''">receive_no = #{receiveNo},</if>
+            <if test="workOrderId != null">work_order_id = #{workOrderId},</if>
+            <if test="receiveTime != null">receive_time = #{receiveTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="updateDeclareResult">
+        update br_receive set last_uuid = #{uuid}, doc_status = #{docStatus},
+            customs_status = #{customsStatus}, execute_type = #{executeType} where id = #{id}
+    </update>
+
+    <delete id="deleteByIds">
+        update br_receive set del_flag = '2' where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <select id="selectItemsByReceiveId" resultType="BrReceiveItem">
+        select t.*, m.material_name from br_receive_item t
+        left join br_material m on m.id = t.material_id
+        where t.receive_id = #{receiveId}
+    </select>
+
+    <insert id="insertItem" parameterType="BrReceiveItem" useGeneratedKeys="true" keyProperty="id">
+        insert into br_receive_item (receive_id, material_id, material_num, return_type)
+        values (#{receiveId}, #{materialId}, #{materialNum}, #{returnType})
+    </insert>
+
+    <delete id="deleteItemsByReceiveId">
+        delete from br_receive_item where receive_id = #{receiveId}
+    </delete>
+</mapper>

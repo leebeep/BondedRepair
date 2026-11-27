@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.BrIssueMapper">
+
+    <resultMap type="BrIssue" id="IssueResult">
+        <id property="id" column="id"/>
+        <result property="issueNo" column="issue_no"/>
+        <result property="workOrderId" column="work_order_id"/>
+        <result property="workNo" column="work_no"/>
+        <result property="issueTime" column="issue_time"/>
+        <result property="docStatus" column="doc_status"/>
+        <result property="customsStatus" column="customs_status"/>
+        <result property="executeType" column="execute_type"/>
+        <result property="lastUuid" column="last_uuid"/>
+        <result property="remark" column="remark"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select i.id, i.issue_no, i.work_order_id, w.work_no, i.issue_time, i.doc_status, i.customs_status,
+               i.execute_type, i.last_uuid, i.remark, i.del_flag, i.create_by, i.create_time
+        from br_issue i
+        left join br_work_order w on w.id = i.work_order_id
+    </sql>
+
+    <select id="selectList" parameterType="BrIssue" resultMap="IssueResult">
+        <include refid="selectVo"/>
+        where i.del_flag = '0'
+        <if test="issueNo != null and issueNo != ''">AND i.issue_no like concat('%', #{issueNo}, '%')</if>
+        <if test="workNo != null and workNo != ''">AND w.work_no like concat('%', #{workNo}, '%')</if>
+        <if test="docStatus != null and docStatus != ''">AND i.doc_status = #{docStatus}</if>
+        <if test="customsStatus != null and customsStatus != ''">AND i.customs_status = #{customsStatus}</if>
+        order by i.id desc
+    </select>
+
+    <select id="selectById" resultMap="IssueResult">
+        <include refid="selectVo"/> where i.id = #{id}
+    </select>
+
+    <select id="selectByIssueNo" resultMap="IssueResult">
+        <include refid="selectVo"/> where i.issue_no = #{issueNo} and i.del_flag = '0'
+    </select>
+
+    <insert id="insert" parameterType="BrIssue" useGeneratedKeys="true" keyProperty="id">
+        insert into br_issue (issue_no, work_order_id, issue_time, doc_status, customs_status, execute_type, remark, create_by, create_time)
+        values (#{issueNo}, #{workOrderId}, #{issueTime}, '01', '00', '1', #{remark}, #{createBy}, sysdate())
+    </insert>
+
+    <update id="update" parameterType="BrIssue">
+        update br_issue
+        <set>
+            <if test="issueNo != null and issueNo != ''">issue_no = #{issueNo},</if>
+            <if test="workOrderId != null">work_order_id = #{workOrderId},</if>
+            <if test="issueTime != null">issue_time = #{issueTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="updateDeclareResult">
+        update br_issue set last_uuid = #{uuid}, doc_status = #{docStatus},
+            customs_status = #{customsStatus}, execute_type = #{executeType} where id = #{id}
+    </update>
+
+    <delete id="deleteByIds">
+        update br_issue set del_flag = '2' where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <select id="selectItemsByIssueId" resultType="BrIssueItem">
+        select t.*, m.material_name from br_issue_item t
+        left join br_material m on m.id = t.material_id
+        where t.issue_id = #{issueId}
+    </select>
+
+    <insert id="insertItem" parameterType="BrIssueItem" useGeneratedKeys="true" keyProperty="id">
+        insert into br_issue_item (issue_id, material_id, goods_source_type, goods_source_no, issue_qty, price)
+        values (#{issueId}, #{materialId}, #{goodsSourceType}, #{goodsSourceNo}, #{issueQty}, #{price})
+    </insert>
+
+    <delete id="deleteItemsByIssueId">
+        delete from br_issue_item where issue_id = #{issueId}
+    </delete>
+</mapper>

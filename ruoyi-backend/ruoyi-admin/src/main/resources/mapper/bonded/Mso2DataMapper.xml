@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.Mso2DataMapper">
+
+    <insert id="insert" parameterType="Mso2Data" useGeneratedKeys="true" keyProperty="id">
+        insert into mso2_data (execute_type, return_material_no, return_time, work_no, material_cd, material_desc,
+            material_version, material_num, calc_unit, is_bonded, return_type, uuid)
+        values (#{executeType}, #{returnMaterialNo}, #{returnTime}, #{workNo}, #{materialCd}, #{materialDesc},
+            #{materialVersion}, #{materialNum}, #{calcUnit}, #{isBonded}, #{returnType}, #{uuid})
+    </insert>
+
+    <select id="selectById" parameterType="Long" resultType="Mso2Data">
+        select * from mso2_data where id = #{id}
+    </select>
+</mapper>

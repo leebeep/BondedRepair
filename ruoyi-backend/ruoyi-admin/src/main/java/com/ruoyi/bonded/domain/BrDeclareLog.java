@@ -1,0 +1,52 @@
+package com.ruoyi.bonded.domain;
+
+import java.util.Date;
+
+/**
+ * 申报日志 br_declare_log（业务单据 ↔ 镜像表行映射）
+ */
+public class BrDeclareLog
+{
+    private Long id;
+    /** EPD101/PTO2/RRD2/MSO2/SDO2 */
+    private String bizType;
+    private String bizTable;
+    private Long bizId;
+    private String mirrorTable;
+    private Long mirrorRowId;
+    private String executeType;
+    private String uuid;
+    private String resultStatus;
+    private String msg;
+    private Date resultTime;
+    /** 0-已写镜像待回执 1-已回执 */
+    private String syncFlag;
+    private Date createTime;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getBizType() { return bizType; }
+    public void setBizType(String bizType) { this.bizType = bizType; }
+    public String getBizTable() { return bizTable; }
+    public void setBizTable(String bizTable) { this.bizTable = bizTable; }
+    public Long getBizId() { return bizId; }
+    public void setBizId(Long bizId) { this.bizId = bizId; }
+    public String getMirrorTable() { return mirrorTable; }
+    public void setMirrorTable(String mirrorTable) { this.mirrorTable = mirrorTable; }
+    public Long getMirrorRowId() { return mirrorRowId; }
+    public void setMirrorRowId(Long mirrorRowId) { this.mirrorRowId = mirrorRowId; }
+    public String getExecuteType() { return executeType; }
+    public void setExecuteType(String executeType) { this.executeType = executeType; }
+    public String getUuid() { return uuid; }
+    public void setUuid(String uuid) { this.uuid = uuid; }
+    public String getResultStatus() { return resultStatus; }
+    public void setResultStatus(String resultStatus) { this.resultStatus = resultStatus; }
+    public String getMsg() { return msg; }
+    public void setMsg(String msg) { this.msg = msg; }
+    public Date getResultTime() { return resultTime; }
+    public void setResultTime(Date resultTime) { this.resultTime = resultTime; }
+    public String getSyncFlag() { return syncFlag; }
+    public void setSyncFlag(String syncFlag) { this.syncFlag = syncFlag; }
+    public Date getCreateTime() { return createTime; }
+    public void setCreateTime(Date createTime) { this.createTime = createTime; }
+}

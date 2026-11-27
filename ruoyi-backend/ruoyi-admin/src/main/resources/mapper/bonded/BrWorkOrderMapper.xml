@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.BrWorkOrderMapper">
+
+    <resultMap type="BrWorkOrder" id="WorkOrderResult">
+        <id property="id" column="id"/>
+        <result property="workNo" column="work_no"/>
+        <result property="batchNo" column="batch_no"/>
+        <result property="serviceFee" column="service_fee"/>
+        <result property="currency" column="currency"/>
+        <result property="verifyCycle" column="verify_cycle"/>
+        <result property="orderStatus" column="order_status"/>
+        <result property="finishDate" column="finish_date"/>
+        <result property="remark" column="remark"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select w.id, w.work_no, w.batch_no, w.service_fee, w.currency,
+               w.verify_cycle, w.order_status, w.finish_date, w.remark, w.del_flag, w.create_by, w.create_time
+        from br_work_order w
+    </sql>
+
+    <select id="selectList" parameterType="BrWorkOrder" resultMap="WorkOrderResult">
+        <include refid="selectVo"/>
+        where w.del_flag = '0'
+        <if test="workNo != null and workNo != ''">AND w.work_no like concat('%', #{workNo}, '%')</if>
+        <if test="batchNo != null and batchNo != ''">AND w.batch_no like concat('%', #{batchNo}, '%')</if>
+        <if test="orderStatus != null and orderStatus != ''">AND w.order_status = #{orderStatus}</if>
+        order by w.id desc
+    </select>
+
+    <select id="selectById" resultMap="WorkOrderResult">
+        <include refid="selectVo"/>
+        where w.id = #{id}
+    </select>
+
+    <select id="selectByWorkNo" resultMap="WorkOrderResult">
+        <include refid="selectVo"/>
+        where w.work_no = #{workNo} and w.del_flag = '0'
+    </select>
+
+    <insert id="insert" parameterType="BrWorkOrder" useGeneratedKeys="true" keyProperty="id">
+        insert into br_work_order (work_no, batch_no, service_fee, currency, verify_cycle,
+            order_status, finish_date, remark, create_by, create_time)
+        values (#{workNo}, #{batchNo}, #{serviceFee}, #{currency}, #{verifyCycle},
+            '01', #{finishDate}, #{remark}, #{createBy}, sysdate())
+    </insert>
+
+    <update id="update" parameterType="BrWorkOrder">
+        update br_work_order
+        <set>
+            <if test="workNo != null and workNo != ''">work_no = #{workNo},</if>
+            <if test="batchNo != null">batch_no = #{batchNo},</if>
+            <if test="serviceFee != null">service_fee = #{serviceFee},</if>
+            <if test="currency != null">currency = #{currency},</if>
+            <if test="verifyCycle != null">verify_cycle = #{verifyCycle},</if>
+            <if test="orderStatus != null and orderStatus != ''">order_status = #{orderStatus},</if>
+            <if test="finishDate != null">finish_date = #{finishDate},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="updateOrderStatus">
+        update br_work_order set order_status = #{orderStatus} where id = #{id}
+    </update>
+
+    <delete id="deleteByIds">
+        update br_work_order set del_flag = '2' where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <select id="selectItemsByWorkOrderId" resultType="BrWorkOrderItem">
+        select i.id, i.work_order_id, i.material_id, m.material_name, i.plan_qty
+        from br_work_order_item i
+        left join br_material m on m.id = i.material_id
+        where i.work_order_id = #{workOrderId}
+    </select>
+
+    <insert id="insertItem" parameterType="BrWorkOrderItem" useGeneratedKeys="true" keyProperty="id">
+        insert into br_work_order_item (work_order_id, material_id, plan_qty)
+        values (#{workOrderId}, #{materialId}, #{planQty})
+    </insert>
+
+    <delete id="deleteItemsByWorkOrderId">
+        delete from br_work_order_item where work_order_id = #{workOrderId}
+    </delete>
+
+    <select id="sumIssuedRepairQty" parameterType="String" resultType="java.math.BigDecimal">
+        select ifnull(sum(i.issue_qty), 0)
+        from br_issue_item i
+        join br_issue h on h.id = i.issue_id and h.del_flag = '0'
+        join br_work_order w on w.id = h.work_order_id
+        join br_material m on m.id = i.material_id
+        where w.work_no = #{workNo} and m.mark_type = '1'
+    </select>
+
+    <select id="sumReceivedRepairQty" parameterType="String" resultType="java.math.BigDecimal">
+        select ifnull(sum(t.material_num), 0)
+        from br_receive_item t
+        join br_receive h on h.id = t.receive_id and h.del_flag = '0'
+        join br_work_order w on w.id = h.work_order_id
+        where w.work_no = #{workNo} and t.return_type in ('5', 'a')
+    </select>
+</mapper>

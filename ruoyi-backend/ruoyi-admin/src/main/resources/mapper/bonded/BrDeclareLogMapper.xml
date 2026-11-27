@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bonded.mapper.BrDeclareLogMapper">
+
+    <resultMap type="BrDeclareLog" id="BrDeclareLogResult">
+        <id property="id" column="id"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="bizTable" column="biz_table"/>
+        <result property="bizId" column="biz_id"/>
+        <result property="mirrorTable" column="mirror_table"/>
+        <result property="mirrorRowId" column="mirror_row_id"/>
+        <result property="executeType" column="execute_type"/>
+        <result property="uuid" column="uuid"/>
+        <result property="resultStatus" column="result_status"/>
+        <result property="msg" column="msg"/>
+        <result property="resultTime" column="result_time"/>
+        <result property="syncFlag" column="sync_flag"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <insert id="insertBrDeclareLog" parameterType="BrDeclareLog" useGeneratedKeys="true" keyProperty="id">
+        insert into br_declare_log (biz_type, biz_table, biz_id, mirror_table, mirror_row_id,
+            execute_type, uuid, sync_flag, create_time)
+        values (#{bizType}, #{bizTable}, #{bizId}, #{mirrorTable}, #{mirrorRowId},
+            #{executeType}, #{uuid}, '0', sysdate())
+    </insert>
+
+    <select id="selectPendingLogs" parameterType="int" resultMap="BrDeclareLogResult">
+        select * from br_declare_log where sync_flag = '0' order by id limit #{limit}
+    </select>
+
+    <update id="updateReceipt" parameterType="BrDeclareLog">
+        update br_declare_log
+        set uuid = #{uuid}, result_status = #{resultStatus}, msg = #{msg}, result_time = #{resultTime},
+            sync_flag = '1'
+        where id = #{id}
+    </update>
+
+    <select id="selectLogList" parameterType="BrDeclareLog" resultMap="BrDeclareLogResult">
+        select * from br_declare_log
+        <where>
+            <if test="bizType != null and bizType != ''">AND biz_type = #{bizType}</if>
+            <if test="bizTable != null and bizTable != ''">AND biz_table = #{bizTable}</if>
+            <if test="bizId != null">AND biz_id = #{bizId}</if>
+            <if test="resultStatus != null and resultStatus != ''">AND result_status = #{resultStatus}</if>
+            <if test="syncFlag != null and syncFlag != ''">AND sync_flag = #{syncFlag}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectBoard" resultType="java.util.HashMap">
+        select biz_type as bizType, ifnull(result_status, 'PENDING') as resultStatus, count(*) as cnt
+        from br_declare_log
+        group by biz_type, ifnull(result_status, 'PENDING')
+    </select>
+</mapper>

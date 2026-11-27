@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>效果图 2 · 列表页统一骨架（入库管理）</title>
+<style>
+:root {
+  --br-bg: #f6f8fb; --br-card: #fff; --br-border: #e8ecf1;
+  --br-text: #1e293b; --br-muted: #64748b; --br-hover: #f1f5f9;
+  --primary: #2563eb; --success: #16a34a; --warn: #d97706; --danger: #dc2626;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--br-bg); color: var(--br-text); font-size: 14px; }
+.layout { display: flex; min-height: 100vh; }
+
+/* 侧边栏（同首页效果图） */
+.sidebar { width: 200px; background: #1e3a5f; color: #cbd5e1; flex-shrink: 0; }
+.logo { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 18px; color: #fff; font-weight: 700; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.logo-dot { width: 26px; height: 26px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.menu { padding: 10px; }
+.menu-group { font-size: 11px; color: #64748b; padding: 12px 12px 6px; letter-spacing: 1px; }
+.menu-item { padding: 10px 12px; border-radius: 8px; margin-bottom: 2px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.menu-item.active { background: var(--primary); color: #fff; }
+
+.main { flex: 1; min-width: 0; }
+.navbar { height: 56px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; padding: 0 20px; position: sticky; top: 0; z-index: 10; }
+.breadcrumb { color: var(--br-muted); font-size: 13px; }
+.breadcrumb b { color: var(--br-text); }
+.nav-right { margin-left: auto; display: flex; gap: 14px; color: var(--br-muted); font-size: 13px; align-items: center; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+.content { padding: 16px; }
+.card { background: var(--br-card); border: 1px solid var(--br-border); border-radius: 12px; margin-bottom: 16px; }
+
+/* ---------- 搜索区 ---------- */
+.search { padding: 16px 20px 4px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--br-muted); }
+.input { min-width: 160px; height: 32px; border: 1px solid #dcdfe6; border-radius: 6px; padding: 0 10px; font-size: 13px; color: var(--br-text); background: #fff; display: inline-flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.input .ph { color: #a8abb2; }
+.input .arrow { color: #a8abb2; font-size: 11px; }
+.btn { height: 32px; padding: 0 15px; border-radius: 6px; border: 1px solid #dcdfe6; background: #fff; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .2s; color: var(--br-text); }
+.btn:hover { color: var(--primary); border-color: rgba(37,99,235,.4); background: rgba(37,99,235,.05); transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(.98); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-primary:hover { color: #fff; background: #1d4fd8; }
+.search-footer { padding: 12px 20px 16px; font-size: 12px; color: var(--primary); }
+
+/* ---------- 工具行 ---------- */
+.toolbar { padding: 14px 20px; border-bottom: 1px solid var(--br-border); display: flex; align-items: center; gap: 10px; }
+.toolbar .title { font-size: 15px; font-weight: 600; margin-right: 8px; }
+.count { font-size: 12px; color: var(--br-muted); background: var(--br-hover); padding: 2px 8px; border-radius: 10px; }
+.toolbar .spacer { flex: 1; }
+
+/* ---------- 表格 ---------- */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--br-hover); color: var(--br-muted); font-weight: 600; text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--br-border); white-space: nowrap; }
+td { padding: 12px 16px; border-bottom: 1px solid var(--br-border); white-space: nowrap; }
+tr:hover td { background: rgba(37,99,235,.03); }
+tr:last-child td { border-bottom: none; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+th.num { text-align: right; }
+.tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.tag i { width: 6px; height: 6px; border-radius: 50%; }
+.tag-danger { color: var(--danger); background: rgba(220,38,38,.08); } .tag-danger i { background: var(--danger); }
+.tag-success { color: var(--success); background: rgba(22,163,74,.08); } .tag-success i { background: var(--success); }
+.tag-warn { color: var(--warn); background: rgba(217,119,6,.08); } .tag-warn i { background: var(--warn); }
+.tag-info { color: var(--br-muted); background: var(--br-hover); } .tag-info i { background: var(--br-muted); }
+.tag-primary { color: var(--primary); background: rgba(37,99,235,.08); } .tag-primary i { background: var(--primary); }
+.op { color: var(--primary); cursor: pointer; font-size: 13px; margin-right: 10px; }
+.op.danger { color: var(--danger); }
+
+/* ---------- 分页 ---------- */
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 14px 20px; font-size: 13px; color: var(--br-muted); }
+.pg { min-width: 30px; height: 30px; border: 1px solid var(--br-border); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; background: #fff; cursor: pointer; }
+.pg.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ---------- Drawer 提示 ---------- */
+.drawer { position: fixed; right: 0; top: 0; height: 100vh; width: 420px; background: #fff; border-left: 1px solid var(--br-border); box-shadow: -8px 0 24px rgba(15,23,42,.08); display: flex; flex-direction: column; z-index: 20; }
+.drawer-head { padding: 16px 20px; border-bottom: 1px solid var(--br-border); display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+.drawer-body { padding: 16px 20px; flex: 1; }
+.dl { display: flex; padding: 8px 0; font-size: 13px; }
+.dl .k { width: 110px; color: var(--br-muted); flex-shrink: 0; }
+.drawer-foot { padding: 14px 20px; border-top: 1px solid var(--br-border); display: flex; gap: 10px; justify-content: flex-end; }
+.mask { position: fixed; inset: 0; background: rgba(15,23,42,.3); z-index: 15; }
+
+.note { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; background: var(--br-card); border: 1px solid var(--br-border); border-radius: 10px; padding: 10px 16px; font-size: 12px; color: var(--br-muted); box-shadow: 0 6px 16px rgba(15,23,42,.08); z-index: 30; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-dot">保</div>保税维修平台</div>
+    <div class="menu">
+      <div class="menu-group">保税维修工作台</div>
+      <div class="menu-item">▦ 首页</div>
+      <div class="menu-item">📄 物料备案</div>
+      <div class="menu-item active">⬇ 入库管理</div>
+      <div class="menu-item">⚙ 工单发料</div>
+      <div class="menu-item">▣ 工单收料</div>
+      <div class="menu-item">⬆ 出库管理</div>
+      <div class="menu-item">▤ 库存台账</div>
+      <div class="menu-item">✉ 申报管理</div>
+      <div class="menu-group">系统管理</div>
+      <div class="menu-item">👤 用户管理</div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="navbar">
+      <span class="breadcrumb">保税维修工作台 / <b>入库管理</b></span>
+      <div class="nav-right"><span>🔄 刷新</span><span>🔍</span><div class="avatar">Ad</div></div>
+    </div>
+    <div class="content">
+
+      <!-- 统一搜索卡片 -->
+      <div class="card">
+        <div class="search">
+          <span class="field">入库单号<span class="input"><span class="ph">请输入入库单号</span></span></span>
+          <span class="field">业务类型<span class="input"><span>04-待维修货物</span><span class="arrow">▼</span></span></span>
+          <span class="field">单据状态<span class="input"><span>03-审核通过</span><span class="arrow">▼</span></span></span>
+          <button class="btn btn-primary">🔍 搜索</button>
+          <button class="btn">↺ 重置</button>
+        </div>
+        <div class="search-footer">展开更多筛选（关联企业、入库时间范围、关区）▲</div>
+      </div>
+
+      <!-- 表格卡片 -->
+      <div class="card">
+        <div class="toolbar">
+          <span class="title">入库单</span><span class="count">共 86 条</span>
+          <span class="spacer"></span>
+          <button class="btn btn-primary">＋ 新增</button>
+          <button class="btn">⬇ 导出</button>
+          <button class="btn">⚙ 列设置</button>
+        </div>
+        <table>
+          <tr>
+            <th style="width:36px"><input type="checkbox"></th>
+            <th>入库单号</th><th>关联企业</th><th>业务类型</th><th>入库时间</th>
+            <th>单据状态</th><th>海关状态</th><th class="num">入库数量</th><th style="width:170px">操作</th>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>PT2026112701</td><td>苏州华芯电子有限公司</td><td>04-待维修货物</td><td>11-27 10:32</td>
+            <td><span class="tag tag-info"><i></i>01-草稿</span></td><td><span class="tag tag-info"><i></i>未申报</span></td><td class="num">120.00</td>
+            <td><span class="op">详情</span><span class="op">编辑</span><span class="op">提交审核</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>PT2026112608</td><td>宁波精密器件有限公司</td><td>04-待维修货物</td><td>11-26 15:10</td>
+            <td><span class="tag tag-warn"><i></i>02-待审核</span></td><td><span class="tag tag-info"><i></i>未申报</span></td><td class="num">56.00</td>
+            <td><span class="op">详情</span><span class="op">审核</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>PT2026112603</td><td>深圳创联科技有限公司</td><td>05-维修用料</td><td>11-26 09:48</td>
+            <td><span class="tag tag-primary"><i></i>03-审核通过</span></td><td><span class="tag tag-info"><i></i>未申报</span></td><td class="num">2,400.00</td>
+            <td><span class="op">详情</span><span class="op">申报</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>PT2026112512</td><td>苏州华芯电子有限公司</td><td>05-维修用料</td><td>11-25 14:22</td>
+            <td><span class="tag tag-success"><i></i>05-申报通过</span></td><td><span class="tag tag-success"><i></i>22-通过</span></td><td class="num">86.50</td>
+            <td><span class="op">详情</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>PT2026112506</td><td>东莞恒达五金制品厂</td><td>04-待维修货物</td><td>11-25 08:15</td>
+            <td><span class="tag tag-danger"><i></i>06-退单</span></td><td><span class="tag tag-danger"><i></i>2N-入库失败</span></td><td class="num">310.00</td>
+            <td><span class="op">详情</span><span class="op">查看回执</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>PT2026112418</td><td>杭州瑞泰仪器有限公司</td><td>05-维修用料</td><td>11-24 17:40</td>
+            <td><span class="tag tag-success"><i></i>05-申报通过</span></td><td><span class="tag tag-success"><i></i>22-通过</span></td><td class="num">1,005.00</td>
+            <td><span class="op">详情</span></td>
+          </tr>
+        </table>
+        <div class="pager">
+          <span>86 条</span><span class="pg">‹</span><span class="pg active">1</span><span class="pg">2</span><span class="pg">3</span><span class="pg">›</span>
+          <span>前往 <span class="input" style="min-width:52px;height:28px;justify-content:center">1</span> 页</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer 详情示意（替代全屏详情页） -->
+<div class="mask"></div>
+<div class="drawer">
+  <div class="drawer-head">入库单详情 · PT2026112603 <span style="color:var(--br-muted)">✕</span></div>
+  <div class="drawer-body">
+    <div class="dl"><span class="k">入库单号</span>PT2026112603</div>
+    <div class="dl"><span class="k">关联企业</span>深圳创联科技有限公司</div>
+    <div class="dl"><span class="k">业务类型</span>05-维修用料</div>
+    <div class="dl"><span class="k">入库时间</span>2026-11-26 09:48</div>
+    <div class="dl"><span class="k">单据状态</span><span class="tag tag-primary"><i></i>03-审核通过</span></div>
+    <div class="dl"><span class="k">海关状态</span><span class="tag tag-info"><i></i>00-未申报</span></div>
+    <div class="dl"><span class="k">预录入编号</span>—</div>
+    <div style="margin-top:14px;font-weight:600;font-size:14px">物料明细（2）</div>
+    <table style="margin-top:8px;font-size:12px">
+      <tr><th>物料</th><th>六类标记</th><th class="num">数量</th></tr>
+      <tr><td>不锈钢结构件 304</td><td>4-维修用料</td><td class="num">1,600.00</td></tr>
+      <tr><td>精密螺丝 M2×5</td><td>4-维修用料</td><td class="num">800.00</td></tr>
+    </table>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn">打印</button>
+    <button class="btn btn-primary">提交申报</button>
+  </div>
+</div>
+
+<div class="note">效果图 2 · 列表页统一骨架（搜索卡片 + 表格卡片 + Drawer 详情）— docs/design/mockups/list.html</div>
+</body>
+</html>
