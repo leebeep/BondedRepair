@@ -1,13 +1,5 @@
--- M2 菜单与权限：维修工单/入库管理/工单发料/工单收料/库存台账
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
-VALUES ('维修工单', 2000, 2, 'workorder', 'bonded/workorder/index', '', '', 1, 0, 'C', '0', '0', 'bonded:wo:list', 'documentation', 'admin', sysdate());
-SET @m := LAST_INSERT_ID();
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time) VALUES
-('工单查询', @m, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'bonded:wo:query', '#', 'admin', sysdate()),
-('工单新增', @m, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'bonded:wo:add', '#', 'admin', sysdate()),
-('工单修改', @m, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'bonded:wo:edit', '#', 'admin', sysdate()),
-('工单删除', @m, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'bonded:wo:remove', '#', 'admin', sysdate());
-
+-- M2 菜单与权限：入库管理/工单发料/工单收料/库存管理
+-- （维修工单独立菜单已废弃：工单号/批次号由发料单、收料单表单录入自动建档）
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
 VALUES ('入库管理', 2000, 3, 'inbound', 'bonded/inbound/index', '', '', 1, 0, 'C', '0', '0', 'bonded:in:list', 'upload', 'admin', sysdate());
 SET @m := LAST_INSERT_ID();
@@ -42,4 +34,9 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, r
 ('收料申报', @m, 6, '', '', '', '', 1, 0, 'F', '0', '0', 'bonded:rcv:declare', '#', 'admin', sysdate());
 
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
-VALUES ('库存台账', 2000, 6, 'stock', 'bonded/stock/index', '', '', 1, 0, 'C', '0', '0', 'bonded:stock:list', 'chart', 'admin', sysdate());
+VALUES ('库存管理', 2000, 6, 'stock', 'bonded/stock/index', '', '', 1, 0, 'C', '0', '0', 'bonded:stock:list', 'chart', 'admin', sysdate());
+
+-- 物料库存详情（隐藏路由，库存清单点"物料详情"进入）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
+SELECT '物料库存详情', 2000, 99, 'stockDetail', 'bonded/stock/detail', '', '', 1, 0, 'C', '1', '0', 'bonded:stock:list', '#', 'admin', sysdate()
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE component = 'bonded/stock/detail');

@@ -331,14 +331,30 @@ CREATE TABLE br_stock_ledger (
   mark_type    CHAR(1) NOT NULL COMMENT '货物类型(六类标记,冗余)',
   biz_type     VARCHAR(6) NOT NULL COMMENT 'IN-入库 ISSUE-发料 RCV-收料 OUT-出库',
   biz_table    VARCHAR(32) NOT NULL, biz_id BIGINT UNSIGNED NOT NULL,
+  biz_no       VARCHAR(60) NULL COMMENT '单据编号(入库/发料/收料/出库单号)',
   goods_source_type VARCHAR(1) NULL COMMENT '来源单证类型 g/i',
   goods_source_no   VARCHAR(60) NULL COMMENT '来源单证编号(入库单号/收料单号)',
   work_no      VARCHAR(60) NULL, batch_no VARCHAR(60) NULL,
   qty          DECIMAL(19,6) NOT NULL COMMENT '方向数量: 收+ 发- 出-',
   balance      DECIMAL(19,6) NOT NULL COMMENT '变动后余额',
   create_time DATETIME NULL,
-  PRIMARY KEY (id), KEY idx_mat (material_id, batch_no)
+  PRIMARY KEY (id),
+  KEY idx_mat (material_id, batch_no),
+  KEY idx_source (material_id, goods_source_type, goods_source_no),
+  KEY idx_biz (biz_table, biz_id),
+  KEY idx_no (biz_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='库存台账流水';
+
+-- 物料库存余额（唯一库存事实，物料为唯一维度；流水仅作审计）
+CREATE TABLE br_material_stock (
+  material_id   BIGINT UNSIGNED NOT NULL COMMENT '物料id(br_material.id)',
+  mark_type     CHAR(1) NOT NULL COMMENT '货物类型(冗余,汇总用)',
+  qty           DECIMAL(19,6) NOT NULL DEFAULT 0 COMMENT '当前结存',
+  last_biz_time DATETIME NULL COMMENT '最近变动时间',
+  update_time   DATETIME NULL,
+  PRIMARY KEY (material_id),
+  KEY idx_mark (mark_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物料库存余额';
 
 CREATE TABLE br_declare_log (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
