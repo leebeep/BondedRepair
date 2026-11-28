@@ -21,7 +21,7 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="物料名称" prop="materialName">
-              <el-input v-model="form.materialName" placeholder="不含物料属性后缀，申报时自动拼接" />
+              <el-input v-model="form.materialName" placeholder="按完整名称录入（六类标记为独立字段，不拼接）" />
             </el-form-item>
           </el-col>
           <el-col :span="12">

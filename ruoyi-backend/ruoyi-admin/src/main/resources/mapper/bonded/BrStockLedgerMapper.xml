@@ -52,6 +52,8 @@
             <if test="gModel != null and gModel != ''">AND m.g_model like concat('%', #{gModel}, '%')</if>
             <if test="codeTs != null and codeTs != ''">AND m.code_ts like concat('%', #{codeTs}, '%')</if>
             <if test="markType != null and markType != ''">AND l.mark_type = #{markType}</if>
+            <if test="markTypeList != null and markTypeList.size() > 0">AND l.mark_type in <foreach collection="markTypeList" item="mt" open="(" separator="," close=")">#{mt}</foreach></if>
+            <if test="isBondedList != null and isBondedList.size() > 0">AND m.is_bonded in <foreach collection="isBondedList" item="ib" open="(" separator="," close=")">#{ib}</foreach></if>
             <if test="bizType != null and bizType != ''">AND l.biz_type = #{bizType}</if>
             <if test="bizNo != null and bizNo != ''">AND l.biz_no like concat('%', #{bizNo}, '%')</if>
             <if test="workNo != null and workNo != ''">AND l.work_no = #{workNo}</if>

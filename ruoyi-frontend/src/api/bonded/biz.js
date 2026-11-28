@@ -41,8 +41,11 @@ export const auditOutbound = id => request({ url: '/bonded/outbound/audit/' + id
 export const declareOutbound = (t, ids) => request({ url: `/bonded/outbound/declare/${t}/${ids}`, method: 'post' })
 export const nextOutboundNo = () => request({ url: '/bonded/outbound/nextNo', method: 'get' })
 
-// 库存台账
+// 库存列表（每物料一行的结存汇总）
 export const listStock = q => request({ url: '/bonded/stock/list', method: 'get', params: q })
+
+// 物料台账流水（库存详情页"更新记录"）
+export const listStockLedger = q => request({ url: '/bonded/stock/ledger', method: 'get', params: q })
 
 // 物料库存详情（物料编号唯一）
 export const getMaterialStock = id => request({ url: '/bonded/stock/material/' + id, method: 'get' })

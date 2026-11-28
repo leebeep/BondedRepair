@@ -41,16 +41,24 @@
         select * from br_declare_log
         <where>
             <if test="bizType != null and bizType != ''">AND biz_type = #{bizType}</if>
+            <if test="bizTypeList != null and bizTypeList.size() > 0">AND biz_type in <foreach collection="bizTypeList" item="bt" open="(" separator="," close=")">#{bt}</foreach></if>
             <if test="bizTable != null and bizTable != ''">AND biz_table = #{bizTable}</if>
             <if test="bizId != null">AND biz_id = #{bizId}</if>
             <if test="bizNo != null and bizNo != ''">AND biz_no like concat('%', #{bizNo}, '%')</if>
             <if test="executeType != null and executeType != ''">AND execute_type = #{executeType}</if>
+            <if test="executeTypeList != null and executeTypeList.size() > 0">AND execute_type in <foreach collection="executeTypeList" item="et" open="(" separator="," close=")">#{et}</foreach></if>
             <if test="uuid != null and uuid != ''">AND uuid like concat('%', #{uuid}, '%')</if>
             <if test="resultStatus != null and resultStatus != ''">
                 <choose>
                     <when test="resultStatus == 'PENDING'.toString()">AND result_status is null</when>
                     <otherwise>AND result_status = #{resultStatus}</otherwise>
                 </choose>
+            </if>
+            <if test="resultStatusList != null and resultStatusList.size() > 0">
+                AND (result_status in
+                <foreach collection="resultStatusList" item="rs" open="(" separator="," close=")">#{rs}</foreach>
+                <if test="resultStatusList.contains('PENDING'.toString())">OR result_status IS NULL</if>
+                )
             </if>
             <if test="syncFlag != null and syncFlag != ''">AND sync_flag = #{syncFlag}</if>
             <if test="beginTime != null and beginTime != ''">AND date_format(create_time, '%Y-%m-%d') &gt;= date_format(#{beginTime}, '%Y-%m-%d')</if>

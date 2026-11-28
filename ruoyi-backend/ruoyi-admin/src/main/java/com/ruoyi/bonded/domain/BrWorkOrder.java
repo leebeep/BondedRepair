@@ -27,6 +27,8 @@ public class BrWorkOrder extends BaseEntity
     private String verifyCycle;
     /** 01-立项 02-维修中 03-已收齐 04-已出清 05-已结案 */
     private String orderStatus;
+    /** 查询辅助：状态多选（列表头筛选，前端逗号串入参自动转换） */
+    private List<String> orderStatusList;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date finishDate;
     private String delFlag;

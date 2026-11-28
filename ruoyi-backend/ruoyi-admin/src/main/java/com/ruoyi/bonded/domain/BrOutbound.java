@@ -31,5 +31,9 @@ public class BrOutbound extends BaseEntity
     private String executeType;
     private String lastUuid;
     private String delFlag;
+    /** 查询辅助：业务类型/单据状态/海关状态多选（列表头筛选） */
+    private List<String> busiTypeList;
+    private List<String> docStatusList;
+    private List<String> customsStatusList;
     private List<BrOutboundItem> items;
 }

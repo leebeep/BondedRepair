@@ -34,6 +34,10 @@
         <if test="relaCustomsFormType != null and relaCustomsFormType != ''">AND rela_customs_form_type = #{relaCustomsFormType}</if>
         <if test="docStatus != null and docStatus != ''">AND doc_status = #{docStatus}</if>
         <if test="customsStatus != null and customsStatus != ''">AND customs_status = #{customsStatus}</if>
+        <if test="busiTypeList != null and busiTypeList.size() > 0">AND busi_type in <foreach collection="busiTypeList" item="bt" open="(" separator="," close=")">#{bt}</foreach></if>
+        <if test="relaCustomsFormTypeList != null and relaCustomsFormTypeList.size() > 0">AND rela_customs_form_type in <foreach collection="relaCustomsFormTypeList" item="rt" open="(" separator="," close=")">#{rt}</foreach></if>
+        <if test="docStatusList != null and docStatusList.size() > 0">AND doc_status in <foreach collection="docStatusList" item="ds" open="(" separator="," close=")">#{ds}</foreach></if>
+        <if test="customsStatusList != null and customsStatusList.size() > 0">AND customs_status in <foreach collection="customsStatusList" item="cs" open="(" separator="," close=")">#{cs}</foreach></if>
         <if test="params.beginInoutTime != null and params.beginInoutTime != ''">AND in_out_time &gt;= #{params.beginInoutTime}</if>
         <if test="params.endInoutTime != null and params.endInoutTime != ''">AND in_out_time &lt;= #{params.endInoutTime}</if>
         order by id desc

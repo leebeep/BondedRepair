@@ -5,7 +5,7 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="物料编号">{{ stock.materialCd }}</el-descriptions-item>
         <el-descriptions-item label="版本号">{{ stock.version }}</el-descriptions-item>
-        <el-descriptions-item label="物料名称">{{ materialNameWithMark(stock.materialName, stock.markType, stock.isBonded) }}</el-descriptions-item>
+        <el-descriptions-item label="物料名称">{{ stock.materialName }}</el-descriptions-item>
         <el-descriptions-item label="物料属性">{{ markLabel(stock.markType) }}</el-descriptions-item>
         <el-descriptions-item label="是否保税">
           <el-tag :type="stock.isBonded === '1' ? 'primary' : 'info'">{{ stock.isBonded === '1' ? '保税' : '非保税' }}</el-tag>
@@ -67,8 +67,8 @@
 </template>
 
 <script setup name="StockDetail">
-import { materialNameWithMark, fmtTimeShort, fmtTimeFull } from '@/utils/bonded'
-import { listStock, getMaterialStock } from '@/api/bonded/biz'
+import { fmtTimeShort, fmtTimeFull } from '@/utils/bonded'
+import { listStockLedger, getMaterialStock } from '@/api/bonded/biz'
 import { customsUnitLabel } from '@/utils/customsUnits'
 
 const { proxy } = getCurrentInstance()
@@ -99,7 +99,7 @@ function getList() {
   listLoading.value = true
   const params = { ...listQuery, materialId }
   if (dateRange.value && dateRange.value.length === 2) { params.beginTime = dateRange.value[0]; params.endTime = dateRange.value[1] }
-  listStock(params).then(r => { rows.value = r.rows; total.value = r.total; listLoading.value = false })
+  listStockLedger(params).then(r => { rows.value = r.rows; total.value = r.total; listLoading.value = false })
 }
 function resetList() {
   Object.assign(listQuery, { pageNum: 1 })
@@ -110,7 +110,7 @@ function cancel() { proxy.$tab.closeOpenPage({ path: '/bonded/stock' }) }
 function handleExport() {
   const params = { materialId }
   if (dateRange.value && dateRange.value.length === 2) { params.beginTime = dateRange.value[0]; params.endTime = dateRange.value[1] }
-  proxy.download('/bonded/stock/export', params, `${stock.value.materialCd || 'material'}_update_records.xlsx`)
+  proxy.download('/bonded/stock/ledger/export', params, `${stock.value.materialCd || 'material'}_update_records.xlsx`)
 }
 
 getMaterialStock(materialId).then(r => { stock.value = r.data.stock; loading.value = false })

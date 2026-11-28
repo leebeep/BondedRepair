@@ -30,7 +30,7 @@
           <template #default="s">{{ returnTypes.find(t => t.value === s.row.returnType)?.label || s.row.returnType }}</template>
         </el-table-column>
         <el-table-column label="物料编号" width="130" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column align="center">
-        <el-table-column label="物料名称" min-width="150" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column align="center">
+        <el-table-column label="物料名称" min-width="150" show-overflow-tooltip><template #default="s">{{ s.row.materialName }}</template></el-table-column align="center">
         <el-table-column label="版本号" width="80" align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
         <el-table-column label="规格型号" width="140" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column align="center">
         <el-table-column label="是否保税" width="90" align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
@@ -49,7 +49,7 @@
 
 <script setup name="ReceiveDetail">
 import { getReceive } from '@/api/bonded/biz'
-import { cstLabel, cstType, docStatusLabel, docStatusType, returnTypes, materialNameWithMark, fmtThousand } from '@/utils/bonded'
+import { cstLabel, cstType, docStatusLabel, docStatusType, returnTypes, fmtThousand } from '@/utils/bonded'
 import { useMaterialCache } from '@/composables/useMaterialCache'
 import { currencyLabel } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'

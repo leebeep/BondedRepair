@@ -3,7 +3,7 @@
     <el-form :inline="true" :model="queryParams" class="mb8">
       <el-form-item label="工单号"><el-input v-model="queryParams.workNo" placeholder="模糊查询" clearable style="width: 180px" @keyup.enter="handleQuery" /></el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="queryParams.orderStatus" placeholder="全部" clearable style="width: 140px">
+        <el-select v-model="queryParams.orderStatus" placeholder="全部" clearable multiple collapse-tags style="width: 160px">
           <el-option v-for="(v, k) in woStatusMap" :key="k" :label="v.label" :value="k" />
         </el-select>
       </el-form-item>
@@ -15,9 +15,11 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5"><el-button type="primary" plain icon="Plus" v-hasPermi="['bonded:wo:add']" @click="handleAdd">新建工单</el-button></el-col>
     </el-row>
-    <el-table v-loading="loading" :data="rows">
-      <el-table-column label="工单号" prop="workNo" width="180" align="center"/>
-      <el-table-column label="状态" width="110" align="center">
+    <el-table v-loading="loading" :data="rows" @filter-change="onFilterChange">
+      <el-table-column label="工单号" prop="workNo" width="180" align="center">
+        <template #default="s"><el-link type="primary" :underline="false" @click="handleDetail(s.row)">{{ s.row.workNo }}</el-link></template>
+      </el-table-column>
+      <el-table-column label="状态" width="110" align="center" column-key="orderStatus" :filters="statusFilters">
         <template #default="s">
           <el-tag :type="woStatusMap[s.row.orderStatus]?.type || 'info'">{{ woStatusMap[s.row.orderStatus]?.label || s.row.orderStatus }}</el-tag>
         </template>
@@ -33,9 +35,8 @@
       <el-table-column label="备注" prop="remark" min-width="140" show-overflow-tooltip align="center">
         <template #default="s">{{ s.row.remark || '-' }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="220" align="center" fixed="right">
+      <el-table-column label="操作" width="160" align="center" fixed="right">
         <template #default="s">
-          <el-button link type="primary" icon="View" @click="handleDetail(s.row)">详情</el-button>
           <el-button v-if="s.row.orderStatus !== '05'" link type="primary" icon="Edit" v-hasPermi="['bonded:wo:edit']" @click="handleEdit(s.row)">编辑</el-button>
           <el-button v-if="s.row.orderStatus === '04'" link type="warning" icon="Stamp" v-hasPermi="['bonded:wo:edit']" @click="handleClose(s.row)">结案</el-button>
           <el-button v-if="s.row.orderStatus === '01'" link type="danger" icon="Delete" v-hasPermi="['bonded:wo:remove']" @click="handleDelete(s.row)">删除</el-button>
@@ -64,6 +65,7 @@
 
 <script setup name="WorkOrder">
 import { listWorkOrder, getWorkOrder, addWorkOrder, updWorkOrder, delWorkOrder, nextWorkOrderNo, closeWorkOrder } from '@/api/bonded/workorder'
+import { enumToFilters, applyFilterChange, packListQuery } from '@/utils/bonded'
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 
@@ -74,15 +76,17 @@ const woStatusMap = {
   '04': { label: '04 已出清', type: 'warning' },
   '05': { label: '05 已结案', type: 'danger' }
 }
+const statusFilters = enumToFilters(woStatusMap)
 
 const rows = ref([]); const loading = ref(false); const total = ref(0)
-const queryParams = reactive({ pageNum: 1, pageSize: 10, workNo: null, orderStatus: null })
+const queryParams = reactive({ pageNum: 1, pageSize: 10, workNo: null, orderStatus: [] })
 function fmt(v) { const n = Number(v); return Number.isFinite(n) && n !== 0 ? parseFloat(n.toFixed(6)) : (n === 0 ? '0' : '-') }
 
-function getList() { loading.value = true; listWorkOrder(queryParams).then(r => { rows.value = r.rows; total.value = r.total; loading.value = false }) }
+function getList() { loading.value = true; listWorkOrder(packListQuery(queryParams)).then(r => { rows.value = r.rows; total.value = r.total; loading.value = false }) }
 function handleQuery() { queryParams.pageNum = 1; getList() }
+function onFilterChange(filters) { applyFilterChange(queryParams, filters); handleQuery() }
 function resetQuery() {
-  Object.assign(queryParams, { pageNum: 1, pageSize: 10, workNo: null, orderStatus: null })
+  Object.assign(queryParams, { pageNum: 1, pageSize: 10, workNo: null, orderStatus: [] })
   handleQuery()
 }
 

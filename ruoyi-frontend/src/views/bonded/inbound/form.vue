@@ -76,11 +76,11 @@
           <el-col :span="12">
             <el-form-item label="物料编号" prop="materialId">
               <el-select v-model="itemForm.materialId" filterable :filter-method="filterMaterial" @change="onMaterialChange" @visible-change="v => !v && (materialQuery = '')" style="width: 100%">
-                <el-option v-for="m in filteredMaterials" :key="m.id" :label="m.materialCd + '　' + materialNameWithMark(m.materialName, m.markType, m.isBonded)" :value="m.id" />
+                <el-option v-for="m in filteredMaterials" :key="m.id" :label="m.materialCd + '　' + m.materialName" :value="m.id" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="materialNameWithMark(pickedMaterial?.materialName, pickedMaterial?.markType, pickedMaterial?.isBonded)" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="pickedMaterial?.materialName" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
         </el-row>
         <el-row>
           <el-col :span="12"><el-form-item label="数量" prop="storageCnt"><el-input-number v-model="itemForm.storageCnt" :min="0.000001" :precision="6" controls-position="right" style="width: 100%" /></el-form-item></el-col>
@@ -134,7 +134,6 @@ import { getInbound, addInbound, updInbound, nextInboundNo } from '@/api/bonded/
 import { useMaterialCache } from '@/composables/useMaterialCache'
 import { currencies } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'
-import { materialNameWithMark } from '@/utils/bonded'
 import DeclarePreviewDialog from '../components/DeclarePreviewDialog.vue'
 
 const { proxy } = getCurrentInstance()
@@ -240,7 +239,7 @@ function itemMaterialCode(row) {
 
 function itemMaterialName(row) {
   const m = findMaterial(row)
-  return materialNameWithMark(m?.materialName || row.materialName, m?.markType ?? row.markType, m?.isBonded ?? row.isBonded) || '-'
+  return m?.materialName || row.materialName || '-'
 }
 
 function itemUnit(row, key) {

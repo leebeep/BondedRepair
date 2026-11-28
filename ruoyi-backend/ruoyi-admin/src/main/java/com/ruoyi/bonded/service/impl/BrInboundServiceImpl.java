@@ -233,7 +233,7 @@ public class BrInboundServiceImpl implements IBrInboundService
                 d.setTakeOrderCd(h.getInboundNo());
                 d.setRelaEntNm(h.getRelaEntNm());
                 d.setMaterialCd(m.getMaterialCd());
-                d.setMaterialDesc(BrMaterialServiceImpl.mirrorName(m.getMaterialName(), m.getMarkType(), m.getIsBonded()));
+                d.setMaterialDesc(m.getMaterialName());
                 d.setMaterialVersion(parseVersion(m.getVersion(), m.getMaterialName()));
                 d.setSpecificationsModels(spec);
                 d.setStorageCnt(item.getStorageCnt());

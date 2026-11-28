@@ -19,31 +19,52 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
- * 库存台账 Controller
+ * 库存管理 Controller（列表=每物料一行的结存汇总；详情=物料台账流水下钻）
  */
 @RestController
 @RequestMapping("/bonded/stock")
 public class BrStockController extends BaseController
 {
     @Autowired
-    private BrStockLedgerMapper ledgerMapper;
-
-    @Autowired
     private BrMaterialStockMapper stockMapper;
 
+    @Autowired
+    private BrStockLedgerMapper ledgerMapper;
+
+    /** 库存列表：按物料一行的结存汇总（台账流水在详情页按物料下钻） */
     @PreAuthorize("@ss.hasPermi('bonded:stock:list')")
     @GetMapping("/list")
-    public TableDataInfo list(BrStockLedger query)
+    public TableDataInfo list(BrMaterialStock query)
+    {
+        startPage();
+        List<BrMaterialStock> list = stockMapper.selectStockSummary(query);
+        return getDataTable(list);
+    }
+
+    /** 库存结存汇总导出（按当前筛选条件） */
+    @PreAuthorize("@ss.hasPermi('bonded:stock:list')")
+    @PostMapping("/export")
+    public void export(jakarta.servlet.http.HttpServletResponse response, BrMaterialStock query)
+    {
+        List<BrMaterialStock> list = stockMapper.selectStockSummary(query);
+        com.ruoyi.common.utils.poi.ExcelUtil<BrMaterialStock> util = new com.ruoyi.common.utils.poi.ExcelUtil<>(BrMaterialStock.class);
+        util.exportExcel(response, list, "物料库存结存");
+    }
+
+    /** 物料台账流水（详情页"更新记录"下钻用，按 materialId + 筛选条件） */
+    @PreAuthorize("@ss.hasPermi('bonded:stock:list')")
+    @GetMapping("/ledger")
+    public TableDataInfo ledgerList(BrStockLedger query)
     {
         startPage();
         List<BrStockLedger> list = ledgerMapper.selectList(query);
         return getDataTable(list);
     }
 
-    /** 台账流水导出（按当前筛选条件） */
+    /** 物料台账流水导出（详情页"导出更新记录"用） */
     @PreAuthorize("@ss.hasPermi('bonded:stock:list')")
-    @PostMapping("/export")
-    public void export(jakarta.servlet.http.HttpServletResponse response, BrStockLedger query)
+    @PostMapping("/ledger/export")
+    public void ledgerExport(jakarta.servlet.http.HttpServletResponse response, BrStockLedger query)
     {
         List<BrStockLedger> list = ledgerMapper.selectList(query);
         com.ruoyi.common.utils.poi.ExcelUtil<BrStockLedger> util = new com.ruoyi.common.utils.poi.ExcelUtil<>(BrStockLedger.class);

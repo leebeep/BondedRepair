@@ -32,6 +32,8 @@
         <if test="workNo != null and workNo != ''">AND w.work_no like concat('%', #{workNo}, '%')</if>
         <if test="docStatus != null and docStatus != ''">AND i.doc_status = #{docStatus}</if>
         <if test="customsStatus != null and customsStatus != ''">AND i.customs_status = #{customsStatus}</if>
+        <if test="docStatusList != null and docStatusList.size() > 0">AND i.doc_status in <foreach collection="docStatusList" item="ds" open="(" separator="," close=")">#{ds}</foreach></if>
+        <if test="customsStatusList != null and customsStatusList.size() > 0">AND i.customs_status in <foreach collection="customsStatusList" item="cs" open="(" separator="," close=")">#{cs}</foreach></if>
         order by i.id desc
     </select>
 

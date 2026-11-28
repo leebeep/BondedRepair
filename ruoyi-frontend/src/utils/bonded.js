@@ -61,25 +61,16 @@ export const declareResultMap = {
 }
 export function declResultLabel(s) { return declareResultMap[s]?.label || s || '-' }
 export function declResultType(s) { return declareResultMap[s]?.type || 'info' }
-// 货物类型（六类标记）选项与品名后缀（与规范 v1.4 / 样例数据、后端 markSuffix 一致）
+// 货物类型（六类标记）选项（标签仅用于类型筛选/展示；物料名称按字面原样存取，不拼接标记后缀）
 export const materialMarkTypes = [
-  { value: '1', label: '待维修货物', suffix: '待修复' },
-  { value: '2', label: '已维修货物', suffix: '已修复' },
-  { value: '3', label: '无法维修货物', suffix: '无法修复' },
-  { value: '4', label: '维修用料件', suffix: '维修用保税料件' },
-  { value: '5', label: '旧件或坏件', suffix: '维修替换下的旧件或坏件' },
-  { value: '6', label: '边角料', suffix: '维修产生的边角料' },
-  { value: '8', label: '维修服务费', suffix: '维修服务费' }
+  { value: '1', label: '待维修货物' },
+  { value: '2', label: '已维修货物' },
+  { value: '3', label: '无法维修货物' },
+  { value: '4', label: '维修用料件' },
+  { value: '5', label: '旧件或坏件' },
+  { value: '6', label: '边角料' },
+  { value: '8', label: '维修服务费' }
 ]
-/** 物料名称展示：拼接货物类型标记；服务费直接拼“维修服务费”，其余用括号 */
-export function materialNameWithMark(name, markType, isBonded) {
-  if (!name) return name
-  // 维修用料件(4)按保税标志区分：非保税 → （非保税），与后端 markSuffix 口径一致
-  const suffix = markType === '4' && isBonded === '0' ? '非保税' : materialMarkTypes.find(t => t.value === markType)?.suffix
-  if (!suffix) return name
-  if (markType === '8') return name.endsWith(suffix) ? name : name + suffix
-  return name.endsWith('（' + suffix + '）') ? name : name + '（' + suffix + '）'
-}
 
 // 业务状态（doc_status）：02待审核/04已申报 为历史遗留死状态，已移除；
 // 03=审核通过（已生效扣账并推送申报，"申报中"由海关状态10/20/21联动显示）
@@ -164,4 +155,27 @@ export function fmtTimeFull(t) { return t ? String(t).replace('T', ' ').slice(0,
 export function fmtThousand(v) {
   if (v === null || v === undefined || v === '' || isNaN(Number(v))) return '-'
   return Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
+}
+
+// ===== 表头列筛选（el-table filters + 远端 filter-change，按全量数据筛选） =====
+/** 枚举映射({值:{label}})或选项数组([{value,label}]) → el-table-column 的 filters */
+export function enumToFilters(source) {
+  const entries = Array.isArray(source)
+    ? source.map(o => [o.value, o.label])
+    : Object.entries(source).map(([k, v]) => [k, v.label])
+  return entries.map(([value, label]) => ({ text: String(label), value }))
+}
+/** filter-change 统一处理：勾选值写入 queryParams[key + 'List']，未勾选置 null */
+export function applyFilterChange(queryParams, filters) {
+  for (const [key, vals] of Object.entries(filters || {})) {
+    queryParams[key + 'List'] = vals && vals.length ? [...vals] : null
+  }
+}
+/** 发送查询前打包：数组参数折叠为逗号串（Spring 自动转换为 List），空数组置 null */
+export function packListQuery(params) {
+  const q = { ...params }
+  for (const k of Object.keys(q)) {
+    if (Array.isArray(q[k])) q[k] = q[k].length ? q[k].join(',') : null
+  }
+  return q
 }

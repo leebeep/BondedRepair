@@ -62,7 +62,7 @@
     <div v-show="activeTab === 'logs'">
         <el-form :inline="true" label-width="90px">
       <el-form-item label="报文类型">
-        <el-select v-model="logQuery.bizType" clearable placeholder="全部" style="width: 150px">
+        <el-select v-model="logQuery.bizType" clearable multiple collapse-tags placeholder="全部" style="width: 180px">
           <el-option v-for="b in bizTypes" :key="b.value" :label="b.value + '-' + b.label" :value="b.value" />
         </el-select>
       </el-form-item>
@@ -73,15 +73,13 @@
         <el-input v-model="logQuery.uuid" clearable placeholder="回执预录入编号" style="width: 180px" @keyup.enter="getLogs" />
       </el-form-item>
       <el-form-item label="执行类型">
-        <el-select v-model="logQuery.executeType" clearable placeholder="全部" style="width: 120px">
+        <el-select v-model="logQuery.executeType" clearable multiple collapse-tags placeholder="全部" style="width: 140px">
           <el-option label="备案" value="1" /><el-option label="变更" value="2" /><el-option label="作废" value="3" />
         </el-select>
       </el-form-item>
       <el-form-item label="回执状态">
-        <el-select v-model="logQuery.resultStatus" clearable placeholder="全部" style="width: 150px">
-          <el-option label="待回执" value="PENDING" />
-          <el-option label="通过" value="Y" /><el-option label="入库成功" value="1" />
-          <el-option label="退单" value="N" /><el-option label="入库失败" value="2" /><el-option label="退单(3)" value="3" />
+        <el-select v-model="logQuery.resultStatus" clearable multiple collapse-tags placeholder="全部" style="width: 170px">
+          <el-option v-for="r in resultStatusOptions" :key="r.value" :label="r.label" :value="r.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="申报时间">
@@ -90,8 +88,8 @@
       <el-form-item><el-button type="primary" icon="Search" @click="getLogs">查询</el-button></el-form-item>
     </el-form>
 
-    <el-table v-loading="loading" :data="logs">
-      <el-table-column label="报文类型" prop="bizType" width="90" align="center" />
+    <el-table v-loading="loading" :data="logs" @filter-change="onFilterChange">
+      <el-table-column label="报文类型" prop="bizType" width="90" align="center" column-key="bizType" :filters="bizTypeFilters" />
       <el-table-column label="单证类型" width="110" align="center">
         <template #default="s">{{ bizLabel(s.row.bizType) }}</template>
       </el-table-column>
@@ -101,7 +99,7 @@
           <span v-else>{{ s.row.bizNo || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="执行类型" width="80" align="center">
+      <el-table-column label="执行类型" width="80" align="center" column-key="executeType" :filters="executeTypeFilters">
         <template #default="s">{{ { '1': '备案', '2': '变更', '3': '作废' }[s.row.executeType] || s.row.executeType }}</template>
       </el-table-column>
       <el-table-column label="预录入编号" prop="uuid" width="170" show-overflow-tooltip align="center">
@@ -112,7 +110,7 @@
           <el-tooltip :content="fmtTimeFull(s.row.createTime)" placement="top"><span>{{ fmtTimeShort(s.row.createTime) }}</span></el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="回执状态" width="120" align="center">
+      <el-table-column label="回执状态" width="120" align="center" column-key="resultStatus" :filters="resultStatusFilters">
         <template #default="s"><el-tag :type="declResultType(s.row.resultStatus || 'PENDING')" :icon="declResultIcon(s.row.resultStatus)">{{ declResultLabel(s.row.resultStatus || 'PENDING') }}</el-tag></template>
       </el-table-column>
       <el-table-column label="回执时间" width="110" align="center">
@@ -123,9 +121,8 @@
       <el-table-column label="回执消息" prop="msg" min-width="160" show-overflow-tooltip align="center">
         <template #default="s">{{ s.row.msg || '-' }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="140" align="center" fixed="right">
+      <el-table-column label="操作" width="90" align="center" fixed="right">
         <template #default="s">
-          <el-button link type="primary" @click="goDoc(s.row)">单证详情</el-button>
           <el-button link type="primary" @click="openReceipt(s.row)">回执详情</el-button>
         </template>
       </el-table-column>
@@ -153,15 +150,21 @@
 
 <script setup name="DeclareBoard">
 import { declareBoard, listDeclareLog, getPushSwitch, setPushSwitch, pushPending, queryReceipt, queryStatus, syncBoard as fetchSyncBoard } from '@/api/bonded/biz'
-import { declareBizTypes as bizTypes, declResultLabel, declResultType, declResultIcon, fmtTimeShort, fmtTimeFull } from '@/utils/bonded'
+import { declareBizTypes as bizTypes, declareResultMap, declResultLabel, declResultType, declResultIcon, fmtTimeShort, fmtTimeFull, enumToFilters, applyFilterChange, packListQuery } from '@/utils/bonded'
 import useUserStore from '@/store/modules/user'
 import { ElMessage } from 'element-plus'
 
 const board = ref({})
 const activeTab = ref('logs')
 const logs = ref([]); const loading = ref(false); const logTotal = ref(0)
-const logQuery = reactive({ pageNum: 1, pageSize: 10, bizType: null, resultStatus: null, bizNo: null, uuid: null, executeType: null })
+const logQuery = reactive({ pageNum: 1, pageSize: 10, bizType: [], resultStatus: [], bizNo: null, uuid: null, executeType: [] })
 const logDateRange = ref([])
+
+// 表头列筛选项（与顶部下拉共用同一参数）
+const bizTypeFilters = enumToFilters(bizTypes)
+const executeTypeFilters = enumToFilters([{ value: '1', label: '备案' }, { value: '2', label: '变更' }, { value: '3', label: '作废' }])
+const resultStatusFilters = enumToFilters(declareResultMap)
+const resultStatusOptions = resultStatusFilters.map(f => ({ value: f.value, label: f.text }))
 
 // 单证类型标签 / 单证详情跳转路由（EPD101 → 物料详情）
 const bizLabel = v => (bizTypes.find(b => b.value === v) || {}).label || v || '-'
@@ -241,13 +244,16 @@ function getSyncBoard() {
 function getLogs() {
   loading.value = true
   const [beginTime, endTime] = logDateRange.value || []
-  listDeclareLog({ ...logQuery, beginTime: beginTime || null, endTime: endTime || null }).then(r => { logs.value = r.rows; logTotal.value = r.total; loading.value = false })
+  listDeclareLog({ ...packListQuery(logQuery), beginTime: beginTime || null, endTime: endTime || null }).then(r => { logs.value = r.rows; logTotal.value = r.total; loading.value = false })
 }
+
+// 表头列筛选（远端）：勾选值写入 logQuery 对应 xxxList，按全量数据过滤
+function onFilterChange(filters) { applyFilterChange(logQuery, filters); logQuery.pageNum = 1; getLogs() }
 
 // 看板联动：点击回执结果状态 → 切到日志清单并按该状态过滤
 function filterLogsByStatus(k) {
   activeTab.value = 'logs'
-  logQuery.resultStatus = k
+  logQuery.resultStatus = [k]
   logQuery.pageNum = 1
   getLogs()
 }

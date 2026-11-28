@@ -69,7 +69,7 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         return prefix + String.format("%04d", seq);
     }
 
-    // 企业三项资料在【系统管理-参数设置】维护（sys_config），EPD101 镜像行必填
+    /** 物料名称口径：按字面原样展示/申报，不拼接货物类型后缀（六类标记 markType 为独立字段） */
     private String enterpCd() { return requireConfig("br.enterpCd", "企业编号"); }
 
     private String enterpNm() { return requireConfig("br.enterpNm", "企业名称"); }
@@ -83,49 +83,7 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         return v;
     }
 
-    /** 货物类型（六类标记）→ 品名后缀（规范 v1.4 / 样例数据口径，如 新能源动力电池模组（无法修复）） */
-    public static String markSuffix(String markType)
-    {
-        return markSuffix(markType, "1");
-    }
-
-    /** 同上；维修用料（markType=4）按保税标志区分后缀：非保税 → （非保税） */
-    public static String markSuffix(String markType, String isBonded)
-    {
-        switch (markType)
-        {
-            case "1": return "（待修复）";
-            case "2": return "（已修复）";
-            case "3": return "（无法修复）";
-            case "4": return "0".equals(isBonded) ? "（非保税）" : "（维修用保税料件）";
-            case "5": return "（维修替换下的旧件或坏件）";
-            case "6": return "（维修产生的边角料）";
-            case "8": return "维修服务费";
-            default: return "";
-        }
-    }
-
-    /**
-     * 组装镜像品名（物料名称 + 货物类型后缀 [+ 附加后缀]），
-     * 并校验不超过镜像表 material_desc / int_product_name varchar(500)，超长即报错。
-     */
-    public static String mirrorName(String materialName, String markType, String isBonded, String extraSuffix)
-    {
-        String s = StringUtils.defaultString(materialName)
-                + markSuffix(markType, isBonded)
-                + StringUtils.defaultString(extraSuffix);
-        if (s.length() > 500)
-        {
-            throw new ServiceException("镜像品名超过规范长度 500（material_desc/int_product_name varchar(500)），请缩短物料名称：" + s);
-        }
-        return s;
-    }
-
-    public static String mirrorName(String materialName, String markType, String isBonded)
-    {
-        return mirrorName(materialName, markType, isBonded, "");
-    }
-
+    /** 货物类型（六类标记）为独立字段，仅做类型标识；物料名称不拼接任何类型后缀 */
     @Override
     public List<BrMaterial> selectBrMaterialList(BrMaterial material)
     {
@@ -161,7 +119,17 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         }
         validate(material);
         material.setCreateBy(SecurityUtils.getUsername());
-        int rows = materialMapper.insertBrMaterial(material);
+        int rows;
+        try
+        {
+            rows = materialMapper.insertBrMaterial(material);
+        }
+        catch (org.springframework.dao.DuplicateKeyException e)
+        {
+            // uk_biz(material_cd, version, calc_unit) 为硬唯一键，软删除(del_flag='2')的记录仍占用编号
+            throw new ServiceException("物料编号【" + material.getMaterialCd() + "】+版本号+计量单位已存在"
+                    + "（联合业务主键唯一，已删除记录仍占用编号）");
+        }
         // 自动备案：保存即写入镜像库（服务费虚物料 markType=8 非报关对象，仅本地记账）
         if (pushSwitch.isEnabled() && !"8".equals(material.getMarkType()))
         {
@@ -248,7 +216,7 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         return count;
     }
 
-    /** 构造 EPD101 镜像行（品名自动拼接货物类型后缀） */
+    /** 构造 EPD101 镜像行（品名取物料名称原样） */
     private Epd101Data buildEpd101(BrMaterial m, String executeType)
     {
         Epd101Data d = new Epd101Data();
@@ -258,7 +226,7 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         d.setEnterpNm(enterpNm());
         d.setMasterCuscd(masterCuscd());
         d.setIntProductNo(m.getMaterialCd());
-        d.setIntProductName(mirrorName(m.getMaterialName(), m.getMarkType(), m.getIsBonded()));
+        d.setIntProductName(m.getMaterialName());
         d.setVersion(m.getVersion());
         d.setgType(m.getgType());
         d.setgModel(StringUtils.defaultString(m.getgModel(), "无"));
@@ -310,9 +278,9 @@ public class BrMaterialServiceImpl implements IBrMaterialService
     /** 数据预检：复刻客户端校验规则，减少采集失败 */
     private void validate(BrMaterial m)
     {
-        if (StringUtils.isNotEmpty(m.getMaterialName()) && m.getMaterialName().length() > 485)
+        if (StringUtils.isNotEmpty(m.getMaterialName()) && m.getMaterialName().length() > 500)
         {
-            throw new ServiceException("物料名称不得超过 485 字符（镜像表 material_desc/int_product_name varchar(500)，需预留货物类型标记后缀）");
+            throw new ServiceException("物料名称不得超过 500 字符（镜像表 material_desc/int_product_name varchar(500)）");
         }
         // 镜像表毛净重列为 decimal(19,5)，录入即校验数值格式，避免申报时插入失败
         checkWeight("货物毛重", m.getTotalGrossWt());

@@ -270,9 +270,8 @@ public class BrOutboundServiceImpl implements IBrOutboundService
                 d.setRelaEntNm(h.getRelaEntNm());
                 d.setReleaseno(h.getOutboundNo());
                 d.setMaterialCd(line.getMaterialCd());
-                d.setMaterialDesc("8".equals(m.getMarkType())
-                        ? BrMaterialServiceImpl.mirrorName(line.getMaterialName(), "2", line.getIsBonded(), "维修服务费")
-                        : BrMaterialServiceImpl.mirrorName(line.getMaterialName(), line.getMarkType(), line.getIsBonded()));
+                // 品名按物料名称原样申报（服务费行取虚物料自身名称，materialCd 仍按被维修商品口径）
+                d.setMaterialDesc(m.getMaterialName());
                 d.setVersion(BrInboundServiceImpl.parseVersion(line.getVersion(), line.getMaterialName()));
                 d.setSpecificationsModels(spec);
                 d.setDeliveryCnt(item.getDeliveryCnt());

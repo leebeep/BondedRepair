@@ -3,24 +3,24 @@
     <el-form :inline="true" :model="queryParams" class="mb8">
       <el-form-item label="入库单号"><el-input v-model="queryParams.inboundNo" placeholder="模糊查询" clearable style="width: 180px" @keyup.enter="handleQuery" /></el-form-item>
       <el-form-item label="入库业务类型">
-        <el-select v-model="queryParams.busiType" placeholder="全部" clearable style="width: 140px">
+        <el-select v-model="queryParams.busiType" placeholder="全部" clearable multiple collapse-tags style="width: 170px">
           <el-option label="04-待维修货物" value="04" /><el-option label="05-维修用料" value="05" /><el-option label="99-其他" value="99" />
         </el-select>
       </el-form-item>
       <el-form-item label="单据状态">
-        <el-select v-model="queryParams.docStatus" placeholder="全部" clearable style="width: 120px">
+        <el-select v-model="queryParams.docStatus" placeholder="全部" clearable multiple collapse-tags style="width: 150px">
           <el-option v-for="opt in docStatusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
       </el-form-item>
       <template v-if="searchExpanded">
         <el-form-item label="关联申报单证类型">
-          <el-select v-model="queryParams.relaCustomsFormType" placeholder="全部" clearable style="width: 160px">
+          <el-select v-model="queryParams.relaCustomsFormType" placeholder="全部" clearable multiple collapse-tags style="width: 190px">
             <el-option label="01-径予放行申明" value="01" /><el-option label="02-公服入库单" value="02" />
             <el-option label="03-报关单" value="03" /><el-option label="05-异常调整" value="05" /><el-option label="99-其他" value="99" />
           </el-select>
         </el-form-item>
         <el-form-item label="海关状态">
-          <el-select v-model="queryParams.customsStatus" placeholder="全部" clearable style="width: 140px">
+          <el-select v-model="queryParams.customsStatus" placeholder="全部" clearable multiple collapse-tags style="width: 160px">
             <el-option v-for="c in cstOptions" :key="c.value" :label="c.label" :value="c.value" />
           </el-select>
         </el-form-item>
@@ -39,9 +39,11 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5"><el-button type="primary" plain icon="Plus" @click="handleAdd">新增</el-button></el-col>
     </el-row>
-    <el-table v-loading="loading" :data="rows">
-      <el-table-column label="入库单号" prop="inboundNo" width="140" align="center"/>
-      <el-table-column label="入库业务类型" width="120" align="center">
+    <el-table v-loading="loading" :data="rows" @filter-change="onFilterChange">
+      <el-table-column label="入库单号" prop="inboundNo" width="140" align="center">
+        <template #default="s"><el-link type="primary" :underline="false" @click="handleDetail(s.row)">{{ s.row.inboundNo }}</el-link></template>
+      </el-table-column>
+      <el-table-column label="入库业务类型" width="120" align="center" column-key="busiType" :filters="busiTypeFilters">
         <template #default="s"><el-tag :type="{ '04': 'primary', '05': 'success', '99': 'info' }[s.row.busiType]">{{ { '04': '待维修货物', '05': '维修用料', '99': '其他' }[s.row.busiType] || s.row.busiType }}</el-tag></template>
       </el-table-column>
       <el-table-column label="物料编号" width="130" show-overflow-tooltip align="center">
@@ -55,28 +57,21 @@
           <el-tooltip :content="fmtTimeFull(s.row.inOutTime)" placement="top"><span>{{ fmtTimeShort(s.row.inOutTime) }}</span></el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="关联申报单证类型" width="140" align="center" show-overflow-tooltip>
+      <el-table-column label="关联申报单证类型" width="180" align="center" show-overflow-tooltip column-key="relaCustomsFormType" :filters="relaFormTypeFilters">
         <template #default="s">{{ { '01': '01-径予放行申明', '02': '02-公服入库单', '03': '03-报关单', '05': '05-异常调整', '99': '99-其他' }[s.row.relaCustomsFormType] || s.row.relaCustomsFormType }}</template>
       </el-table-column>
-      <el-table-column label="关联申报单证编号" width="150" show-overflow-tooltip align="center">
-        <template #default="s">{{ s.row.relaCustomsFormNum || '-' }}</template>
-      </el-table-column>
-      <el-table-column label="单据状态" width="110" align="center">
+      <el-table-column label="单据状态" width="110" align="center" column-key="docStatus" :filters="docStatusFilters">
         <template #default="s">
           <el-tag :type="docStatusType(s.row.docStatus, s.row.customsStatus)" :icon="docStatusIcon(s.row.docStatus, s.row.customsStatus)">
             {{ docStatusLabel(s.row.docStatus, s.row.customsStatus) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="海关状态" width="110" align="center">
+      <el-table-column label="海关状态" width="110" align="center" column-key="customsStatus" :filters="customsFilters">
         <template #default="s"><el-tag :type="cstType(s.row.customsStatus)" :icon="cstIcon(s.row.customsStatus)" style="cursor:pointer" @click="openReceipt(s.row)">{{ cstLabel(s.row.customsStatus) }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="预录入编号" prop="lastUuid" width="170" show-overflow-tooltip align="center">
-        <template #default="s">{{ s.row.lastUuid || '-' }}</template>
-      </el-table-column>
-      <el-table-column label="操作" width="300" align="center" fixed="right">
+      <el-table-column label="操作" width="250" align="center" fixed="right">
         <template #default="s">
-          <el-button link type="primary" icon="View" @click="handleDetail(s.row)">详情</el-button>
           <el-button v-if="canExec(s.row, '1')" link type="success" icon="Stamp" v-hasPermi="['bonded:in:declare']" @click="handleDeclare('1', s.row)">备案</el-button>
           <el-button v-if="canExec(s.row, '2')" link type="warning" icon="EditPen" v-hasPermi="['bonded:in:declare']" @click="handleDeclare('2', s.row)">变更</el-button>
           <el-button v-if="canExec(s.row, '3')" link type="danger" icon="Delete" v-hasPermi="['bonded:in:declare']" @click="handleDeclare('3', s.row)">作废</el-button>
@@ -92,7 +87,7 @@
 
 <script setup name="Inbound">
 import { listInbound, delInbound, declareInbound } from '@/api/bonded/biz'
-import { cstLabel, cstType, cstIcon, customsStatusMap, docStatusLabel, docStatusOptions, docStatusType, docStatusIcon, materialNameWithMark, allowedExecTypes, fmtTimeShort, fmtTimeFull } from '@/utils/bonded'
+import { cstLabel, cstType, cstIcon, customsStatusMap, docStatusLabel, docStatusOptions, docStatusType, docStatusIcon, allowedExecTypes, fmtTimeShort, fmtTimeFull, enumToFilters, applyFilterChange, packListQuery } from '@/utils/bonded'
 import DeclareReceiptDialog from '../components/DeclareReceiptDialog.vue'
 import { addDateRange } from '@/utils/ruoyi'
 const { proxy } = getCurrentInstance()
@@ -103,23 +98,36 @@ const canExec = (row, t) => allowedExecTypes(row).includes(t)
 const dateRange = ref([])
 const searchExpanded = ref(false)
 const cstOptions = Object.entries(customsStatusMap).map(([value, v]) => ({ value, label: v.label }))
-const queryParams = reactive({ pageNum: 1, pageSize: 10, inboundNo: null, busiType: null, relaCustomsFormType: null, docStatus: null, customsStatus: null })
+const busiTypeFilters = enumToFilters([{ value: '04', label: '04-待维修货物' }, { value: '05', label: '05-维修用料' }, { value: '99', label: '99-其他' }])
+const relaFormTypeFilters = enumToFilters([
+  { value: '01', label: '01-径予放行申明' }, { value: '02', label: '02-公服入库单' }, { value: '03', label: '03-报关单' },
+  { value: '05', label: '05-异常调整' }, { value: '99', label: '99-其他' }
+])
+const docStatusFilters = enumToFilters(docStatusOptions)
+const customsFilters = enumToFilters(customsStatusMap)
+const queryParams = reactive({ pageNum: 1, pageSize: 10, inboundNo: null, busiType: [], relaCustomsFormType: [], docStatus: [], customsStatus: [] })
 
 function getList() {
   loading.value = true
-  listInbound(addDateRange(queryParams, dateRange.value, 'InoutTime')).then(r => {
+  const params = addDateRange(packListQuery(queryParams), dateRange.value, 'InoutTime')
+  listInbound(params).then(r => {
     rows.value = r.rows; total.value = r.total; loading.value = false
   })
 }
 function handleQuery() { queryParams.pageNum = 1; getList() }
-function resetQuery() { dateRange.value = []; proxy.resetForm('queryParams'); handleQuery() }
+function onFilterChange(filters) { applyFilterChange(queryParams, filters); handleQuery() }
+function resetQuery() {
+  Object.assign(queryParams, { pageNum: 1, pageSize: 10, inboundNo: null, busiType: [], relaCustomsFormType: [], docStatus: [], customsStatus: [] })
+  dateRange.value = []
+  handleQuery()
+}
 
 // ===== 行操作（保存即生效：单据保存成功即登记台账并按开关写入镜像库，无独立审核环节） =====
 
 // 明细摘要（列表接口已带 items：materialCd/materialName/storageCnt/price/currency/specificationsModels）
 function itemSummary(row) {
   const items = row.items || []
-  const first = materialNameWithMark(items[0]?.materialName, items[0]?.markType, items[0]?.isBonded) || ''
+  const first = items[0]?.materialName || ''
   return items.length > 1 ? first + ' 等 ' + items.length + ' 行' : (first || '-')
 }
 function itemCdSummary(row) {

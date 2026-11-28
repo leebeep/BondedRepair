@@ -28,6 +28,9 @@
         <if test="busiType != null and busiType != ''">AND busi_type = #{busiType}</if>
         <if test="docStatus != null and docStatus != ''">AND doc_status = #{docStatus}</if>
         <if test="customsStatus != null and customsStatus != ''">AND customs_status = #{customsStatus}</if>
+        <if test="busiTypeList != null and busiTypeList.size() > 0">AND busi_type in <foreach collection="busiTypeList" item="bt" open="(" separator="," close=")">#{bt}</foreach></if>
+        <if test="docStatusList != null and docStatusList.size() > 0">AND doc_status in <foreach collection="docStatusList" item="ds" open="(" separator="," close=")">#{ds}</foreach></if>
+        <if test="customsStatusList != null and customsStatusList.size() > 0">AND customs_status in <foreach collection="customsStatusList" item="cs" open="(" separator="," close=")">#{cs}</foreach></if>
         order by id desc
     </select>
     <select id="selectById" resultMap="OutboundResult"><include refid="selectVo"/> where id = #{id} and del_flag = '0'</select>

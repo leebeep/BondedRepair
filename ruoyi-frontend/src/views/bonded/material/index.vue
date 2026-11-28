@@ -9,12 +9,12 @@
           <el-input v-model="queryParams.materialName" placeholder="请输入物料名称" clearable style="width: 180px" @keyup.enter="handleQuery" />
         </el-form-item>
         <el-form-item label="物料属性" prop="markType">
-          <el-select v-model="queryParams.markType" placeholder="全部" clearable style="width: 200px">
+          <el-select v-model="queryParams.markType" placeholder="全部" clearable multiple collapse-tags style="width: 220px">
             <el-option v-for="d in markTypeOptions" :key="d.value" :label="d.label" :value="d.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="海关状态" prop="customsStatus">
-          <el-select v-model="queryParams.customsStatus" placeholder="全部" clearable style="width: 120px">
+          <el-select v-model="queryParams.customsStatus" placeholder="全部" clearable multiple collapse-tags style="width: 150px">
             <el-option v-for="(v, k) in customsStatusMap" :key="k" :label="v.label" :value="k" />
           </el-select>
         </el-form-item>
@@ -35,27 +35,29 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="materialList">
-      <el-table-column label="物料编号" prop="materialCd" width="140" show-overflow-tooltip align="center"/>
-      <el-table-column label="物料名称" show-overflow-tooltip min-width="160" align="center">
-        <template #default="scope">{{ materialNameWithMark(scope.row.materialName, scope.row.markType, scope.row.isBonded) }}</template>
+    <el-table v-loading="loading" :data="materialList" @filter-change="onFilterChange">
+      <el-table-column label="物料编号" prop="materialCd" width="140" show-overflow-tooltip align="center">
+        <template #default="scope"><el-link type="primary" :underline="false" @click="handleDetail(scope.row)">{{ scope.row.materialCd }}</el-link></template>
       </el-table-column>
-      <el-table-column label="物料属性" width="170" align="center">
+      <el-table-column label="物料名称" show-overflow-tooltip min-width="160" align="center">
+        <template #default="scope">{{ scope.row.materialName }}</template>
+      </el-table-column>
+      <el-table-column label="物料属性" width="170" align="center" column-key="markType" :filters="markTypeFilters">
         <template #default="scope">{{ markLabel(scope.row.markType) }}</template>
       </el-table-column>
-      <el-table-column label="料件成品标志" prop="gType" width="110" align="center">
+      <el-table-column label="料件成品标志" prop="gType" width="150" align="center" column-key="gType" :filters="gTypeFilters">
         <template #default="scope">{{ { I: '料件', E: '成品', S: '半成品' }[scope.row.gType] }}</template>
       </el-table-column>
       <el-table-column label="HS编码" prop="codeTs" width="120" align="center"/>
       <el-table-column label="计量单位" width="120" align="center">
         <template #default="scope">{{ customsUnitLabel(scope.row.calcUnit) }}</template>
       </el-table-column>
-      <el-table-column label="保税" prop="isBonded" width="70" align="center">
+      <el-table-column label="保税" prop="isBonded" width="70" align="center" column-key="isBonded" :filters="isBondedFilters">
         <template #default="scope">
           <el-tag :type="scope.row.isBonded === '1' ? 'primary' : 'info'">{{ scope.row.isBonded === '1' ? '保税' : '非保税' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="备案状态" width="100" align="center">
+      <el-table-column label="备案状态" width="100" align="center" column-key="declareStatus" :filters="declareStatusFilters">
         <template #default="scope">
           <el-tag :type="['0', '1', '2', '3'][scope.row.declareStatus] === undefined ? 'info' : ['info', 'warning', 'success', 'danger'][scope.row.declareStatus]"
                   :icon="{ '0': 'EditPen', '1': 'Clock', '2': 'CircleCheckFilled', '3': 'CircleCloseFilled' }[scope.row.declareStatus]">
@@ -63,17 +65,15 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="海关状态" width="110" align="center">
+      <el-table-column label="海关状态" width="110" align="center" column-key="customsStatus" :filters="customsFilters">
         <template #default="scope">
           <el-tag :type="customsStatusMap[scope.row.customsStatus]?.type || 'info'" :icon="cstIcon(scope.row.customsStatus)">
             {{ customsStatusMap[scope.row.customsStatus]?.label || scope.row.customsStatus }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="预录入编号" prop="uuid" width="180" show-overflow-tooltip align="center"/>
-      <el-table-column label="操作" width="280" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" width="240" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="View" v-hasPermi="['bonded:material:query']" @click="handleDetail(scope.row)">详情</el-button>
           <el-button v-if="canExec(scope.row, '1')" link type="success" icon="Stamp" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('1', scope.row)">备案</el-button>
           <el-button v-if="canExec(scope.row, '2')" link type="warning" icon="EditPen" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('2', scope.row)">变更</el-button>
           <el-button v-if="canExec(scope.row, '3')" link type="danger" icon="Delete" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('3', scope.row)">作废</el-button>
@@ -89,29 +89,21 @@
 <script setup name="Material">
 import { listMaterial, delMaterial, declareMaterial } from '@/api/bonded/material'
 import { customsUnitLabel } from '@/utils/customsUnits'
-import { materialMarkTypes as markTypeOptions, materialNameWithMark, cstIcon } from '@/utils/bonded'
+import { materialMarkTypes as markTypeOptions, cstIcon, customsStatusMap, enumToFilters, applyFilterChange, packListQuery } from '@/utils/bonded'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
-
-const customsStatusMap = {
-  '00': { label: '未申报', type: 'info' },
-  '10': { label: '待采集', type: 'primary' },
-  '20': { label: '已采集', type: 'primary' },
-  '90': { label: '采集超时', type: 'danger' },
-  '21': { label: '申报中', type: 'warning' },
-  '2Y': { label: '入库成功', type: 'success' },
-  '2N': { label: '入库失败', type: 'danger' },
-  '22': { label: '通过', type: 'success' },
-  '23': { label: '转人工', type: 'warning' },
-  '24': { label: '退单', type: 'danger' },
-  '29': { label: '已作废', type: 'info' }
-}
 
 const materialList = ref([])
 const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
+
+const markTypeFilters = enumToFilters(markTypeOptions)
+const gTypeFilters = enumToFilters([{ value: 'I', label: '料件' }, { value: 'E', label: '成品' }, { value: 'S', label: '半成品' }])
+const isBondedFilters = enumToFilters([{ value: '1', label: '保税' }, { value: '0', label: '非保税' }])
+const declareStatusFilters = enumToFilters([{ value: '0', label: '未申报' }, { value: '1', label: '已申报' }, { value: '2', label: '通过' }, { value: '3', label: '退单' }])
+const customsFilters = enumToFilters(customsStatusMap)
 
 // 行内申报按钮联动：与后端 checkDeclareAllowed 同规则
 // 备案(1)限未申报(0)/退单(3)；变更(2)/作废(3)限备案通过(2)；服务费虚物料(markType=8)禁止申报
@@ -123,7 +115,7 @@ const canExec = (row, t) => {
 }
 
 const data = reactive({
-  queryParams: { pageNum: 1, pageSize: 10, materialCd: null, materialName: null, markType: null, customsStatus: null }
+  queryParams: { pageNum: 1, pageSize: 10, materialCd: null, materialName: null, markType: [], customsStatus: [] }
 })
 
 const { queryParams } = toRefs(data)
@@ -135,7 +127,7 @@ function markLabel(markType) {
 
 function getList() {
   loading.value = true
-  listMaterial(queryParams.value).then(res => {
+  listMaterial(packListQuery(queryParams.value)).then(res => {
     materialList.value = res.rows
     total.value = res.total
     loading.value = false
@@ -147,8 +139,10 @@ function handleQuery() {
   getList()
 }
 
+function onFilterChange(filters) { applyFilterChange(queryParams.value, filters); handleQuery() }
+
 function resetQuery() {
-  proxy.resetForm('queryRef')
+  Object.assign(queryParams.value, { pageNum: 1, pageSize: 10, materialCd: null, materialName: null, markType: [], customsStatus: [] })
   handleQuery()
 }
 
@@ -183,7 +177,7 @@ function handleDelete(row) {
 }
 
 function handleExport() {
-  proxy.download('bonded/material/export', { ...queryParams.value }, `material_${new Date().getTime()}.xlsx`)
+  proxy.download('bonded/material/export', { ...packListQuery(queryParams.value) }, `material_${new Date().getTime()}.xlsx`)
 }
 
 getList()

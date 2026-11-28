@@ -38,6 +38,7 @@
         <if test="workNo != null and workNo != ''">AND w.work_no like concat('%', #{workNo}, '%')</if>
         <if test="batchNo != null and batchNo != ''">AND w.batch_no like concat('%', #{batchNo}, '%')</if>
         <if test="orderStatus != null and orderStatus != ''">AND w.order_status = #{orderStatus}</if>
+        <if test="orderStatusList != null and orderStatusList.size() > 0">AND w.order_status in <foreach collection="orderStatusList" item="os" open="(" separator="," close=")">#{os}</foreach></if>
         order by w.id desc
     </select>
 

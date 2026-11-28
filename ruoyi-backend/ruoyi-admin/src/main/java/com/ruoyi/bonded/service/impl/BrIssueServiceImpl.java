@@ -270,7 +270,7 @@ public class BrIssueServiceImpl implements IBrIssueService
                 d.setGoodsSourceNo(item.getGoodsSourceNo());
                 d.setPrice(item.getPrice());
                 d.setMaterialCd(m.getMaterialCd());
-                d.setMaterialDesc(BrMaterialServiceImpl.mirrorName(m.getMaterialName(), m.getMarkType(), m.getIsBonded()));
+                d.setMaterialDesc(m.getMaterialName());
                 d.setMaterialVersion(BrInboundServiceImpl.parseVersion(m.getVersion(), m.getMaterialName()));
                 d.setIssueMaterialQty(item.getIssueQty());
                 d.setCalcUnit(m.getCalcUnit());

@@ -37,6 +37,26 @@
         where s.material_id = #{materialId}
     </select>
 
+    <!-- 库存结存汇总：每物料一行（列表页主视图；台账流水在详情页按物料下钻） -->
+    <select id="selectStockSummary" parameterType="BrMaterialStock" resultMap="StockResult">
+        select s.material_id, s.mark_type, s.qty, s.last_biz_time, s.update_time,
+               m.material_cd, m.version, m.material_name, m.g_model, m.code_ts, m.calc_unit, m.is_bonded, m.declare_status
+        from br_material_stock s
+        join br_material m on m.id = s.material_id and m.del_flag = '0'
+        <where>
+            <if test="materialCd != null and materialCd != ''">AND m.material_cd like concat('%', #{materialCd}, '%')</if>
+            <if test="materialName != null and materialName != ''">AND m.material_name like concat('%', #{materialName}, '%')</if>
+            <if test="gModel != null and gModel != ''">AND m.g_model like concat('%', #{gModel}, '%')</if>
+            <if test="codeTs != null and codeTs != ''">AND m.code_ts like concat('%', #{codeTs}, '%')</if>
+            <if test="markType != null and markType != ''">AND s.mark_type = #{markType}</if>
+            <if test="markTypeList != null and markTypeList.size() > 0">AND s.mark_type in <foreach collection="markTypeList" item="mt" open="(" separator="," close=")">#{mt}</foreach></if>
+            <if test="isBondedList != null and isBondedList.size() > 0">AND m.is_bonded in <foreach collection="isBondedList" item="ib" open="(" separator="," close=")">#{ib}</foreach></if>
+            <if test="beginTime != null">AND s.last_biz_time &gt;= #{beginTime}</if>
+            <if test="endTime != null">AND s.last_biz_time &lt; date_add(#{endTime}, interval 1 day)</if>
+        </where>
+        order by s.qty desc, m.material_cd asc
+    </select>
+
     <select id="selectMonthStats" resultType="java.util.HashMap">
         select biz_type as bizType, ifnull(sum(qty), 0) as qty, count(*) as cnt
         from br_stock_ledger

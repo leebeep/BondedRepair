@@ -84,7 +84,7 @@
 
 <script setup name="WorkOrderDetail">
 import { getWorkOrder } from '@/api/bonded/workorder'
-import { returnTypes, materialNameWithMark, docStatusLabel, docStatusType, cstLabel, cstType } from '@/utils/bonded'
+import { returnTypes, docStatusLabel, docStatusType, cstLabel, cstType } from '@/utils/bonded'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()
@@ -109,10 +109,10 @@ const sums = ref({})
 function fmt(v) { const n = Number(v); return Number.isFinite(n) ? parseFloat(n.toFixed(6)) : '-' }
 function rtLabel(t) { return returnTypes.find(x => x.value === t)?.label || t }
 function issueLines(items) {
-  return (items || []).map(i => `${materialNameWithMark(i.materialName, i.markType, i.isBonded) || i.materialCd || '-'} × ${i.issueQty}`).join('\n') || '—'
+  return (items || []).map(i => `${i.materialName || i.materialCd || '-'} × ${i.issueQty}`).join('\n') || '—'
 }
 function receiveLines(items) {
-  return (items || []).map(i => `${rtLabel(i.returnType)}：${materialNameWithMark(i.materialName, i.markType, i.isBonded) || i.materialCd || '-'} × ${i.materialNum}`).join('\n') || '—'
+  return (items || []).map(i => `${rtLabel(i.returnType)}：${i.materialName || i.materialCd || '-'} × ${i.materialNum}`).join('\n') || '—'
 }
 
 const id = route.params.id

@@ -20,7 +20,6 @@
 </template>
 
 <script setup name="DeclarePreviewDialog">
-import { materialNameWithMark } from '@/utils/bonded'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -38,7 +37,7 @@ function now() {
 function desc(item) {
   const name = item.materialName || item.materialDesc || ''
   if (item.markType === '8') return name.includes('维修服务费') ? name : name + '维修服务费'
-  return materialNameWithMark(name, item.markType)
+  return name
 }
 
 const rows = computed(() => {

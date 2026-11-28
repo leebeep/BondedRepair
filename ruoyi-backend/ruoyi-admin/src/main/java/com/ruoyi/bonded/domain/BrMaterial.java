@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
+import java.util.List;
+
 /**
  * 物料主数据对象 br_material
  *
@@ -73,6 +75,13 @@ public class BrMaterial extends BaseEntity
 
     private String delFlag;
 
+    /** 查询辅助：列表头多选筛选（物料属性/料件成品标志/保税/备案状态/海关状态） */
+    private List<String> markTypeList;
+    private List<String> gTypeList;
+    private List<String> isBondedList;
+    private List<String> declareStatusList;
+    private List<String> customsStatusList;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getMaterialCd() { return materialCd; }
@@ -115,4 +124,14 @@ public class BrMaterial extends BaseEntity
     public void setExecuteType(String executeType) { this.executeType = executeType; }
     public String getDelFlag() { return delFlag; }
     public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+    public List<String> getMarkTypeList() { return markTypeList; }
+    public void setMarkTypeList(List<String> markTypeList) { this.markTypeList = markTypeList; }
+    public List<String> getgTypeList() { return gTypeList; }
+    public void setgTypeList(List<String> gTypeList) { this.gTypeList = gTypeList; }
+    public List<String> getIsBondedList() { return isBondedList; }
+    public void setIsBondedList(List<String> isBondedList) { this.isBondedList = isBondedList; }
+    public List<String> getDeclareStatusList() { return declareStatusList; }
+    public void setDeclareStatusList(List<String> declareStatusList) { this.declareStatusList = declareStatusList; }
+    public List<String> getCustomsStatusList() { return customsStatusList; }
+    public void setCustomsStatusList(List<String> customsStatusList) { this.customsStatusList = customsStatusList; }
 }

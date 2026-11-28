@@ -23,7 +23,7 @@
           <el-table :data="form.items" size="small" border empty-text="暂无明细，点击下方按钮添加" style="width: 100%">
             <el-table-column label="序号" type="index" width="55" align="center" />
             <el-table-column label="物料编号" width="120" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column align="center">
-            <el-table-column label="物料名称" min-width="140" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column align="center">
+            <el-table-column label="物料名称" min-width="140" show-overflow-tooltip><template #default="s">{{ s.row.materialName }}</template></el-table-column align="center">
             <el-table-column label="版本号" width="80" align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
             <el-table-column label="规格型号" width="130" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column align="center">
             <el-table-column label="是否保税" width="90" align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
@@ -55,11 +55,11 @@
           <el-col :span="12">
             <el-form-item label="物料编号" prop="materialId">
               <el-select v-model="itemForm.materialId" filterable :filter-method="filterMaterial" @change="onMaterialChange(itemForm)" @visible-change="v => !v && (materialQuery = '')" style="width: 100%">
-                <el-option v-for="m in filteredMaterials" :key="m.id" :label="m.materialCd + '　' + materialNameWithMark(m.materialName, m.markType, m.isBonded)" :value="m.id" />
+                <el-option v-for="m in filteredMaterials" :key="m.id" :label="m.materialCd + '　' + m.materialName" :value="m.id" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="materialNameWithMark(pickedItemMaterial?.materialName, pickedItemMaterial?.markType, pickedItemMaterial?.isBonded)" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="pickedItemMaterial?.materialName" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
@@ -95,7 +95,6 @@
 </template>
 
 <script setup name="IssueForm">
-import { materialNameWithMark } from '@/utils/bonded'
 import { getIssue, addIssue, updIssue, listInbound, listReceive, listStock, nextIssueNo } from '@/api/bonded/biz'
 import { listWorkOrderOptions } from '@/api/bonded/workorder'
 import { useMaterialCache } from '@/composables/useMaterialCache'

@@ -31,10 +31,10 @@
         <result property="updateTime" column="update_time"/>
     </resultMap>
 
-    <!-- 按前缀查最大物料编号（自动编号流水用） -->
+    <!-- 按前缀查最大物料编号（自动编号流水用；不过滤 del_flag——软删记录仍占用 uk_biz 唯一键，编号不可复用） -->
     <select id="selectMaxMaterialCdByPrefix" parameterType="String" resultType="String">
         select max(material_cd) from br_material
-        where del_flag = '0' and material_cd like concat(#{prefix}, '%')
+        where material_cd like concat(#{prefix}, '%')
     </select>
 
     <sql id="selectVo">
@@ -54,6 +54,11 @@
         <if test="isBonded != null and isBonded != ''">AND is_bonded = #{isBonded}</if>
         <if test="declareStatus != null and declareStatus != ''">AND declare_status = #{declareStatus}</if>
         <if test="customsStatus != null and customsStatus != ''">AND customs_status = #{customsStatus}</if>
+        <if test="markTypeList != null and markTypeList.size() > 0">AND mark_type in <foreach collection="markTypeList" item="mt" open="(" separator="," close=")">#{mt}</foreach></if>
+        <if test="gTypeList != null and gTypeList.size() > 0">AND g_type in <foreach collection="gTypeList" item="gt" open="(" separator="," close=")">#{gt}</foreach></if>
+        <if test="isBondedList != null and isBondedList.size() > 0">AND is_bonded in <foreach collection="isBondedList" item="ib" open="(" separator="," close=")">#{ib}</foreach></if>
+        <if test="declareStatusList != null and declareStatusList.size() > 0">AND declare_status in <foreach collection="declareStatusList" item="dst" open="(" separator="," close=")">#{dst}</foreach></if>
+        <if test="customsStatusList != null and customsStatusList.size() > 0">AND customs_status in <foreach collection="customsStatusList" item="cst" open="(" separator="," close=")">#{cst}</foreach></if>
         order by id desc
     </select>
 

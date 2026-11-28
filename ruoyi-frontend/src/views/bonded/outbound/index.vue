@@ -3,17 +3,17 @@
     <el-form :inline="true" :model="queryParams" class="mb8">
       <el-form-item label="出库单号"><el-input v-model="queryParams.outboundNo" placeholder="模糊查询" clearable style="width: 180px" @keyup.enter="handleQuery" /></el-form-item>
       <el-form-item label="业务类型">
-        <el-select v-model="queryParams.busiType" placeholder="全部" clearable style="width: 170px">
+        <el-select v-model="queryParams.busiType" placeholder="全部" clearable multiple collapse-tags style="width: 190px">
           <el-option v-for="t in busiTypes" :key="t.value" :label="t.label" :value="t.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="单据状态">
-        <el-select v-model="queryParams.docStatus" placeholder="全部" clearable style="width: 140px">
+        <el-select v-model="queryParams.docStatus" placeholder="全部" clearable multiple collapse-tags style="width: 160px">
           <el-option v-for="opt in docStatusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="海关状态">
-        <el-select v-model="queryParams.customsStatus" placeholder="全部" clearable style="width: 140px">
+        <el-select v-model="queryParams.customsStatus" placeholder="全部" clearable multiple collapse-tags style="width: 160px">
           <el-option v-for="c in cstOptions" :key="c.value" :label="c.label" :value="c.value" />
         </el-select>
       </el-form-item>
@@ -25,9 +25,11 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5"><el-button type="primary" plain icon="Plus" v-hasPermi="['bonded:out:add']" @click="handleAdd">新增</el-button></el-col>
     </el-row>
-    <el-table v-loading="loading" :data="rows">
-      <el-table-column label="出库单号" prop="outboundNo" width="160" align="center"/>
-      <el-table-column label="出库业务类型" width="160" align="center">
+    <el-table v-loading="loading" :data="rows" @filter-change="onFilterChange">
+      <el-table-column label="出库单号" prop="outboundNo" width="160" align="center">
+        <template #default="s"><el-link type="primary" :underline="false" @click="handleDetail(s.row)">{{ s.row.outboundNo }}</el-link></template>
+      </el-table-column>
+      <el-table-column label="出库业务类型" width="160" align="center" column-key="busiType" :filters="busiTypeFilters">
         <template #default="s"><el-tag :type="{ '03': 'info', '04': 'primary', '05': 'success', '99': 'info' }[s.row.busiType]">{{ busiTypes.find(t => t.value === s.row.busiType)?.label || s.row.busiType }}</el-tag></template>
       </el-table-column>
       <el-table-column label="物料编号" width="130" show-overflow-tooltip align="center">
@@ -41,22 +43,18 @@
           <el-tooltip :content="fmtTimeFull(s.row.inOutTime)" placement="top"><span>{{ fmtTimeShort(s.row.inOutTime) }}</span></el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="单据状态" width="110" align="center">
+      <el-table-column label="单据状态" width="110" align="center" column-key="docStatus" :filters="docStatusFilters">
         <template #default="s">
           <el-tag :type="docStatusType(s.row.docStatus, s.row.customsStatus)" :icon="docStatusIcon(s.row.docStatus, s.row.customsStatus)">
             {{ docStatusLabel(s.row.docStatus, s.row.customsStatus) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="海关状态" width="110" align="center">
+      <el-table-column label="海关状态" width="110" align="center" column-key="customsStatus" :filters="customsFilters">
         <template #default="s"><el-tag :type="cstType(s.row.customsStatus)" :icon="cstIcon(s.row.customsStatus)" style="cursor:pointer" @click="openReceipt(s.row)">{{ cstLabel(s.row.customsStatus) }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="预录入编号" prop="lastUuid" width="170" show-overflow-tooltip align="center">
-        <template #default="s">{{ s.row.lastUuid || '-' }}</template>
-      </el-table-column>
-      <el-table-column label="操作" width="300" align="center" fixed="right">
+      <el-table-column label="操作" width="250" align="center" fixed="right">
         <template #default="s">
-          <el-button link type="primary" icon="View" @click="handleDetail(s.row)">详情</el-button>
           <el-button v-if="canExec(s.row, '1')" link type="success" icon="Stamp" v-hasPermi="['bonded:out:declare']" @click="handleDeclare('1', s.row)">备案</el-button>
           <el-button v-if="canExec(s.row, '2')" link type="warning" icon="EditPen" v-hasPermi="['bonded:out:declare']" @click="handleDeclare('2', s.row)">变更</el-button>
           <el-button v-if="canExec(s.row, '3')" link type="danger" icon="Delete" v-hasPermi="['bonded:out:declare']" @click="handleDeclare('3', s.row)">作废</el-button>
@@ -72,7 +70,7 @@
 
 <script setup name="Outbound">
 import { listOutbound, delOutbound, declareOutbound } from '@/api/bonded/biz'
-import { cstLabel, cstType, cstIcon, customsStatusMap, docStatusLabel, docStatusOptions, docStatusType, docStatusIcon, outboundBusiTypes as busiTypes, materialNameWithMark, allowedExecTypes, fmtTimeShort, fmtTimeFull } from '@/utils/bonded'
+import { cstLabel, cstType, cstIcon, customsStatusMap, docStatusLabel, docStatusOptions, docStatusType, docStatusIcon, outboundBusiTypes as busiTypes, allowedExecTypes, fmtTimeShort, fmtTimeFull, enumToFilters, applyFilterChange, packListQuery } from '@/utils/bonded'
 import DeclareReceiptDialog from '../components/DeclareReceiptDialog.vue'
 import { useMaterialCache } from '@/composables/useMaterialCache'
 const { proxy } = getCurrentInstance()
@@ -83,12 +81,16 @@ const canExec = (row, t) => allowedExecTypes(row).includes(t)
 const { load: loadMaterialCache, cdOf } = useMaterialCache()
 loadMaterialCache()
 const cstOptions = Object.entries(customsStatusMap).map(([value, v]) => ({ value, label: v.label }))
-const queryParams = reactive({ pageNum: 1, pageSize: 10, outboundNo: null, busiType: null, docStatus: null, customsStatus: null })
+const busiTypeFilters = enumToFilters(busiTypes)
+const docStatusFilters = enumToFilters(docStatusOptions)
+const customsFilters = enumToFilters(customsStatusMap)
+const queryParams = reactive({ pageNum: 1, pageSize: 10, outboundNo: null, busiType: [], docStatus: [], customsStatus: [] })
 
-function getList() { loading.value = true; listOutbound(queryParams).then(r => { rows.value = r.rows; total.value = r.total; loading.value = false }) }
+function getList() { loading.value = true; listOutbound(packListQuery(queryParams)).then(r => { rows.value = r.rows; total.value = r.total; loading.value = false }) }
 function handleQuery() { queryParams.pageNum = 1; getList() }
+function onFilterChange(filters) { applyFilterChange(queryParams, filters); handleQuery() }
 function resetQuery() {
-  Object.assign(queryParams, { pageNum: 1, pageSize: 10, outboundNo: null, busiType: null, docStatus: null, customsStatus: null })
+  Object.assign(queryParams, { pageNum: 1, pageSize: 10, outboundNo: null, busiType: [], docStatus: [], customsStatus: [] })
   handleQuery()
 }
 
@@ -98,7 +100,7 @@ function resetQuery() {
 function itemCd(it) { return it.materialCd || cdOf(it.materialId) || '-' }
 function itemSummary(row) {
   const items = row.items || []
-  const first = materialNameWithMark(items[0]?.materialName, items[0]?.markType, items[0]?.isBonded) || ''
+  const first = items[0]?.materialName || ''
   return items.length > 1 ? first + ' 等 ' + items.length + ' 行' : (first || '-')
 }
 function itemCdSummary(row) {

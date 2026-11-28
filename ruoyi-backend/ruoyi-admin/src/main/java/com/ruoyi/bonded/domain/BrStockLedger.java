@@ -2,6 +2,7 @@ package com.ruoyi.bonded.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import com.ruoyi.common.annotation.Excel;
 import lombok.Data;
 
@@ -55,6 +56,10 @@ public class BrStockLedger
     /** 查询用：时间范围 */
     private Date beginTime;
     private Date endTime;
+
+    /** 查询辅助：物料属性/保税标志多选（列表头筛选） */
+    private List<String> markTypeList;
+    private List<String> isBondedList;
 
     private String batchNoQuery;
 }

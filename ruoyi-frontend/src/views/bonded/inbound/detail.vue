@@ -33,7 +33,7 @@
           <template #default="s">{{ s.row.materialCd || '-' }}</template>
         </el-table-column>
         <el-table-column label="物料名称" min-width="170" show-overflow-tooltip align="center">
-          <template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) || '-' }}</template>
+          <template #default="s">{{ s.row.materialName || '-' }}</template>
         </el-table-column>
         <el-table-column label="规格型号" prop="specificationsModels" width="140" show-overflow-tooltip align="center"/>
         <el-table-column label="数量" width="100" align="center">
@@ -78,7 +78,7 @@
 
 <script setup name="InboundDetail">
 import { getInbound } from '@/api/bonded/biz'
-import { cstLabel, cstType, docStatusLabel, docStatusType, materialNameWithMark, fmtThousand } from '@/utils/bonded'
+import { cstLabel, cstType, docStatusLabel, docStatusType, fmtThousand } from '@/utils/bonded'
 import { currencyLabel } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'
 

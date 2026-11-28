@@ -285,7 +285,7 @@ public class BrReceiveServiceImpl implements IBrReceiveService
             {
                 BrMaterial m = materialMapper.selectBrMaterialById(item.getMaterialId());
                 if (m == null) { throw new ServiceException("明细物料不存在: " + item.getMaterialId()); }
-                // 样例集 00 注2：服务费行(returnType=8)按被维修商品口径申报，materialCd/名称/版本/单位/保税标志均取被维修商品
+                // 样例集 00 注2：服务费行(returnType=8)按被维修商品口径申报，materialCd/版本/单位/保税标志取被维修商品，品名取物料名称原样
                 BrMaterial line = m;
                 if ("8".equals(m.getMarkType()))
                 {
@@ -301,9 +301,8 @@ public class BrReceiveServiceImpl implements IBrReceiveService
                 d.setReturnTime(h.getReceiveTime());
                 d.setWorkNo(wo.getWorkNo());
                 d.setMaterialCd(line.getMaterialCd());
-                d.setMaterialDesc("8".equals(m.getMarkType())
-                        ? BrMaterialServiceImpl.mirrorName(line.getMaterialName(), "2", line.getIsBonded(), "维修服务费")
-                        : BrMaterialServiceImpl.mirrorName(line.getMaterialName(), line.getMarkType(), line.getIsBonded()));
+                // 品名按物料名称原样申报（服务费行取虚物料自身名称，materialCd 仍按被维修商品口径）
+                d.setMaterialDesc(m.getMaterialName());
                 d.setMaterialVersion(new BigDecimal(Integer.toString(
                         BrInboundServiceImpl.parseVersion(line.getVersion(), line.getMaterialName()))));
                 d.setMaterialNum(item.getMaterialNum());

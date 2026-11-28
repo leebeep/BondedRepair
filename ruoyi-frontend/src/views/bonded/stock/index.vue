@@ -6,47 +6,44 @@
       <el-form-item label="规格型号"><el-input v-model="queryParams.gModel" clearable style="width: 130px" @keyup.enter="getList" /></el-form-item>
       <el-form-item label="HS编码"><el-input v-model="queryParams.codeTs" clearable style="width: 130px" @keyup.enter="getList" /></el-form-item>
       <el-form-item label="物料属性">
-        <el-select v-model="queryParams.markType" clearable placeholder="全部" style="width: 130px">
+        <el-select v-model="queryParams.markType" clearable multiple collapse-tags placeholder="全部" style="width: 150px">
           <el-option v-for="d in markTypes" :key="d.value" :label="d.label" :value="d.value" />
         </el-select>
       </el-form-item>
-      <el-form-item label="时间范围">
+      <el-form-item label="变动时间">
         <el-date-picker v-model="dateRange" type="daterange" range-separator="-" start-placeholder="开始" end-placeholder="结束" value-format="YYYY-MM-DD" style="width: 220px" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="getList">搜索</el-button>
-        <el-button icon="Refresh" @click="resetLedgerQuery">重置</el-button>
+        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
-    <el-table v-loading="loading" :data="rows">
+    <!-- 结存汇总视图：每物料一行；台账流水点击物料编号进详情查看 -->
+    <el-table v-loading="loading" :data="rows" @filter-change="onFilterChange">
       <el-table-column type="index" label="序号" width="55" align="center" :index="indexMethod" />
-      <el-table-column label="物料编号" prop="materialCd" min-width="150" show-overflow-tooltip align="center"/>
-      <el-table-column label="物料名称" min-width="220" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column align="center">
+      <el-table-column label="物料编号" prop="materialCd" min-width="150" show-overflow-tooltip align="center">
+        <template #default="s"><el-link type="primary" :underline="false" @click="goDetail(s.row.materialId)">{{ s.row.materialCd }}</el-link></template>
+      </el-table-column>
+      <el-table-column label="物料名称" min-width="220" show-overflow-tooltip><template #default="s">{{ s.row.materialName }}</template></el-table-column align="center">
       <el-table-column label="规格型号" min-width="120" show-overflow-tooltip align="center">
         <template #default="s">{{ s.row.gModel || '-' }}</template>
       </el-table-column>
       <el-table-column label="HS编码" min-width="110" show-overflow-tooltip align="center">
         <template #default="s">{{ s.row.codeTs || '-' }}</template>
       </el-table-column>
-      <el-table-column label="物料属性" width="110" align="center">
+      <el-table-column label="物料属性" width="110" align="center" column-key="markType" :filters="markTypeFilters">
         <template #default="s">{{ markTypes.find(d => d.value === s.row.markType)?.label || s.row.markType }}</template>
       </el-table-column>
-      <el-table-column label="是否保税" width="90" align="center">
+      <el-table-column label="是否保税" width="90" align="center" column-key="isBonded" :filters="isBondedFilters">
         <template #default="s"><el-tag size="small" :type="s.row.isBonded === '1' ? 'primary' : 'info'">{{ s.row.isBonded === '1' ? '保税' : '非保税' }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="当前库存" prop="balance" width="120" align="center">
-        <template #default="s"><span :class="{ 'qty-minus': Number(s.row.balance) < 0 }">{{ fmtThousand(s.row.balance) }}</span></template>
+      <el-table-column label="当前结存" prop="qty" width="120" align="center">
+        <template #default="s"><span :class="{ 'qty-minus': Number(s.row.qty) < 0 }">{{ fmtThousand(s.row.qty) }}</span></template>
       </el-table-column>
-      <el-table-column label="在库时间" prop="stockDays" width="100" align="center">
-        <template #default="s">{{ s.row.stockDays === null || s.row.stockDays === undefined ? '-' : s.row.stockDays + ' 天' }}</template>
-      </el-table-column>
-      <el-table-column label="发生时间" width="110" align="center">
+      <el-table-column label="最近变动时间" width="140" align="center">
         <template #default="s">
-          <el-tooltip :content="fmtTimeFull(s.row.createTime)" placement="top"><span>{{ fmtTimeShort(s.row.createTime) }}</span></el-tooltip>
+          <el-tooltip :content="fmtTimeFull(s.row.lastBizTime)" placement="top"><span>{{ fmtTimeFull(s.row.lastBizTime) }}</span></el-tooltip>
         </template>
-      </el-table-column>
-      <el-table-column label="操作" width="90" align="center" fixed="right">
-        <template #default="s"><el-button link type="primary" @click="goDetail(s.row.materialId)">物料详情</el-button></template>
       </el-table-column>
     </el-table>
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
@@ -54,7 +51,7 @@
 </template>
 
 <script setup name="Stock">
-import { materialNameWithMark, fmtThousand, fmtTimeShort, fmtTimeFull } from '@/utils/bonded'
+import { fmtThousand, fmtTimeFull, enumToFilters, applyFilterChange, packListQuery } from '@/utils/bonded'
 import { listStock } from '@/api/bonded/biz'
 
 const markTypes = [
@@ -62,10 +59,12 @@ const markTypes = [
   { value: '4', label: '维修用料件' }, { value: '5', label: '旧件或坏件' }, { value: '6', label: '边角料' },
   { value: '8', label: '维修服务费' }
 ]
+const markTypeFilters = enumToFilters(markTypes)
+const isBondedFilters = enumToFilters([{ value: '1', label: '保税' }, { value: '0', label: '非保税' }])
 const { proxy } = getCurrentInstance()
 
 const rows = ref([]); const loading = ref(false); const total = ref(0)
-const queryParams = reactive({ pageNum: 1, pageSize: 10, materialCd: null, materialName: null, gModel: null, codeTs: null, markType: null })
+const queryParams = reactive({ pageNum: 1, pageSize: 10, materialCd: null, materialName: null, gModel: null, codeTs: null, markType: [] })
 const dateRange = ref([])
 
 function indexMethod(index) { return (queryParams.pageNum - 1) * queryParams.pageSize + index + 1 }
@@ -73,10 +72,11 @@ function getList() {
   loading.value = true
   const params = { ...queryParams }
   if (dateRange.value && dateRange.value.length === 2) { params.beginTime = dateRange.value[0]; params.endTime = dateRange.value[1] }
-  listStock(params).then(r => { rows.value = r.rows; total.value = r.total; loading.value = false })
+  listStock(packListQuery(params)).then(r => { rows.value = r.rows; total.value = r.total; loading.value = false })
 }
-function resetLedgerQuery() {
-  Object.assign(queryParams, { pageNum: 1, materialCd: null, materialName: null, gModel: null, codeTs: null, markType: null })
+function onFilterChange(filters) { applyFilterChange(queryParams, filters); queryParams.pageNum = 1; getList() }
+function resetQuery() {
+  Object.assign(queryParams, { pageNum: 1, materialCd: null, materialName: null, gModel: null, codeTs: null, markType: [] })
   dateRange.value = []
   getList()
 }

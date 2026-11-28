@@ -20,6 +20,9 @@ public interface BrMaterialStockMapper
     /** 单个物料库存（联查物料基本信息，详情页用） */
     public BrMaterialStock selectByMaterialId(@Param("materialId") Long materialId);
 
+    /** 库存结存汇总（每物料一行，联查物料基本信息，列表页用） */
+    public List<BrMaterialStock> selectStockSummary(BrMaterialStock query);
+
     /** 本月四向流量（台账聚合） */
     public List<java.util.Map<String, Object>> selectMonthStats(@Param("materialId") Long materialId,
             @Param("monthBegin") String monthBegin);

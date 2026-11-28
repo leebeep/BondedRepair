@@ -1,6 +1,7 @@
 package com.ruoyi.bonded.domain;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 申报日志 br_declare_log（业务单据 ↔ 镜像表行映射）
@@ -28,6 +29,11 @@ public class BrDeclareLog
     /** 查询辅助：申报时间范围（不入库） */
     private String beginTime;
     private String endTime;
+
+    /** 查询辅助：报文类型/执行类型/回执状态多选（列表头筛选） */
+    private List<String> bizTypeList;
+    private List<String> executeTypeList;
+    private List<String> resultStatusList;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -61,4 +67,10 @@ public class BrDeclareLog
     public void setBeginTime(String beginTime) { this.beginTime = beginTime; }
     public String getEndTime() { return endTime; }
     public void setEndTime(String endTime) { this.endTime = endTime; }
+    public List<String> getBizTypeList() { return bizTypeList; }
+    public void setBizTypeList(List<String> bizTypeList) { this.bizTypeList = bizTypeList; }
+    public List<String> getExecuteTypeList() { return executeTypeList; }
+    public void setExecuteTypeList(List<String> executeTypeList) { this.executeTypeList = executeTypeList; }
+    public List<String> getResultStatusList() { return resultStatusList; }
+    public void setResultStatusList(List<String> resultStatusList) { this.resultStatusList = resultStatusList; }
 }

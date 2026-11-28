@@ -24,6 +24,9 @@ public class BrIssue extends BaseEntity
     private Date issueTime;
     private String docStatus;
     private String customsStatus;
+    /** 查询辅助：单据状态/海关状态多选（列表头筛选） */
+    private List<String> docStatusList;
+    private List<String> customsStatusList;
     private String executeType;
     private String lastUuid;
     private String delFlag;
