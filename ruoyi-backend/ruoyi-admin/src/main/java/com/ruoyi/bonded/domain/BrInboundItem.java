@@ -22,6 +22,9 @@ public class BrInboundItem
     private String unit1;
     /** 法定计量单位2(关联查询，展示用) */
     private String unit2;
+    /** 冗余展示字段：来自物料档案（单据页面拼接六类标记名称用） */
+    private String markType;
+    private String isBonded;
     private BigDecimal storageCnt;
     private BigDecimal price;
     private String currency;

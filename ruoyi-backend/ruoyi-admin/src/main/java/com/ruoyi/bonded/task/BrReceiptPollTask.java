@@ -48,6 +48,9 @@ public class BrReceiptPollTask
     @Autowired private BrInboundMapper inboundMapper;
     @Autowired private BrIssueMapper issueMapper;
     @Autowired private BrReceiveMapper receiveMapper;
+    @Autowired private com.ruoyi.bonded.service.BrLedgerService ledgerService;
+    @Autowired private com.ruoyi.bonded.service.BrWorkOrderService workOrderService;
+    @Autowired private com.ruoyi.bonded.mapper.BrWorkOrderMapper workOrderMapper;
 
     /** 默认 60 秒一轮，可用 br.poll.intervalMs 配置 */
     @Scheduled(fixedDelayString = "${br.poll.intervalMs:60000}")
@@ -80,8 +83,18 @@ public class BrReceiptPollTask
             Epd101Data row = epd101DataMapper.selectEpd101DataById(decl.getMirrorRowId());
             if (row == null || StringUtils.isEmpty(row.getResultStatus())) { return; }
             resultStatus = row.getResultStatus(); uuid = row.getUuid(); msg = row.getMsg(); resultTime = row.getResultTime();
-            materialMapper.updateDeclareResult(decl.getBizId(), uuid, mapDeclareStatus(resultStatus),
-                    mapCustomsStatus(resultStatus), decl.getExecuteType());
+            if ("3".equals(decl.getExecuteType()))
+            {
+                // 作废回执：成功→物料回到未申报(0)/海关29已作废；失败→保持通过(2)，海关状态取回执码
+                boolean ok = "Y".equals(resultStatus) || "1".equals(resultStatus);
+                materialMapper.updateDeclareResult(decl.getBizId(), uuid,
+                        ok ? "0" : "2", ok ? "29" : mapCustomsStatus(resultStatus), decl.getExecuteType());
+            }
+            else
+            {
+                materialMapper.updateDeclareResult(decl.getBizId(), uuid, mapDeclareStatus(resultStatus),
+                        mapCustomsStatus(resultStatus), decl.getExecuteType());
+            }
         }
         else if ("PTO2".equals(bizType))
         {
@@ -93,6 +106,7 @@ public class BrReceiptPollTask
             {
                 inboundMapper.updateDeclareResult(decl.getBizId(), uuid, ds,
                         customsFor(resultStatus, decl.getExecuteType()), decl.getExecuteType());
+                if ("07".equals(ds)) { ledgerService.reverseDoc("br_inbound", decl.getBizId()); }
             }
         }
         else if ("RRD2".equals(bizType))
@@ -105,6 +119,12 @@ public class BrReceiptPollTask
             {
                 issueMapper.updateDeclareResult(decl.getBizId(), uuid, ds,
                         customsFor(resultStatus, decl.getExecuteType()), decl.getExecuteType());
+                if ("07".equals(ds))
+                {
+                    ledgerService.reverseDoc("br_issue", decl.getBizId());
+                    com.ruoyi.bonded.domain.BrIssue ih = issueMapper.selectById(decl.getBizId());
+                    if (ih != null && ih.getWorkOrderId() != null) { workOrderService.refreshWorkOrderStatus(ih.getWorkOrderId()); }
+                }
             }
         }
         else if ("MSO2".equals(bizType))
@@ -117,6 +137,12 @@ public class BrReceiptPollTask
             {
                 receiveMapper.updateDeclareResult(decl.getBizId(), uuid, ds,
                         customsFor(resultStatus, decl.getExecuteType()), decl.getExecuteType());
+                if ("07".equals(ds))
+                {
+                    ledgerService.reverseDoc("br_receive", decl.getBizId());
+                    com.ruoyi.bonded.domain.BrReceive rh = receiveMapper.selectById(decl.getBizId());
+                    if (rh != null && rh.getWorkOrderId() != null) { workOrderService.refreshWorkOrderStatus(rh.getWorkOrderId()); }
+                }
             }
         }
         else if ("SDO2".equals(bizType))
@@ -129,6 +155,20 @@ public class BrReceiptPollTask
             {
                 outboundMapper.updateDeclareResult(decl.getBizId(), uuid, ds,
                         customsFor(resultStatus, decl.getExecuteType()), decl.getExecuteType());
+                if ("07".equals(ds))
+                {
+                    ledgerService.reverseDoc("br_outbound", decl.getBizId());
+                    java.util.Set<Long> woIds = new java.util.HashSet<>();
+                    for (com.ruoyi.bonded.domain.BrOutboundItem item : outboundMapper.selectItemsByOutboundId(decl.getBizId()))
+                    {
+                        if ("i".equals(item.getGoodsSourceType()) && StringUtils.isNotEmpty(item.getGoodsSourceNo()))
+                        {
+                            Long woId = workOrderMapper.selectWorkOrderIdByReceiveNo(item.getGoodsSourceNo());
+                            if (woId != null) { woIds.add(woId); }
+                        }
+                    }
+                    for (Long woId : woIds) { workOrderService.refreshOutClearStatus(woId); }
+                }
             }
         }
         else
@@ -173,12 +213,12 @@ public class BrReceiptPollTask
         }
     }
 
-    /** 单据回执映射：作废回执成功→07 已作废；作废失败不回写业务单据（仅记日志）；其余走常规映射 */
+    /** 单据回执映射：作废回执成功→07 已作废；作废失败→06 退单（可改后重新审核申报）；其余走常规映射 */
     private String docStatusFor(String result, String execType)
     {
         if ("3".equals(execType))
         {
-            return ("Y".equals(result) || "1".equals(result)) ? "07" : null;
+            return ("Y".equals(result) || "1".equals(result)) ? "07" : "06";
         }
         return mapDocStatus(result);
     }

@@ -56,7 +56,9 @@ public class BrOutboundController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody BrOutbound outbound)
     {
-        return toAjax(outboundService.insert(outbound));
+        String warn = outboundService.draftWarning(outbound);
+        int rows = outboundService.insert(outbound);
+        return com.ruoyi.common.utils.StringUtils.isEmpty(warn) ? toAjax(rows) : AjaxResult.success("保存成功，注意：" + warn);
     }
 
     @PreAuthorize("@ss.hasPermi('bonded:out:edit')")

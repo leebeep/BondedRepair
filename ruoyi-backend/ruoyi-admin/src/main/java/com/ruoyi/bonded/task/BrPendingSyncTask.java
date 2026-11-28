@@ -16,7 +16,7 @@ import com.ruoyi.bonded.service.IBrReceiveService;
 import com.ruoyi.common.exception.ServiceException;
 
 /**
- * 待同步补推任务：开关重新打开后，自动批量补推滞留单据（doc_status=03/customs_status=00 与物料 0/00），保证不丢。
+ * 待同步补报任务：开关重新打开后，自动批量补报滞留单据（doc_status=03/customs_status=00 与物料 0/00），保证不丢。
  */
 @Component
 public class BrPendingSyncTask
@@ -37,7 +37,7 @@ public class BrPendingSyncTask
         pushPending();
     }
 
-    /** 可由联网日志模块手动触发；返回本次补推单据数 */
+    /** 可由联网日志模块手动触发；返回本次补报单据数 */
     public int pushPending()
     {
         if (!pushSwitch.isEnabled())
@@ -52,7 +52,7 @@ public class BrPendingSyncTask
         n += pushMaterials();
         if (n > 0)
         {
-            log.info("补推完成，共 {} 单", n);
+            log.info("补报完成，共 {} 单", n);
         }
         return n;
     }
@@ -74,12 +74,12 @@ public class BrPendingSyncTask
                 case "SDO2": outboundService.declare(arr, "A"); break;
                 default: break;
             }
-            log.info("{} 补推 {} 单", bizType, ids.size());
+            log.info("{} 补报 {} 单", bizType, ids.size());
             return ids.size();
         }
         catch (Exception e)
         {
-            log.warn("{} 批量补推失败，改为逐单重试: {}", bizType, e.getMessage());
+            log.warn("{} 批量补报失败，改为逐单重试: {}", bizType, e.getMessage());
             int ok = 0;
             for (Long id : ids)
             {
@@ -98,7 +98,7 @@ public class BrPendingSyncTask
                 }
                 catch (Exception ex)
                 {
-                    log.warn("{} 单 {} 补推失败: {}", bizType, id, ex.getMessage());
+                    log.warn("{} 单 {} 补报失败: {}", bizType, id, ex.getMessage());
                 }
             }
             return ok;
@@ -124,16 +124,16 @@ public class BrPendingSyncTask
             catch (ServiceException e)
             {
                 // 校验类失败（如数据不全）保持滞留，人工修正后自动重试
-                log.warn("物料 {} 备案补推失败: {}", id, e.getMessage());
+                log.warn("物料 {} 备案补报失败: {}", id, e.getMessage());
             }
             catch (Exception e)
             {
-                log.error("物料 {} 备案补推异常", id, e);
+                log.error("物料 {} 备案补报异常", id, e);
             }
         }
         if (ok > 0)
         {
-            log.info("EPD101 补推 {} 单", ok);
+            log.info("EPD101 补报 {} 单", ok);
         }
         return ok;
     }

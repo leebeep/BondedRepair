@@ -36,7 +36,7 @@
     </select>
 
     <select id="selectById" resultMap="IssueResult">
-        <include refid="selectVo"/> where i.id = #{id}
+        <include refid="selectVo"/> where i.id = #{id} and i.del_flag = '0'
     </select>
 
     <select id="selectByIssueNo" resultMap="IssueResult">
@@ -85,4 +85,15 @@
     <delete id="deleteItemsByIssueId">
         delete from br_issue_item where issue_id = #{issueId}
     </delete>
+
+    <!-- 按issueNo查询（含软删除行） -->
+    <select id="selectByIssueNoAny" resultMap="IssueResult">
+        <include refid="selectVo"/> where i.issue_no = #{issueNo}
+    </select>
+
+    <!-- 按前缀查最大发料单号（自动编号流水用，含逻辑删除行避免流水撞号） -->
+    <select id="selectMaxIssueNoByPrefix" parameterType="String" resultType="String">
+        select max(i.issue_no) from br_issue i
+        where i.issue_no like concat(#{prefix}, '%')
+    </select>
 </mapper>

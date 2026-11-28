@@ -22,7 +22,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.annotation.Log;
 
 /**
- * 联网日志 Controller（原申报管理）：自动推送开关 + 采集看板 + 同步/查询日志
+ * 联网日志 Controller（原申报管理）：自动申报开关 + 采集看板 + 同步/查询日志
  */
 @RestController
 @RequestMapping("/bonded/declare")
@@ -36,7 +36,7 @@ public class BrDeclareController extends BaseController
     @Autowired private BrPendingSyncTask pendingSyncTask;
     @Autowired private CustomsQueryService queryService;
 
-    /** 自动推送开关：查询 */
+    /** 自动申报开关：查询 */
     @PreAuthorize("@ss.hasPermi('bonded:declare:list')")
     @GetMapping("/push-switch")
     public AjaxResult pushSwitchGet()
@@ -44,9 +44,9 @@ public class BrDeclareController extends BaseController
         return success(pushSwitch.isEnabled());
     }
 
-    /** 自动推送开关：切换 */
+    /** 自动申报开关：切换 */
     @PreAuthorize("@ss.hasPermi('bonded:declare:edit')")
-    @Log(title = "联网自动推送开关", businessType = BusinessType.UPDATE)
+    @Log(title = "联网自动申报开关", businessType = BusinessType.UPDATE)
     @PutMapping("/push-switch/{enabled}")
     public AjaxResult pushSwitchSet(@PathVariable boolean enabled)
     {
@@ -62,14 +62,14 @@ public class BrDeclareController extends BaseController
         return success(syncMapper.selectSyncBoard());
     }
 
-    /** 手动补推：立即推送开关关闭期间滞留的待同步单据（03/00、物料 0/00） */
+    /** 手动补报：立即申报开关关闭期间滞留的待申报单据（03/00、物料 0/00） */
     @PreAuthorize("@ss.hasPermi('bonded:declare:edit')")
-    @Log(title = "联网日志补推", businessType = BusinessType.OTHER)
+    @Log(title = "联网日志补报", businessType = BusinessType.OTHER)
     @PostMapping("/push-pending")
     public AjaxResult pushPending()
     {
         int n = pendingSyncTask.pushPending();
-        return success("本次补推 " + n + " 单");
+        return success("本次补报 " + n + " 单");
     }
 
     /** 手动主动查询：立即调公服查询接口覆盖回执（写回镜像表，轮询任务回读业务单据） */

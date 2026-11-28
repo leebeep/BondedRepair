@@ -8,6 +8,7 @@ export const updInbound = d => request({ url: '/bonded/inbound', method: 'put', 
 export const delInbound = id => request({ url: '/bonded/inbound/' + id, method: 'delete' })
 export const auditInbound = id => request({ url: '/bonded/inbound/audit/' + id, method: 'post' })
 export const declareInbound = (t, ids) => request({ url: `/bonded/inbound/declare/${t}/${ids}`, method: 'post' })
+export const nextInboundNo = () => request({ url: '/bonded/inbound/nextNo', method: 'get' })
 
 // 工单发料
 export const listIssue = q => request({ url: '/bonded/issue/list', method: 'get', params: q })
@@ -17,6 +18,7 @@ export const updIssue = d => request({ url: '/bonded/issue', method: 'put', data
 export const delIssue = id => request({ url: '/bonded/issue/' + id, method: 'delete' })
 export const auditIssue = id => request({ url: '/bonded/issue/audit/' + id, method: 'post' })
 export const declareIssue = (t, ids) => request({ url: `/bonded/issue/declare/${t}/${ids}`, method: 'post' })
+export const nextIssueNo = () => request({ url: '/bonded/issue/nextNo', method: 'get' })
 
 // 工单收料
 export const listReceive = q => request({ url: '/bonded/receive/list', method: 'get', params: q })

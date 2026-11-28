@@ -43,12 +43,22 @@ public class BrIssueController extends BaseController
         return success(issueService.selectById(id));
     }
 
+    /** 下一张发料单号（默认自动生成，前缀经 参数设置 br.issue.no.prefix 修改） */
+    @PreAuthorize("@ss.hasPermi('bonded:issue:add')")
+    @GetMapping("/nextNo")
+    public AjaxResult nextNo()
+    {
+        return AjaxResult.success("操作成功", issueService.nextIssueNo());
+    }
+
     @PreAuthorize("@ss.hasPermi('bonded:issue:add')")
     @Log(title = "工单发料", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody BrIssue issue)
     {
-        return toAjax(issueService.insert(issue));
+        String warn = issueService.draftWarning(issue);
+        int rows = issueService.insert(issue);
+        return com.ruoyi.common.utils.StringUtils.isEmpty(warn) ? toAjax(rows) : AjaxResult.success("保存成功，注意：" + warn);
     }
 
     @PreAuthorize("@ss.hasPermi('bonded:issue:edit')")

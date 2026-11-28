@@ -124,4 +124,29 @@
         join br_work_order w on w.id = h.work_order_id
         where w.work_no = #{workNo} and t.return_type = '1'
     </select>
+
+    <!-- 须出区收料合计：已修复5/残次品a/未使用1/旧件7/服务费8/边角料9；余料6结转不出区 -->
+    <select id="sumToClearQty" parameterType="String" resultType="java.math.BigDecimal">
+        select ifnull(sum(t.material_num), 0)
+        from br_receive_item t
+        join br_receive h on h.id = t.receive_id and h.del_flag = '0' and h.doc_status in ('03', '05')
+        join br_work_order w on w.id = h.work_order_id
+        where w.work_no = #{workNo} and t.return_type in ('5', 'a', '1', '7', '8', '9')
+    </select>
+
+    <!-- 该工单收料（来源 i）已出库数量合计（出库单 03/05 状态） -->
+    <select id="sumOutboundQty" parameterType="String" resultType="java.math.BigDecimal">
+        select ifnull(sum(i.delivery_cnt), 0)
+        from br_outbound_item i
+        join br_outbound h on h.id = i.outbound_id and h.del_flag = '0' and h.doc_status in ('03', '05')
+        where i.goods_source_type = 'i'
+          and i.goods_source_no in (
+              select h2.receive_no from br_receive h2
+              join br_work_order w2 on w2.id = h2.work_order_id
+              where w2.work_no = #{workNo} and h2.del_flag = '0')
+    </select>
+
+    <select id="selectWorkOrderIdByReceiveNo" parameterType="String" resultType="java.lang.Long">
+        select work_order_id from br_receive where receive_no = #{receiveNo} and del_flag = '0' limit 1
+    </select>
 </mapper>

@@ -12,6 +12,8 @@ public class BrDeclareLog
     private String bizType;
     private String bizTable;
     private Long bizId;
+    /** 单据编号（物料编号/入库单号/发料单号/收料单号/出库单号），日志清单展示用 */
+    private String bizNo;
     private String mirrorTable;
     private Long mirrorRowId;
     private String executeType;
@@ -23,8 +25,14 @@ public class BrDeclareLog
     private String syncFlag;
     private Date createTime;
 
+    /** 查询辅助：申报时间范围（不入库） */
+    private String beginTime;
+    private String endTime;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public String getBizNo() { return bizNo; }
+    public void setBizNo(String bizNo) { this.bizNo = bizNo; }
     public String getBizType() { return bizType; }
     public void setBizType(String bizType) { this.bizType = bizType; }
     public String getBizTable() { return bizTable; }
@@ -49,4 +57,8 @@ public class BrDeclareLog
     public void setSyncFlag(String syncFlag) { this.syncFlag = syncFlag; }
     public Date getCreateTime() { return createTime; }
     public void setCreateTime(Date createTime) { this.createTime = createTime; }
+    public String getBeginTime() { return beginTime; }
+    public void setBeginTime(String beginTime) { this.beginTime = beginTime; }
+    public String getEndTime() { return endTime; }
+    public void setEndTime(String endTime) { this.endTime = endTime; }
 }

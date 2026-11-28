@@ -43,6 +43,14 @@ public class BrInboundController extends BaseController
         return success(inboundService.selectById(id));
     }
 
+    /** 下一张入库单号（默认自动生成，前缀经 参数设置 br.inbound.no.prefix 修改） */
+    @PreAuthorize("@ss.hasPermi('bonded:in:add')")
+    @GetMapping("/nextNo")
+    public AjaxResult nextNo()
+    {
+        return AjaxResult.success("操作成功", inboundService.nextInboundNo());
+    }
+
     @PreAuthorize("@ss.hasPermi('bonded:in:add')")
     @Log(title = "入库单", businessType = BusinessType.INSERT)
     @PostMapping

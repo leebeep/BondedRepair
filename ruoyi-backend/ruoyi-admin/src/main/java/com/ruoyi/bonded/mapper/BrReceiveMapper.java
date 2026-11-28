@@ -16,6 +16,9 @@ public interface BrReceiveMapper
 
     public BrReceive selectByReceiveNo(@Param("receiveNo") String receiveNo);
 
+    /** 按receiveNo查询（含软删除行，用于编号占用校验的友好提示） */
+    public BrReceive selectByReceiveNoAny(@Param("receiveNo") String receiveNo);
+
     /** 按前缀查最大收料单号（自动编号流水用，含逻辑删除行避免流水撞号） */
     public String selectMaxReceiveNoByPrefix(@Param("prefix") String prefix);
 

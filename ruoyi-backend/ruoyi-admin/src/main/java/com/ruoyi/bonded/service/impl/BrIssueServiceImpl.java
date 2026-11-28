@@ -39,6 +39,28 @@ public class BrIssueServiceImpl implements IBrIssueService
     @Autowired private BrWorkOrderService workOrderService;
     @Autowired private BrPushSwitch pushSwitch;
 
+    /** 发料单号自动生成前缀参数（sys_config，可在 参数设置 中修改） */
+    public static final String ISSUE_NO_PREFIX_KEY = "br.issue.no.prefix";
+    public static final String DEFAULT_ISSUE_NO_PREFIX = "IS";
+
+    @Autowired private com.ruoyi.system.service.ISysConfigService configService;
+
+    @Override
+    public String nextIssueNo()
+    {
+        String prefix = configService.selectConfigByKey(ISSUE_NO_PREFIX_KEY);
+        if (prefix == null || prefix.isEmpty()) { prefix = DEFAULT_ISSUE_NO_PREFIX; }
+        String head = prefix + new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
+        String max = issueMapper.selectMaxIssueNoByPrefix(head);
+        int seq = 1;
+        if (max != null && max.length() > head.length())
+        {
+            try { seq = Integer.parseInt(max.substring(head.length())) + 1; }
+            catch (NumberFormatException ignored) { }
+        }
+        return head + String.format("%03d", seq);
+    }
+
     @Override
     public List<BrIssue> selectList(BrIssue issue)
     {
@@ -121,8 +143,12 @@ public class BrIssueServiceImpl implements IBrIssueService
             if (db != null && db.getWorkOrderId() != null) { woIds.add(db.getWorkOrderId()); }
         }
         int rows = issueMapper.deleteByIds(ids);
-        // 删除后同步重建工单投入明细，避免残留已删发料的物料
-        for (Long woId : woIds) { workOrderService.rebuildRepairItems(woId); }
+        // 删除后同步重建工单投入明细并按剩余发料/收料重建工单状态（避免草稿删除后状态滞留 02）
+        for (Long woId : woIds)
+        {
+            workOrderService.rebuildRepairItems(woId);
+            workOrderService.refreshWorkOrderStatus(woId);
+        }
         return rows;
     }
 
@@ -132,7 +158,7 @@ public class BrIssueServiceImpl implements IBrIssueService
     {
         BrIssue h = issueMapper.selectById(id);
         if (h == null) { throw new ServiceException("发料单不存在"); }
-        if (!"01".equals(h.getDocStatus()) && !"02".equals(h.getDocStatus())) { throw new ServiceException("发料单【" + h.getIssueNo() + "】已审核"); }
+        if (!"01".equals(h.getDocStatus())) { throw new ServiceException("发料单【" + h.getIssueNo() + "】已审核"); }
         BrWorkOrder wo = workOrderMapper.selectById(h.getWorkOrderId());
         List<BrIssueItem> items = issueMapper.selectItemsByIssueId(id);
         if (items.isEmpty()) { throw new ServiceException("发料单明细为空"); }
@@ -150,7 +176,7 @@ public class BrIssueServiceImpl implements IBrIssueService
                     item.getGoodsSourceType(), item.getGoodsSourceNo(), wo.getWorkNo(), wo.getBatchNo(),
                     item.getIssueQty().negate());
         }
-        // 审核通过；自动推送开关打开时同事务写入镜像库，关闭则滞留待同步由补推任务处理
+        // 审核通过；自动申报开关打开时同事务写入镜像库，关闭则滞留待申报由补报任务处理
         int rows = issueMapper.updateDeclareResult(id, h.getLastUuid(), "03", h.getCustomsStatus(), "1");
         if (pushSwitch.isEnabled())
         {
@@ -170,6 +196,20 @@ public class BrIssueServiceImpl implements IBrIssueService
             // A=自动判定：已申报过（有预录入编号）走变更(2)，否则首报(1)
             String t = executeType;
             if ("A".equals(t)) { t = StringUtils.isNotEmpty(h.getLastUuid()) ? "2" : "1"; }
+                        // 执行策略联动：变更(2)/作废(3)仅限 申报中/申报通过/退单；在途(申报中未回执)禁止任何申报，避免报文叠写
+            if ("03".equals(h.getDocStatus()) && ("10".equals(h.getCustomsStatus()) || "20".equals(h.getCustomsStatus()) || "21".equals(h.getCustomsStatus())))
+            {
+                throw new ServiceException("单据【" + h.getIssueNo() + "】申报回执未到（海关状态：" + h.getCustomsStatus() + "），请等待回执后再申报");
+            }
+            // 执行策略联动：已申报过（有预录入编号）只能变更或作废，不允许再次备案
+            if ("1".equals(t) && StringUtils.isNotEmpty(h.getLastUuid()))
+            {
+                throw new ServiceException("发料单【" + h.getIssueNo() + "】已申报（预录入编号：" + h.getLastUuid() + "），只能变更或作废，不允许再次备案");
+            }
+            if ("2".equals(t) && !"03".equals(h.getDocStatus()) && !"05".equals(h.getDocStatus()) && !"06".equals(h.getDocStatus()))
+            {
+                throw new ServiceException("单据【" + h.getIssueNo() + "】仅申报中/申报通过/退单状态可变更（已作废单据不可变更）");
+            }
             if ("1".equals(t) && !"03".equals(h.getDocStatus()))
             {
                 throw new ServiceException("发料单【" + h.getIssueNo() + "】未审核通过，不能申报");
@@ -201,7 +241,7 @@ public class BrIssueServiceImpl implements IBrIssueService
                 d.setGoodsSourceNo(item.getGoodsSourceNo());
                 d.setPrice(item.getPrice());
                 d.setMaterialCd(m.getMaterialCd());
-                d.setMaterialDesc(m.getMaterialName() + BrMaterialServiceImpl.markSuffix(m.getMarkType()));
+                d.setMaterialDesc(m.getMaterialName() + BrMaterialServiceImpl.markSuffix(m.getMarkType(), m.getIsBonded()));
                 d.setMaterialVersion(BrInboundServiceImpl.parseVersion(m.getVersion(), m.getMaterialName()));
                 d.setIssueMaterialQty(item.getIssueQty());
                 d.setCalcUnit(m.getCalcUnit());
@@ -215,6 +255,7 @@ public class BrIssueServiceImpl implements IBrIssueService
                 log.setBizId(id);
                 log.setMirrorTable("rrd2_data");
                 log.setMirrorRowId(d.getId());
+                log.setBizNo(h.getIssueNo());
                 log.setExecuteType(t);
                 log.setUuid(StringUtils.defaultString(lastUuid, ""));
                 declareLogMapper.insertBrDeclareLog(log);
@@ -230,6 +271,10 @@ public class BrIssueServiceImpl implements IBrIssueService
         if (StringUtils.isEmpty(issue.getIssueNo())) { throw new ServiceException("发料单号必填"); }
         BrIssue exist = issueMapper.selectByIssueNo(issue.getIssueNo());
         if (exist != null && !exist.getId().equals(selfId)) { throw new ServiceException("发料单号已存在: " + issue.getIssueNo()); }
+        if (exist == null && issueMapper.selectByIssueNoAny(issue.getIssueNo()) != null)
+        {
+            throw new ServiceException("发料单号已被占用（含已删除单据，编号不可复用）: " + issue.getIssueNo());
+        }
         if (StringUtils.isEmpty(issue.getWorkNo()) && issue.getWorkOrderId() == null) { throw new ServiceException("工单号必填"); }
         if (issue.getItems() == null || issue.getItems().isEmpty()) { throw new ServiceException("发料明细不能为空"); }
         boolean hasRepairGoods = false;
@@ -258,5 +303,26 @@ public class BrIssueServiceImpl implements IBrIssueService
     static Integer parseVersion(String version)
     {
         return BrInboundServiceImpl.parseVersion(version, null);
+    }
+
+    /** 草稿保存软校验：来源余额不足时返回提示（不阻断保存，审核时硬拦截） */
+    @Override
+    public String draftWarning(BrIssue issue)
+    {
+        if (issue.getItems() == null) { return ""; }
+        StringBuilder warn = new StringBuilder();
+        for (BrIssueItem item : issue.getItems())
+        {
+            BrMaterial m = materialMapper.selectBrMaterialById(item.getMaterialId());
+            if (m == null || item.getIssueQty() == null) { continue; }
+            BigDecimal available = ledgerService.sourceBalance(item.getMaterialId(), item.getGoodsSourceType(), item.getGoodsSourceNo());
+            if (available.compareTo(item.getIssueQty()) < 0)
+            {
+                if (warn.length() > 0) { warn.append("；"); }
+                warn.append(m.getMaterialName()).append(" 来源 ").append(item.getGoodsSourceNo())
+                        .append(" 可用 ").append(available).append("，本次发料 ").append(item.getIssueQty()).append("（审核时将拦截）");
+            }
+        }
+        return warn.toString();
     }
 }

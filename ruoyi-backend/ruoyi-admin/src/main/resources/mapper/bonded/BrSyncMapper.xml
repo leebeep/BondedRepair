@@ -31,7 +31,7 @@
         union all
         select 'SDO2' as bizType, customs_status as k, count(*) as cnt from br_outbound where del_flag = '0' group by customs_status
         union all
-        select 'EPD101' as bizType, customs_status as k, count(*) as cnt from br_material where del_flag = '0' group by customs_status
+        select 'EPD101' as bizType, customs_status as k, count(*) as cnt from br_material where del_flag = '0' and mark_type != '8' group by customs_status
     </select>
 
     <select id="selectQueryUuidsInbound" resultType="java.lang.String">

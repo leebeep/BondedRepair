@@ -42,4 +42,13 @@ public interface BrWorkOrderMapper
 
     /** 工单未使用料件收料合计（returnType=1） */
     public java.math.BigDecimal sumUnusedRepairQty(@Param("workNo") String workNo);
+
+    /** 工单须出区收料合计（returnType in 5/a/1/7/8/9；余料 6 结转不出区，不参与出清判断） */
+    public java.math.BigDecimal sumToClearQty(@Param("workNo") String workNo);
+
+    /** 工单已出库数量合计（来源为该工单收料单、单据 03/05 状态） */
+    public java.math.BigDecimal sumOutboundQty(@Param("workNo") String workNo);
+
+    /** 按收料单号反查工单ID（出库清状态推进用） */
+    public Long selectWorkOrderIdByReceiveNo(@Param("receiveNo") String receiveNo);
 }

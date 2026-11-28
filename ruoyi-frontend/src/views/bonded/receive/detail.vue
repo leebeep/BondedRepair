@@ -19,6 +19,7 @@
         <el-descriptions-item label="海关状态">
           <el-tag :type="cstType(form.customsStatus)">{{ cstLabel(form.customsStatus) }}</el-tag>
         </el-descriptions-item>
+        <el-descriptions-item label="预录入编号">{{ form.lastUuid || '-' }}</el-descriptions-item>
       </el-descriptions>
     </el-card>
     <el-card shadow="never" class="mt8">
@@ -30,11 +31,11 @@
           <template #default="s">{{ returnTypes.find(t => t.value === s.row.returnType)?.label || s.row.returnType }}</template>
         </el-table-column>
         <el-table-column label="物料编号" width="130" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column>
-        <el-table-column label="物料名称" min-width="150" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialName') }}</template></el-table-column>
+        <el-table-column label="物料名称" min-width="150" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column>
         <el-table-column label="版本号" width="80" align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
-        <el-table-column label="计量单位" width="110" align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
-        <el-table-column label="是否保税" width="90" align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
         <el-table-column label="规格型号" width="140" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column>
+        <el-table-column label="是否保税" width="90" align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
+        <el-table-column label="计量单位" width="110" align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
         <el-table-column label="数量" prop="materialNum" width="130" align="right" />
         <el-table-column label="说明" width="180"><template #default="s"><span v-if="s.row.returnType === '8'" class="text-muted">系统自动生成，数量 0.1</span></template></el-table-column>
       </el-table>
@@ -48,7 +49,7 @@
 <script setup name="ReceiveDetail">
 import { getReceive } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
-import { cstLabel, cstType, docStatusLabel, docStatusType, returnTypes } from '@/utils/bonded'
+import { cstLabel, cstType, docStatusLabel, docStatusType, returnTypes, materialNameWithMark } from '@/utils/bonded'
 import { currencyLabel } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'
 

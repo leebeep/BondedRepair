@@ -23,6 +23,7 @@
         <el-descriptions-item label="海关状态">
           <el-tag :type="cstType(form.customsStatus)">{{ cstLabel(form.customsStatus) }}</el-tag>
         </el-descriptions-item>
+        <el-descriptions-item label="预录入编号">{{ form.lastUuid || '-' }}</el-descriptions-item>
       </el-descriptions>
     </el-card>
     <el-card shadow="never" class="mt8">
@@ -31,20 +32,20 @@
       </template>
       <el-table :data="form.items || []" size="small" border>
         <el-table-column label="物料编号" width="130" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column>
-        <el-table-column label="物料名称" min-width="150" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialName') }}</template></el-table-column>
+        <el-table-column label="物料名称" min-width="150" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column>
         <el-table-column label="版本号" width="80" align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
-        <el-table-column label="计量单位" width="110" align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
+        <el-table-column label="规格型号" width="140" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column>
         <el-table-column label="是否保税" width="90" align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
         <el-table-column label="来源类型" width="100" align="center">
           <template #default="s">{{ { g: 'g-入库清单', i: 'i-工单收料' }[s.row.goodsSourceType] || s.row.goodsSourceType }}</template>
         </el-table-column>
         <el-table-column label="来源单号" prop="goodsSourceNo" width="150" />
+        <el-table-column label="计量单位" width="110" align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
         <el-table-column label="出库数量" prop="deliveryCnt" width="110" align="right" />
         <el-table-column label="单价" prop="price" width="110" align="right" />
         <el-table-column label="币制" width="110" align="center">
           <template #default="s">{{ currencyLabel(s.row.currency) }}</template>
         </el-table-column>
-        <el-table-column label="规格型号" width="140" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column>
         <el-table-column label="出库说明" prop="busiDesc" width="140" show-overflow-tooltip />
       </el-table>
     </el-card>
@@ -57,7 +58,7 @@
 <script setup name="OutboundDetail">
 import { getOutbound } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
-import { cstLabel, cstType, docStatusLabel, docStatusType, outboundBusiTypes as busiTypes } from '@/utils/bonded'
+import { cstLabel, cstType, docStatusLabel, docStatusType, outboundBusiTypes as busiTypes, materialNameWithMark } from '@/utils/bonded'
 import { currencyLabel } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'
 

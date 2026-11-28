@@ -7,6 +7,7 @@
         <result property="bizType" column="biz_type"/>
         <result property="bizTable" column="biz_table"/>
         <result property="bizId" column="biz_id"/>
+        <result property="bizNo" column="biz_no"/>
         <result property="mirrorTable" column="mirror_table"/>
         <result property="mirrorRowId" column="mirror_row_id"/>
         <result property="executeType" column="execute_type"/>
@@ -19,9 +20,9 @@
     </resultMap>
 
     <insert id="insertBrDeclareLog" parameterType="BrDeclareLog" useGeneratedKeys="true" keyProperty="id">
-        insert into br_declare_log (biz_type, biz_table, biz_id, mirror_table, mirror_row_id,
+        insert into br_declare_log (biz_type, biz_table, biz_id, biz_no, mirror_table, mirror_row_id,
             execute_type, uuid, sync_flag, create_time)
-        values (#{bizType}, #{bizTable}, #{bizId}, #{mirrorTable}, #{mirrorRowId},
+        values (#{bizType}, #{bizTable}, #{bizId}, #{bizNo}, #{mirrorTable}, #{mirrorRowId},
             #{executeType}, #{uuid}, '0', sysdate())
     </insert>
 
@@ -42,8 +43,18 @@
             <if test="bizType != null and bizType != ''">AND biz_type = #{bizType}</if>
             <if test="bizTable != null and bizTable != ''">AND biz_table = #{bizTable}</if>
             <if test="bizId != null">AND biz_id = #{bizId}</if>
-            <if test="resultStatus != null and resultStatus != ''">AND result_status = #{resultStatus}</if>
+            <if test="bizNo != null and bizNo != ''">AND biz_no like concat('%', #{bizNo}, '%')</if>
+            <if test="executeType != null and executeType != ''">AND execute_type = #{executeType}</if>
+            <if test="uuid != null and uuid != ''">AND uuid like concat('%', #{uuid}, '%')</if>
+            <if test="resultStatus != null and resultStatus != ''">
+                <choose>
+                    <when test="resultStatus == 'PENDING'.toString()">AND result_status is null</when>
+                    <otherwise>AND result_status = #{resultStatus}</otherwise>
+                </choose>
+            </if>
             <if test="syncFlag != null and syncFlag != ''">AND sync_flag = #{syncFlag}</if>
+            <if test="beginTime != null and beginTime != ''">AND date_format(create_time, '%Y-%m-%d') &gt;= date_format(#{beginTime}, '%Y-%m-%d')</if>
+            <if test="endTime != null and endTime != ''">AND date_format(create_time, '%Y-%m-%d') &lt;= date_format(#{endTime}, '%Y-%m-%d')</if>
         </where>
         order by id desc
     </select>

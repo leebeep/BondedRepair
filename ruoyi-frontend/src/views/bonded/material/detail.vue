@@ -7,8 +7,8 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="物料编号">{{ form.materialCd }}</el-descriptions-item>
         <el-descriptions-item label="版本号">{{ form.version }}</el-descriptions-item>
-        <el-descriptions-item label="物料名称">{{ materialNameWithMark(form.materialName, form.markType) }}</el-descriptions-item>
-        <el-descriptions-item label="货物类型">{{ markLabel(form.markType) }}</el-descriptions-item>
+        <el-descriptions-item label="物料名称">{{ materialNameWithMark(form.materialName, form.markType, form.isBonded) }}</el-descriptions-item>
+        <el-descriptions-item label="物料属性">{{ markLabel(form.markType) }}</el-descriptions-item>
         <el-descriptions-item label="料件成品标志">{{ { I: 'I-料件', E: 'E-成品', S: 'S-半成品' }[form.gType] }}</el-descriptions-item>
         <el-descriptions-item label="是否保税">
           <el-tag :type="form.isBonded === '1' ? 'primary' : 'info'">{{ form.isBonded === '1' ? '保税' : '非保税' }}</el-tag>

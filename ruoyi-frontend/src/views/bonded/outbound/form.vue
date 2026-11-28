@@ -44,17 +44,17 @@
           <el-table :data="form.items" size="small" border empty-text="暂无明细，点击下方按钮添加" style="width: 100%">
             <el-table-column label="序号" type="index" width="55" align="center" header-align="center" />
             <el-table-column label="物料编号" width="120" header-align="center" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column>
-            <el-table-column label="物料名称" min-width="140" header-align="center" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialName') }}</template></el-table-column>
+            <el-table-column label="物料名称" min-width="140" header-align="center" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column>
             <el-table-column label="版本号" width="80" align="center" header-align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
-            <el-table-column label="计量单位" width="100" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
+            <el-table-column label="规格型号" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column>
             <el-table-column label="是否保税" width="90" align="center" header-align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
             <el-table-column label="来源类型" width="110" align="center" header-align="center"><template #default="s">{{ sourceTypeLabel(s.row.goodsSourceType) }}</template></el-table-column>
             <el-table-column label="来源单号" width="150" header-align="center" show-overflow-tooltip><template #default="s">{{ s.row.goodsSourceNo || '-' }}</template></el-table-column>
             <el-table-column label="余额提示" width="150" header-align="center"><template #default="s"><span :class="balanceInsufficient(s.row) ? 'text-danger' : ''">{{ balanceTip(s.row) }}</span></template></el-table-column>
+            <el-table-column label="计量单位" width="100" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
             <el-table-column label="出库数量" width="110" align="right" header-align="center"><template #default="s">{{ s.row.deliveryCnt ?? '-' }}</template></el-table-column>
             <el-table-column label="单价" width="100" align="right" header-align="center"><template #default="s">{{ s.row.price ?? '-' }}</template></el-table-column>
             <el-table-column label="币制" width="110" align="center" header-align="center"><template #default="s">{{ currencyLabel(s.row.currency) }}</template></el-table-column>
-            <el-table-column label="规格型号" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column>
             <el-table-column v-if="isBusi99" label="出库说明" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ s.row.busiDesc || '-' }}</template></el-table-column>
             <el-table-column label="操作" width="110" align="center" header-align="center" fixed="right">
               <template #default="s">
@@ -79,11 +79,11 @@
           <el-col :span="12">
             <el-form-item label="物料编号" prop="materialId">
               <el-select v-model="itemForm.materialId" filterable style="width: 100%" @change="onMaterialChange(itemForm)">
-                <el-option v-for="m in materials" :key="m.id" :label="m.materialCd + '　' + m.materialName" :value="m.id" />
+                <el-option v-for="m in materials" :key="m.id" :label="m.materialCd + '　' + materialNameWithMark(m.materialName, m.markType, m.isBonded)" :value="m.id" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="pickedItemMaterial?.materialName" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="materialNameWithMark(pickedItemMaterial?.materialName, pickedItemMaterial?.markType, pickedItemMaterial?.isBonded)" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
@@ -132,7 +132,7 @@
 import { getOutbound, addOutbound, updOutbound, listStock, listInbound, listReceive, nextOutboundNo } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
 import DeclarePreviewDialog from '../components/DeclarePreviewDialog.vue'
-import { outboundBusiTypes as busiTypes } from '@/utils/bonded'
+import { outboundBusiTypes as busiTypes, materialNameWithMark } from '@/utils/bonded'
 import { currencies, currencyLabel } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'
 

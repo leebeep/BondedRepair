@@ -5,7 +5,7 @@
       <el-form-item label="物料名称"><el-input v-model="queryParams.materialName" clearable style="width: 150px" @keyup.enter="getList" /></el-form-item>
       <el-form-item label="规格型号"><el-input v-model="queryParams.gModel" clearable style="width: 130px" @keyup.enter="getList" /></el-form-item>
       <el-form-item label="HS编码"><el-input v-model="queryParams.codeTs" clearable style="width: 130px" @keyup.enter="getList" /></el-form-item>
-      <el-form-item label="货物类型">
+      <el-form-item label="物料属性">
         <el-select v-model="queryParams.markType" clearable placeholder="全部" style="width: 130px">
           <el-option v-for="d in markTypes" :key="d.value" :label="d.label" :value="d.value" />
         </el-select>
@@ -20,23 +20,23 @@
     </el-form>
     <el-table v-loading="loading" :data="rows">
       <el-table-column type="index" label="序号" width="55" align="center" :index="indexMethod" />
-      <el-table-column label="物料编号" prop="materialCd" min-width="150" show-overflow-tooltip />
-      <el-table-column label="物料名称" prop="materialName" min-width="220" show-overflow-tooltip />
-      <el-table-column label="规格型号" prop="gModel" min-width="120" show-overflow-tooltip />
-      <el-table-column label="HS编码" prop="codeTs" min-width="110" show-overflow-tooltip />
-      <el-table-column label="货物类型" width="110" align="center">
+      <el-table-column label="物料编号" prop="materialCd" min-width="150" header-align="center" show-overflow-tooltip />
+      <el-table-column label="物料名称" min-width="220" header-align="center" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column>
+      <el-table-column label="规格型号" prop="gModel" min-width="120" header-align="center" show-overflow-tooltip />
+      <el-table-column label="HS编码" prop="codeTs" min-width="110" header-align="center" show-overflow-tooltip />
+      <el-table-column label="物料属性" width="110" align="center">
         <template #default="s">{{ markTypes.find(d => d.value === s.row.markType)?.label || s.row.markType }}</template>
       </el-table-column>
       <el-table-column label="是否保税" width="90" align="center">
         <template #default="s"><el-tag size="small" :type="s.row.isBonded === '1' ? 'primary' : 'info'">{{ s.row.isBonded === '1' ? '保税' : '非保税' }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="当前库存" prop="balance" width="120" align="right">
+      <el-table-column label="当前库存" prop="balance" width="120" align="right" header-align="center">
         <template #default="s"><span :class="{ 'qty-minus': Number(s.row.balance) < 0 }">{{ fmtQty(s.row.balance) }}</span></template>
       </el-table-column>
-      <el-table-column label="在库时间" prop="stockDays" width="100" align="right">
+      <el-table-column label="在库时间" prop="stockDays" width="100" align="right" header-align="center">
         <template #default="s">{{ s.row.stockDays === null || s.row.stockDays === undefined ? '-' : s.row.stockDays + ' 天' }}</template>
       </el-table-column>
-      <el-table-column label="最新更新时间" prop="createTime" width="150" align="center" />
+      <el-table-column label="发生时间" prop="createTime" width="150" align="center" />
       <el-table-column label="操作" width="90" align="center" fixed="right">
         <template #default="s"><el-button link type="primary" @click="goDetail(s.row.materialId)">物料详情</el-button></template>
       </el-table-column>
@@ -46,6 +46,7 @@
 </template>
 
 <script setup name="Stock">
+import { materialNameWithMark } from '@/utils/bonded'
 import { listStock } from '@/api/bonded/biz'
 
 const markTypes = [

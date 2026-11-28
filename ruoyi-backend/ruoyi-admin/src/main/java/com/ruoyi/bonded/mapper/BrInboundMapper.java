@@ -16,6 +16,12 @@ public interface BrInboundMapper
 
     public BrInbound selectByInboundNo(@Param("inboundNo") String inboundNo);
 
+    /** 按inboundNo查询（含软删除行，用于编号占用校验的友好提示） */
+    public BrInbound selectByInboundNoAny(@Param("inboundNo") String inboundNo);
+
+    /** 按前缀查最大入库单号（自动编号流水用，含逻辑删除行避免流水撞号） */
+    public String selectMaxInboundNoByPrefix(@Param("prefix") String prefix);
+
     public int insert(BrInbound inbound);
 
     public int update(BrInbound inbound);

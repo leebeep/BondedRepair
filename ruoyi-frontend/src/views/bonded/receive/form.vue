@@ -40,11 +40,11 @@
             <el-table-column label="序号" type="index" width="55" align="center" header-align="center" />
             <el-table-column label="收料类型" width="190" header-align="center" show-overflow-tooltip><template #default="s">{{ returnTypeLabel(s.row) }}</template></el-table-column>
             <el-table-column label="物料编号" width="120" header-align="center" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column>
-            <el-table-column label="物料名称" min-width="140" header-align="center" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialName') }}</template></el-table-column>
+            <el-table-column label="物料名称" min-width="140" header-align="center" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column>
             <el-table-column label="版本号" width="80" align="center" header-align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
-            <el-table-column label="计量单位" width="100" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
-            <el-table-column label="是否保税" width="90" align="center" header-align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
             <el-table-column label="规格型号" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column>
+            <el-table-column label="是否保税" width="90" align="center" header-align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
+            <el-table-column label="计量单位" width="100" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
             <el-table-column label="数量" width="110" align="right" header-align="center"><template #default="s">{{ s.row.materialNum ?? '-' }}</template></el-table-column>
             <el-table-column label="说明" width="170" header-align="center" show-overflow-tooltip><template #default="s"><span v-if="isServiceFee(s.row)" class="text-muted">系统自动生成，数量 0.1</span></template></el-table-column>
             <el-table-column label="操作" width="110" align="center" header-align="center" fixed="right">
@@ -80,11 +80,11 @@
           <el-col :span="12">
             <el-form-item label="物料编号" prop="materialId">
               <el-select v-model="itemForm.materialId" filterable style="width: 100%" @change="onMaterialChange(itemForm)">
-                <el-option v-for="m in materials" :key="m.id" :label="m.materialCd + '　' + m.materialName" :value="m.id" />
+                <el-option v-for="m in materials" :key="m.id" :label="m.materialCd + '　' + materialNameWithMark(m.materialName, m.markType, m.isBonded)" :value="m.id" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="pickedItemMaterial?.materialName" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="materialNameWithMark(pickedItemMaterial?.materialName, pickedItemMaterial?.markType, pickedItemMaterial?.isBonded)" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
         </el-row>
         <el-row>
           <el-col :span="12"><el-form-item label="数量" prop="materialNum"><el-input-number v-model="itemForm.materialNum" :min="0.000001" :precision="6" controls-position="right" style="width: 100%" /></el-form-item></el-col>
@@ -104,7 +104,7 @@
 import { getReceive, addReceive, updReceive, nextReceiveNo, queryWorkOrder } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
 import DeclarePreviewDialog from '../components/DeclarePreviewDialog.vue'
-import { returnTypes } from '@/utils/bonded'
+import { returnTypes, materialNameWithMark } from '@/utils/bonded'
 import { currencies } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'
 

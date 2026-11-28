@@ -18,6 +18,9 @@ public interface IBrInboundService
 
     public int deleteByIds(Long[] ids);
 
+    /** 下一张入库单号（默认自动生成，前缀经 参数设置 br.inbound.no.prefix 修改） */
+    public String nextInboundNo();
+
     /** 审核：01/02 -> 03，登记台账 IN */
     public int audit(Long id);
 

@@ -59,19 +59,19 @@ export const materialMarkTypes = [
   { value: '8', label: '维修服务费', suffix: '维修服务费' }
 ]
 /** 物料名称展示：拼接货物类型标记；服务费直接拼“维修服务费”，其余用括号 */
-export function materialNameWithMark(name, markType) {
+export function materialNameWithMark(name, markType, isBonded) {
   if (!name) return name
-  const t = materialMarkTypes.find(t => t.value === markType)
-  const suffix = t?.suffix
+  // 维修用料件(4)按保税标志区分：非保税 → （非保税），与后端 markSuffix 口径一致
+  const suffix = markType === '4' && isBonded === '0' ? '非保税' : materialMarkTypes.find(t => t.value === markType)?.suffix
   if (!suffix) return name
   if (markType === '8') return name.endsWith(suffix) ? name : name + suffix
   return name.endsWith('（' + suffix + '）') ? name : name + '（' + suffix + '）'
 }
 
-// 业务状态（doc_status）：02/04 当前实现不会写入，03 为审核通过（申报中由海关状态体现）
+// 业务状态（doc_status）：02待审核/04已申报 为历史遗留死状态，已移除；
+// 03=审核通过（已生效扣账并推送申报，"申报中"由海关状态10/20/21联动显示）
 export const docStatusMap = {
   '01': { label: '草稿', type: 'info' },
-  '02': { label: '待审核', type: 'warning' },
   '03': { label: '审核通过', type: 'primary' },
   '05': { label: '申报通过', type: 'success' },
   '06': { label: '退单', type: 'danger' },
@@ -86,4 +86,21 @@ export function docStatusLabel(status, customsStatus) {
 export function docStatusType(status, customsStatus) {
   if (status === '03' && declaringCustomsStatus.includes(customsStatus)) return 'warning'
   return docStatusMap[status]?.type || 'info'
+}
+
+/**
+ * 申报执行策略联动：返回单据当前允许的执行策略数组（'1'备案/'2'变更/'3'作废）
+ * 规则：已申报过（有预录入编号）只能变更/作废，不允许再次备案；
+ * 申报在途（03+10/20/21）与已作废（07）一律禁止申报
+ */
+export function allowedExecTypes(row) {
+  if (!row) return []
+  const ds = row.docStatus
+  const cs = row.customsStatus
+  if (ds === '07' || cs === '29') return []
+  if (ds === '03' && declaringCustomsStatus.includes(cs)) return []
+  const allowed = []
+  if (ds === '03' && !row.lastUuid) allowed.push('1')
+  if (row.lastUuid && ['03', '05', '06'].includes(ds)) allowed.push('2', '3')
+  return allowed
 }

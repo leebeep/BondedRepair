@@ -6,7 +6,7 @@
       </template>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="150px">
         <el-row>
-          <el-col :span="12"><el-form-item label="入库单号" prop="inboundNo"><el-input v-model="form.inboundNo" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="入库单号" prop="inboundNo"><el-input v-model="form.inboundNo" placeholder="已自动生成，可修改" /></el-form-item></el-col>
           <el-col :span="12">
             <el-form-item label="入库业务类型" prop="busiType">
               <el-select v-model="form.busiType" style="width: 100%">
@@ -39,15 +39,15 @@
             <el-table-column label="物料名称" min-width="150" header-align="center" show-overflow-tooltip>
               <template #default="s">{{ itemMaterialName(s.row) }}</template>
             </el-table-column>
+            <el-table-column label="规格型号" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ itemSpecification(s.row) }}</template></el-table-column>
             <el-table-column label="数量" width="100" align="right" header-align="center"><template #default="s">{{ s.row.storageCnt }}</template></el-table-column>
+            <el-table-column label="计量单位" width="100" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row, 'calcUnit') }}</template></el-table-column>
             <el-table-column label="单价" width="100" align="right" header-align="center"><template #default="s">{{ s.row.price }}</template></el-table-column>
             <el-table-column label="币制" width="90" align="center" header-align="center"><template #default="s">{{ currencyLabel(s.row.currency) }}</template></el-table-column>
             <el-table-column label="总价" width="110" align="right" header-align="center"><template #default="s">{{ itemTotal(s.row) }}</template></el-table-column>
-            <el-table-column label="计量单位" width="100" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row, 'calcUnit') }}</template></el-table-column>
-            <el-table-column label="规格型号" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ itemSpecification(s.row) }}</template></el-table-column>
             <el-table-column label="法定计量单位1" width="120" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row, 'unit1') }}</template></el-table-column>
-            <el-table-column label="法定计量单位2" width="120" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row, 'unit2') }}</template></el-table-column>
             <el-table-column label="第一法定数量" prop="unit1Num" width="110" align="right" header-align="center" />
+            <el-table-column label="法定计量单位2" width="120" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row, 'unit2') }}</template></el-table-column>
             <el-table-column label="第二法定数量" prop="unit2Num" width="110" align="right" header-align="center" />
             <el-table-column v-if="isDecl01" label="品牌类型" prop="brandType" width="100" header-align="center" show-overflow-tooltip />
             <el-table-column v-if="isDecl01" label="监管方式" prop="tradeModeCd" width="100" header-align="center" show-overflow-tooltip />
@@ -77,11 +77,11 @@
           <el-col :span="12">
             <el-form-item label="物料编号" prop="materialId">
               <el-select v-model="itemForm.materialId" filterable :filter-method="filterMaterial" @change="onMaterialChange" @visible-change="v => !v && (materialQuery = '')" style="width: 100%">
-                <el-option v-for="m in filteredMaterials" :key="m.id" :label="m.materialCd + '　' + m.materialName" :value="m.id" />
+                <el-option v-for="m in filteredMaterials" :key="m.id" :label="m.materialCd + '　' + materialNameWithMark(m.materialName, m.markType, m.isBonded)" :value="m.id" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="pickedMaterial?.materialName" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="物料名称"><el-input :value="materialNameWithMark(pickedMaterial?.materialName, pickedMaterial?.markType, pickedMaterial?.isBonded)" disabled placeholder="选择物料后自动带出" /></el-form-item></el-col>
         </el-row>
         <el-row>
           <el-col :span="12"><el-form-item label="数量" prop="storageCnt"><el-input-number v-model="itemForm.storageCnt" :min="0.000001" :precision="6" controls-position="right" style="width: 100%" /></el-form-item></el-col>
@@ -131,10 +131,11 @@
 </template>
 
 <script setup name="InboundForm">
-import { getInbound, addInbound, updInbound } from '@/api/bonded/biz'
+import { getInbound, addInbound, updInbound, nextInboundNo } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
 import { currencies } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'
+import { materialNameWithMark } from '@/utils/bonded'
 import DeclarePreviewDialog from '../components/DeclarePreviewDialog.vue'
 
 const { proxy } = getCurrentInstance()
@@ -237,7 +238,8 @@ function itemMaterialCode(row) {
 }
 
 function itemMaterialName(row) {
-  return findMaterial(row)?.materialName || row.materialName || '-'
+  const m = findMaterial(row)
+  return materialNameWithMark(m?.materialName || row.materialName, m?.markType ?? row.markType, m?.isBonded ?? row.isBonded) || '-'
 }
 
 function itemUnit(row, key) {
@@ -265,6 +267,9 @@ const title = ref(id ? '修改入库单' : '新增入库单')
 
 if (id) {
   getInbound(id).then(r => { form.value = r.data })
+} else {
+  // 新增时自动生成入库单号（可修改），失败则留空由用户填写
+  nextInboundNo().then(r => { form.value.inboundNo = r.data }).catch(() => {})
 }
 listMaterial({ pageNum: 1, pageSize: 200, declareStatus: '2' }).then(r => { materials.value = r.rows })
 

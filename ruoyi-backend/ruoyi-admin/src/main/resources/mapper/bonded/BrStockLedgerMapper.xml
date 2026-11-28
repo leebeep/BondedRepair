@@ -59,7 +59,11 @@
             <if test="beginTime != null">AND l.create_time &gt;= #{beginTime}</if>
             <if test="endTime != null">AND l.create_time &lt; date_add(#{endTime}, interval 1 day)</if>
         </where>
-        order by l.id desc
+        <!-- 物料库存详情（按 materialId 过滤）按发生时间正序展示；台账列表页保持最新在前 -->
+        <choose>
+            <when test="materialId != null">order by l.id asc</when>
+            <otherwise>order by l.id desc</otherwise>
+        </choose>
     </select>
 
     <select id="selectByBiz" resultMap="LedgerResult">

@@ -26,4 +26,7 @@ public interface IBrOutboundService
 
     /** 提交 SDO2 申报 */
     public int declare(Long[] ids, String executeType);
+
+    /** 草稿保存软校验：来源余额不足时返回提示（不阻断保存，审核时硬拦截） */
+    public String draftWarning(BrOutbound outbound);
 }

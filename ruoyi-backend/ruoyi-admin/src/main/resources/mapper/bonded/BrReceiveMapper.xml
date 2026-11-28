@@ -38,7 +38,7 @@
     </select>
 
     <select id="selectById" resultMap="ReceiveResult">
-        <include refid="selectVo"/> where r.id = #{id}
+        <include refid="selectVo"/> where r.id = #{id} and r.del_flag = '0'
     </select>
 
     <select id="selectByReceiveNo" resultMap="ReceiveResult">
@@ -93,4 +93,9 @@
     <delete id="deleteItemsByReceiveId">
         delete from br_receive_item where receive_id = #{receiveId}
     </delete>
+
+    <!-- 含软删除行查询 -->
+    <select id="selectByReceiveNoAny" resultMap="ReceiveResult">
+        <include refid="selectVo"/> where r.receive_no = #{receiveNo}
+    </select>
 </mapper>

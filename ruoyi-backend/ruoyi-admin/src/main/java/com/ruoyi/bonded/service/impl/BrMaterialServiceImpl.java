@@ -82,12 +82,18 @@ public class BrMaterialServiceImpl implements IBrMaterialService
     /** 货物类型（六类标记）→ 品名后缀（规范 v1.4 / 样例数据口径，如 新能源动力电池模组（无法修复）） */
     public static String markSuffix(String markType)
     {
+        return markSuffix(markType, "1");
+    }
+
+    /** 同上；维修用料（markType=4）按保税标志区分后缀：非保税 → （非保税） */
+    public static String markSuffix(String markType, String isBonded)
+    {
         switch (markType)
         {
             case "1": return "（待修复）";
             case "2": return "（已修复）";
             case "3": return "（无法修复）";
-            case "4": return "（维修用保税料件）";
+            case "4": return "0".equals(isBonded) ? "（非保税）" : "（维修用保税料件）";
             case "5": return "（维修替换下的旧件或坏件）";
             case "6": return "（维修产生的边角料）";
             case "8": return "维修服务费";
@@ -206,6 +212,7 @@ public class BrMaterialServiceImpl implements IBrMaterialService
             log.setBizId(id);
             log.setMirrorTable("epd101_data");
             log.setMirrorRowId(data.getId());
+            log.setBizNo(material.getMaterialCd());
             log.setExecuteType(executeType);
             log.setUuid(StringUtils.defaultString(lastUuid, StringUtils.EMPTY));
             declareLogMapper.insertBrDeclareLog(log);
@@ -226,7 +233,7 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         d.setEnterpNm(enterpNm);
         d.setMasterCuscd(masterCuscd);
         d.setIntProductNo(m.getMaterialCd());
-        d.setIntProductName(m.getMaterialName() + markSuffix(m.getMarkType()));
+        d.setIntProductName(m.getMaterialName() + markSuffix(m.getMarkType(), m.getIsBonded()));
         d.setVersion(m.getVersion());
         d.setgType(m.getgType());
         d.setgModel(StringUtils.defaultString(m.getgModel(), "无"));
@@ -261,9 +268,13 @@ public class BrMaterialServiceImpl implements IBrMaterialService
                 break;
             case "2":
             case "3":
-                if (!"2".equals(st) && !"1".equals(st))
+                if ("1".equals(st))
                 {
-                    throw new ServiceException("变更/作废仅适用于已申报的物料【" + m.getMaterialName() + "】");
+                    throw new ServiceException("物料【" + m.getMaterialName() + "】申报回执未到（已申报待回执），请等待回执后再申报");
+                }
+                if (!"2".equals(st))
+                {
+                    throw new ServiceException("变更/作废仅适用于已备案通过的物料【" + m.getMaterialName() + "】");
                 }
                 break;
             default:
@@ -283,6 +294,10 @@ public class BrMaterialServiceImpl implements IBrMaterialService
             if (StringUtils.isEmpty(m.getgName()))
             {
                 throw new ServiceException("保税货物必填 HS 商品名称（规范 §2.2.1）");
+            }
+            if (StringUtils.isEmpty(m.getUnit1()))
+            {
+                throw new ServiceException("保税货物必填法定计量单位（规范 §2.2.1）");
             }
         }
         if (StringUtils.isEmpty(m.getgModel()))

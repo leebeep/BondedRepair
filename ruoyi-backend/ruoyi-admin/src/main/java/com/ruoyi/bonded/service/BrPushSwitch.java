@@ -8,7 +8,7 @@ import com.ruoyi.system.domain.SysConfig;
 import com.ruoyi.system.service.ISysConfigService;
 
 /**
- * 联网自动推送总开关（sys_config: br.auto.push.enabled，true=审核/保存自动写镜像库）
+ * 联网自动申报总开关（sys_config: br.auto.push.enabled，true=审核/保存自动写镜像库）
  */
 @Component
 public class BrPushSwitch
@@ -33,10 +33,10 @@ public class BrPushSwitch
         {
             SysConfig c = new SysConfig();
             c.setConfigKey(KEY);
-            c.setConfigName("联网自动推送开关");
+            c.setConfigName("联网自动申报开关");
             c.setConfigValue(val);
             c.setConfigType("Y");
-            c.setRemark("true=单据审核/物料保存自动写入镜像库；false=仅人工变更/作废/补推写入");
+            c.setRemark("true=单据审核/物料保存自动申报（写入镜像库）；false=仅人工变更/作废/补报写入");
             c.setCreateBy(SecurityUtils.getUsername());
             configService.insertConfig(c);
         }

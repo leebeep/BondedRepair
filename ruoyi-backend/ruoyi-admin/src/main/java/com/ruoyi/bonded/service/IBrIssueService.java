@@ -23,4 +23,10 @@ public interface IBrIssueService
 
     /** 提交 RRD2 申报 */
     public int declare(Long[] ids, String executeType);
+
+    /** 下一张发料单号（默认自动生成，前缀经 参数设置 br.issue.no.prefix 修改） */
+    public String nextIssueNo();
+
+    /** 草稿保存软校验：来源余额不足时返回提示（不阻断保存，审核时硬拦截） */
+    public String draftWarning(BrIssue issue);
 }

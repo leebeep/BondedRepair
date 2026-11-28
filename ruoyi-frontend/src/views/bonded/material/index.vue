@@ -8,7 +8,7 @@
         <el-form-item label="物料名称" prop="materialName">
           <el-input v-model="queryParams.materialName" placeholder="请输入物料名称" clearable style="width: 180px" @keyup.enter="handleQuery" />
         </el-form-item>
-        <el-form-item label="货物类型" prop="markType">
+        <el-form-item label="物料属性" prop="markType">
           <el-select v-model="queryParams.markType" placeholder="全部" clearable style="width: 200px">
             <el-option v-for="d in markTypeOptions" :key="d.value" :label="d.label" :value="d.value" />
           </el-select>
@@ -30,30 +30,20 @@
         <el-button type="primary" plain icon="Plus" v-hasPermi="['bonded:material:add']" @click="handleAdd">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" plain icon="Stamp" :disabled="multiple" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('1')">备案申报</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="warning" plain icon="EditPen" :disabled="multiple" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('2')">变更申报</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="danger" plain icon="Delete" :disabled="multiple" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('3')">作废申报</el-button>
-      </el-col>
-      <el-col :span="1.5">
         <el-button type="info" plain icon="Download" v-hasPermi="['bonded:material:export']" @click="handleExport">导出</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="materialList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
+    <el-table v-loading="loading" :data="materialList">
       <el-table-column label="物料编号" prop="materialCd" width="140" show-overflow-tooltip />
       <el-table-column label="物料名称" show-overflow-tooltip min-width="160">
-        <template #default="scope">{{ materialNameWithMark(scope.row.materialName, scope.row.markType) }}</template>
+        <template #default="scope">{{ materialNameWithMark(scope.row.materialName, scope.row.markType, scope.row.isBonded) }}</template>
       </el-table-column>
-      <el-table-column label="货物类型" width="170">
+      <el-table-column label="物料属性" width="170">
         <template #default="scope">{{ markLabel(scope.row.markType) }}</template>
       </el-table-column>
-      <el-table-column label="料件/成品" prop="gType" width="90" align="center">
+      <el-table-column label="料件成品标志" prop="gType" width="110" align="center">
         <template #default="scope">{{ { I: '料件', E: '成品', S: '半成品' }[scope.row.gType] }}</template>
       </el-table-column>
       <el-table-column label="HS编码" prop="codeTs" width="120" />
@@ -80,10 +70,13 @@
         </template>
       </el-table-column>
       <el-table-column label="预录入编号" prop="uuid" width="180" show-overflow-tooltip />
-      <el-table-column label="操作" width="220" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" width="300" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="View" v-hasPermi="['bonded:material:query']" @click="handleDetail(scope.row)">详情</el-button>
           <el-button link type="primary" icon="Edit" v-hasPermi="['bonded:material:edit']" :disabled="scope.row.declareStatus === '2'" @click="handleUpdate(scope.row)">修改</el-button>
+          <el-button v-if="canExec(scope.row, '1')" link type="success" icon="Stamp" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('1', scope.row)">备案</el-button>
+          <el-button v-if="canExec(scope.row, '2')" link type="warning" icon="EditPen" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('2', scope.row)">变更</el-button>
+          <el-button v-if="canExec(scope.row, '3')" link type="danger" icon="Delete" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('3', scope.row)">作废</el-button>
           <el-button link type="danger" icon="Delete" v-hasPermi="['bonded:material:remove']" :disabled="scope.row.declareStatus === '2'" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -117,9 +110,16 @@ const customsStatusMap = {
 const materialList = ref([])
 const loading = ref(true)
 const showSearch = ref(true)
-const ids = ref([])
-const multiple = ref(true)
 const total = ref(0)
+
+// 行内申报按钮联动：与后端 checkDeclareAllowed 同规则
+// 备案(1)限未申报(0)/退单(3)；变更(2)/作废(3)限备案通过(2)；服务费虚物料(markType=8)禁止申报
+const canExec = (row, t) => {
+  if (row.markType === '8') return false
+  const st = row.declareStatus
+  if (t === '1') return st === '0' || st === '3'
+  return st === '2'
+}
 
 const data = reactive({
   queryParams: { pageNum: 1, pageSize: 10, materialCd: null, materialName: null, markType: null, customsStatus: null }
@@ -151,9 +151,14 @@ function resetQuery() {
   handleQuery()
 }
 
-function handleSelectionChange(selection) {
-  ids.value = selection.map(item => item.id)
-  multiple.value = !selection.length
+function handleDeclare(executeType, row) {
+  const nameMap = { '1': '备案申报', '2': '变更申报', '3': '作废申报' }
+  proxy.$modal.confirm(`确认对物料【${row.materialCd}】执行【${nameMap[executeType]}】？申报数据将写入海关镜像表。`).then(() => {
+    return declareMaterial(executeType, row.id)
+  }).then(() => {
+    getList()
+    proxy.$modal.msgSuccess(`${nameMap[executeType]}已提交，等待客户端采集传输`)
+  }).catch(() => {})
 }
 
 // 新增：跳转录入页
@@ -173,16 +178,6 @@ function handleDetail(row) {
 
 function handleDelete(row) {
   proxy.$modal.confirm('是否确认删除该物料？').then(() => delMaterial(row.id)).then(() => { getList(); proxy.$modal.msgSuccess('删除成功') }).catch(() => {})
-}
-
-function handleDeclare(executeType) {
-  const nameMap = { '1': '备案申报', '2': '变更申报', '3': '作废申报' }
-  proxy.$modal.confirm(`确认对选中的 ${ids.value.length} 条物料执行【${nameMap[executeType]}】？申报数据将写入海关镜像表。`).then(() => {
-    return declareMaterial(executeType, ids.value.join(','))
-  }).then(() => {
-    getList()
-    proxy.$modal.msgSuccess(`${nameMap[executeType]}已提交，等待客户端采集传输`)
-  }).catch(() => {})
 }
 
 function handleExport() {

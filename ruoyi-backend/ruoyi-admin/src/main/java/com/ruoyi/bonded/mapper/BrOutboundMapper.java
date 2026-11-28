@@ -16,6 +16,9 @@ public interface BrOutboundMapper
 
     public BrOutbound selectByOutboundNo(@Param("outboundNo") String outboundNo);
 
+    /** 按outboundNo查询（含软删除行，用于编号占用校验的友好提示） */
+    public BrOutbound selectByOutboundNoAny(@Param("outboundNo") String outboundNo);
+
     /** 按前缀查最大出库单号（自动编号流水用，含逻辑删除行避免流水撞号） */
     public String selectMaxOutboundNoByPrefix(@Param("prefix") String prefix);
 

@@ -21,6 +21,7 @@
         <el-descriptions-item label="海关状态">
           <el-tag :type="cstType(form.customsStatus)">{{ cstLabel(form.customsStatus) }}</el-tag>
         </el-descriptions-item>
+        <el-descriptions-item label="预录入编号">{{ form.lastUuid || '-' }}</el-descriptions-item>
       </el-descriptions>
     </el-card>
     <el-card shadow="never" class="mt8">
@@ -28,32 +29,33 @@
         <span>物料明细</span>
       </template>
       <el-table :data="form.items || []" size="small" border>
+        <el-table-column type="index" label="序号" width="55" align="center" />
         <el-table-column label="物料编号" width="130" show-overflow-tooltip>
           <template #default="s">{{ s.row.materialCd || '-' }}</template>
         </el-table-column>
         <el-table-column label="物料名称" min-width="170" show-overflow-tooltip>
-          <template #default="s">{{ s.row.materialName || '-' }}</template>
+          <template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) || '-' }}</template>
         </el-table-column>
+        <el-table-column label="规格型号" prop="specificationsModels" width="140" show-overflow-tooltip />
         <el-table-column label="数量" prop="storageCnt" width="100" align="right" />
-        <el-table-column label="单价" prop="price" width="100" align="right" />
-        <el-table-column label="总价" width="120" align="right">
-          <template #default="s">{{ itemTotal(s.row) }}</template>
-        </el-table-column>
-        <el-table-column label="币制" width="90" align="center">
-          <template #default="s">{{ currencyLabel(s.row.currency) }}</template>
-        </el-table-column>
         <el-table-column label="计量单位" width="100" align="center">
           <template #default="s">{{ s.row.calcUnit ? customsUnitLabel(s.row.calcUnit) : '-' }}</template>
         </el-table-column>
-        <el-table-column label="规格型号" prop="specificationsModels" width="140" show-overflow-tooltip />
+        <el-table-column label="单价" prop="price" width="100" align="right" />
+        <el-table-column label="币制" width="90" align="center">
+          <template #default="s">{{ currencyLabel(s.row.currency) }}</template>
+        </el-table-column>
+        <el-table-column label="总价" width="120" align="right">
+          <template #default="s">{{ itemTotal(s.row) }}</template>
+        </el-table-column>
         <el-table-column label="法定计量单位1" width="120" align="center">
           <template #default="s">{{ s.row.unit1 ? customsUnitLabel(s.row.unit1) : '-' }}</template>
         </el-table-column>
+        <el-table-column label="第一法定数量" prop="unit1Num" width="110" align="right" />
         <el-table-column label="法定计量单位2" width="120" align="center">
           <template #default="s">{{ s.row.unit2 ? customsUnitLabel(s.row.unit2) : '-' }}</template>
         </el-table-column>
-        <el-table-column label="法定数量1" prop="unit1Num" width="100" align="right" />
-        <el-table-column label="法定数量2" prop="unit2Num" width="100" align="right" />
+        <el-table-column label="第二法定数量" prop="unit2Num" width="110" align="right" />
         <el-table-column v-if="form.relaCustomsFormType === '01'" label="品牌类型" prop="brandType" width="100" show-overflow-tooltip />
         <el-table-column v-if="form.relaCustomsFormType === '01'" label="监管方式" prop="tradeModeCd" width="100" show-overflow-tooltip />
         <el-table-column v-if="form.relaCustomsFormType === '01'" label="启抵国" prop="arrivingCountryCode" width="90" show-overflow-tooltip />
@@ -69,7 +71,7 @@
 
 <script setup name="InboundDetail">
 import { getInbound } from '@/api/bonded/biz'
-import { cstLabel, cstType, docStatusLabel, docStatusType } from '@/utils/bonded'
+import { cstLabel, cstType, docStatusLabel, docStatusType, materialNameWithMark } from '@/utils/bonded'
 import { currencyLabel } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'
 

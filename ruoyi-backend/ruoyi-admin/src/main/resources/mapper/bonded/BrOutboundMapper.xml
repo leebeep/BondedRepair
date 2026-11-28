@@ -31,7 +31,7 @@
         <if test="customsStatus != null and customsStatus != ''">AND customs_status = #{customsStatus}</if>
         order by id desc
     </select>
-    <select id="selectById" resultMap="OutboundResult"><include refid="selectVo"/> where id = #{id}</select>
+    <select id="selectById" resultMap="OutboundResult"><include refid="selectVo"/> where id = #{id} and del_flag = '0'</select>
     <select id="selectByOutboundNo" resultMap="OutboundResult"><include refid="selectVo"/> where outbound_no = #{outboundNo} and del_flag = '0'</select>
 
     <!-- 按前缀查最大出库单号（自动编号流水用，含逻辑删除行避免流水撞号） -->
@@ -75,4 +75,9 @@
         values (#{outboundId}, #{materialId}, #{deliveryCnt}, #{price}, #{currency}, #{specificationsModels}, #{goodsSourceType}, #{goodsSourceNo}, #{busiDesc})
     </insert>
     <delete id="deleteItemsByOutboundId">delete from br_outbound_item where outbound_id = #{outboundId}</delete>
+
+    <!-- 含软删除行查询 -->
+    <select id="selectByOutboundNoAny" resultMap="OutboundResult">
+        <include refid="selectVo"/> where outbound_no = #{outboundNo}
+    </select>
 </mapper>

@@ -5,8 +5,8 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="物料编号">{{ stock.materialCd }}</el-descriptions-item>
         <el-descriptions-item label="版本号">{{ stock.version }}</el-descriptions-item>
-        <el-descriptions-item label="物料名称">{{ stock.materialName }}</el-descriptions-item>
-        <el-descriptions-item label="货物类型">{{ markLabel(stock.markType) }}</el-descriptions-item>
+        <el-descriptions-item label="物料名称">{{ materialNameWithMark(stock.materialName, stock.markType, stock.isBonded) }}</el-descriptions-item>
+        <el-descriptions-item label="物料属性">{{ markLabel(stock.markType) }}</el-descriptions-item>
         <el-descriptions-item label="是否保税">
           <el-tag :type="stock.isBonded === '1' ? 'primary' : 'info'">{{ stock.isBonded === '1' ? '保税' : '非保税' }}</el-tag>
         </el-descriptions-item>
@@ -63,6 +63,7 @@
 </template>
 
 <script setup name="StockDetail">
+import { materialNameWithMark } from '@/utils/bonded'
 import { listStock, getMaterialStock } from '@/api/bonded/biz'
 import { customsUnitLabel } from '@/utils/customsUnits'
 

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 联网同步扫描 Mapper：待补推单据、采集状态看板、主动查询扫描
+ * 联网同步扫描 Mapper：待补报单据、采集状态看板、主动查询扫描
  */
 public interface BrSyncMapper
 {

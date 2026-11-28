@@ -331,6 +331,7 @@ CREATE TABLE br_stock_ledger (
   mark_type    CHAR(1) NOT NULL COMMENT '货物类型(六类标记,冗余)',
   biz_type     VARCHAR(6) NOT NULL COMMENT 'IN-入库 ISSUE-发料 RCV-收料 OUT-出库',
   biz_table    VARCHAR(32) NOT NULL, biz_id BIGINT UNSIGNED NOT NULL,
+  biz_no       VARCHAR(60) NULL COMMENT '单据编号(物料编号/入库单号/发料单号/收料单号/出库单号)',
   biz_no       VARCHAR(60) NULL COMMENT '单据编号(入库/发料/收料/出库单号)',
   goods_source_type VARCHAR(1) NULL COMMENT '来源单证类型 g/i',
   goods_source_no   VARCHAR(60) NULL COMMENT '来源单证编号(入库单号/收料单号)',

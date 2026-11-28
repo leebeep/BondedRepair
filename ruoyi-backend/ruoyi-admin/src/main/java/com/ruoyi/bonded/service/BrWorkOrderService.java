@@ -109,4 +109,60 @@ public class BrWorkOrderService
             workOrderMapper.insertItem(wi);
         }
     }
+
+    /**
+     * 出清校验：工单须出区收料（5/a/1/7/8/9，余料 6 结转除外）全部出库（03/05）→ 转 04 已出清；
+     * 已出清/已结案不回退。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void refreshOutClearStatus(Long workOrderId)
+    {
+        BrWorkOrder wo = workOrderMapper.selectById(workOrderId);
+        if (wo == null) { return; }
+        String st = wo.getOrderStatus();
+        if ("04".equals(st) || "05".equals(st)) { return; }
+        BigDecimal toClear = workOrderMapper.sumToClearQty(wo.getWorkNo());
+        BigDecimal out = workOrderMapper.sumOutboundQty(wo.getWorkNo());
+        if (toClear.compareTo(BigDecimal.ZERO) > 0 && out.compareTo(toClear) >= 0)
+        {
+            workOrderMapper.updateOrderStatus(workOrderId, "04");
+        }
+        else if ("04".equals(st))
+        {
+            // 出库单作废冲账后出清不再成立：按发料/收料实际重建（01/02/03）
+            BigDecimal issued = workOrderMapper.sumIssuedRepairQty(wo.getWorkNo());
+            String next;
+            if (issued.compareTo(BigDecimal.ZERO) <= 0) { next = "01"; }
+            else
+            {
+                BigDecimal received = workOrderMapper.sumReceivedRepairQty(wo.getWorkNo());
+                BigDecimal unused = workOrderMapper.sumUnusedRepairQty(wo.getWorkNo());
+                next = received.compareTo(issued.subtract(unused)) >= 0 ? "03" : "02";
+            }
+            workOrderMapper.updateOrderStatus(workOrderId, next);
+        }
+    }
+
+    /**
+     * 按发料/收料实际情况重建工单状态（发料草稿删除等场景）：
+     * 无发料 → 01 立项；收齐（已修复+残次品 >= 实际投入）→ 03；其余 → 02 生产中。不降级 04/05。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void refreshWorkOrderStatus(Long workOrderId)
+    {
+        BrWorkOrder wo = workOrderMapper.selectById(workOrderId);
+        if (wo == null) { return; }
+        String st = wo.getOrderStatus();
+        if ("04".equals(st) || "05".equals(st)) { return; }
+        BigDecimal issued = workOrderMapper.sumIssuedRepairQty(wo.getWorkNo());
+        if (issued.compareTo(BigDecimal.ZERO) <= 0)
+        {
+            workOrderMapper.updateOrderStatus(workOrderId, "01");
+            return;
+        }
+        BigDecimal received = workOrderMapper.sumReceivedRepairQty(wo.getWorkNo());
+        BigDecimal unused = workOrderMapper.sumUnusedRepairQty(wo.getWorkNo());
+        String next = received.compareTo(issued.subtract(unused)) >= 0 ? "03" : "02";
+        if (!next.equals(st)) { workOrderMapper.updateOrderStatus(workOrderId, next); }
+    }
 }

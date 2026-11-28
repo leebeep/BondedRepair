@@ -16,6 +16,12 @@ public interface BrIssueMapper
 
     public BrIssue selectByIssueNo(@Param("issueNo") String issueNo);
 
+    /** 按issueNo查询（含软删除行，用于编号占用校验的友好提示） */
+    public BrIssue selectByIssueNoAny(@Param("issueNo") String issueNo);
+
+    /** 按前缀查最大发料单号（自动编号流水用，含逻辑删除行避免流水撞号） */
+    public String selectMaxIssueNoByPrefix(@Param("prefix") String prefix);
+
     public int insert(BrIssue issue);
 
     public int update(BrIssue issue);
