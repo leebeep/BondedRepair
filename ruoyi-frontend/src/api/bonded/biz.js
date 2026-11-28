@@ -54,6 +54,7 @@ export const getPushSwitch = () => request({ url: '/bonded/declare/push-switch',
 export const setPushSwitch = enabled => request({ url: '/bonded/declare/push-switch/' + enabled, method: 'put' })
 export const pushPending = () => request({ url: '/bonded/declare/push-pending', method: 'post' })
 export const queryReceipt = () => request({ url: '/bonded/declare/query-receipt', method: 'post' })
+export const queryStatus = () => request({ url: '/bonded/declare/query-status', method: 'get' })
 export const syncBoard = () => request({ url: '/bonded/declare/sync-board', method: 'get' })
 
 // 首页工作台统计

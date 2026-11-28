@@ -20,8 +20,6 @@ public class BrReceive extends BaseEntity
     private Long workOrderId;
     /** 工单号(表单录入，自动建档；列表为关联查询) */
     private String workNo;
-    /** 申报批次号(表单录入，写入工单) */
-    private String batchNo;
     /** 维修服务费总额(表单录入，写入工单) */
     private java.math.BigDecimal serviceFee;
     /** 服务费币制(表单录入，写入工单) */

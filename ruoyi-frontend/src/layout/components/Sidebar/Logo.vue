@@ -2,11 +2,11 @@
   <div class="sidebar-logo-container" :class="{ 'collapse': collapse }">
     <transition name="sidebarLogoFade">
       <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
-        <img v-if="logo" :src="logo" class="sidebar-logo" />
+        <img v-if="logo" :src="logo" class="sidebar-logo" :style="{ filter: logoFilter }" />
         <h1 v-else class="sidebar-title">{{ title }}</h1>
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
-        <img v-if="logo" :src="logo" class="sidebar-logo" />
+        <img v-if="logo" :src="logo" class="sidebar-logo" :style="{ filter: logoFilter }" />
         <h1 class="sidebar-title">{{ title }}</h1>
       </router-link>
     </transition>
@@ -49,6 +49,15 @@ const getLogoTextColor = computed(() => {
     return variables.menuLightText
   }
   return sideTheme.value === 'theme-dark' ? '#fff' : variables.menuLightText
+})
+
+// 白色Logo在浅色侧边栏上压暗显示
+const logoFilter = computed(() => {
+  if (settingsStore.isDark) {
+    return 'none'
+  }
+  const lightBg = settingsStore.navType == 3 || sideTheme.value !== 'theme-dark'
+  return lightBg ? 'brightness(0.25)' : 'none'
 })
 </script>
 

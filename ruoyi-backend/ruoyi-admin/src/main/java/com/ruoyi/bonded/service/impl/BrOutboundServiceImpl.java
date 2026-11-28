@@ -23,6 +23,7 @@ public class BrOutboundServiceImpl implements IBrOutboundService
     @Autowired private Sdo2DataMapper sdo2DataMapper;
     @Autowired private BrDeclareLogMapper declareLogMapper;
     @Autowired private BrLedgerService ledgerService;
+    @Autowired private com.ruoyi.bonded.service.BrDeclareSupport declareSupport;
     @Autowired private BrPushSwitch pushSwitch;
     @Autowired private com.ruoyi.system.service.ISysConfigService configService;
     @Autowired private com.ruoyi.bonded.mapper.BrWorkOrderMapper workOrderMapper;
@@ -79,6 +80,8 @@ public class BrOutboundServiceImpl implements IBrOutboundService
             item.setOutboundId(outbound.getId());
             outboundMapper.insertItem(item);
         }
+        // 保存即生效（小企业单人作业，无独立审核环节）：同事务余额校验、登记台账并按开关写镜像库，失败整体回滚
+        audit(outbound.getId());
         return 1;
     }
 
@@ -88,7 +91,17 @@ public class BrOutboundServiceImpl implements IBrOutboundService
     {
         BrOutbound db = outboundMapper.selectById(outbound.getId());
         if (db == null) { throw new ServiceException("出库单不存在"); }
-        if (!"01".equals(db.getDocStatus()) && !"06".equals(db.getDocStatus())) { throw new ServiceException("仅草稿/退单状态可修改"); }
+        // 未采集可修改：草稿(01)、退单(06)、生效未申报(03/00)、待采集(03/10，客户端未取走镜像行)
+        boolean editable = "01".equals(db.getDocStatus()) || "06".equals(db.getDocStatus())
+                || ("03".equals(db.getDocStatus()) && ("00".equals(db.getCustomsStatus()) || "10".equals(db.getCustomsStatus())));
+        if (!editable) { throw new ServiceException("出库单【" + db.getOutboundNo() + "】已被海关采集，不可直接修改，请走变更申报流程"); }
+        // 原 03 生效单修改：先冲销台账、清理未采集镜像行与待回执日志，按草稿口径重走审核并重写镜像
+        if ("03".equals(db.getDocStatus()))
+        {
+            ledgerService.reverseDoc("br_outbound", outbound.getId());
+            declareSupport.purgePending("br_outbound", outbound.getId(), db.getOutboundNo());
+            outboundMapper.updateDeclareResult(outbound.getId(), null, "01", "00", "1");
+        }
         // 表单不再录入出库业务单证编号：空时默认=原出库单号（DB 列 NOT NULL，兜底旧数据）
         if (StringUtils.isEmpty(outbound.getBusiFormNum()))
         {
@@ -108,18 +121,42 @@ public class BrOutboundServiceImpl implements IBrOutboundService
         {
             outboundMapper.updateDeclareResult(outbound.getId(), db.getLastUuid(), "01", "00", db.getExecuteType());
         }
+        audit(outbound.getId());
         return 1;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteByIds(Long[] ids)
     {
+        java.util.Set<Long> woIds = new java.util.HashSet<>();
         for (Long id : ids)
         {
             BrOutbound db = outboundMapper.selectById(id);
-            if (db != null && !"01".equals(db.getDocStatus())) { throw new ServiceException("出库单非草稿状态，禁止删除"); }
+            if (db == null) { continue; }
+            // 可删除：草稿(01) 或 生效未申报(03/00，镜像表未写入)；已写镜像走变更/作废申报
+            boolean deletable = "01".equals(db.getDocStatus())
+                    || ("03".equals(db.getDocStatus()) && "00".equals(db.getCustomsStatus()));
+            if (!deletable) { throw new ServiceException("出库单【" + db.getOutboundNo() + "】已写入海关镜像库，禁止删除，请走变更或作废申报"); }
         }
-        return outboundMapper.deleteByIds(ids);
+        // 生效单已登记台账：先冲销再删除，并按剩余出库重建工单出清状态
+        for (Long id : ids)
+        {
+            BrOutbound db = outboundMapper.selectById(id);
+            if (db == null) { continue; }
+            if ("03".equals(db.getDocStatus())) { ledgerService.reverseDoc("br_outbound", id); }
+            for (BrOutboundItem item : outboundMapper.selectItemsByOutboundId(id))
+            {
+                if ("i".equals(item.getGoodsSourceType()) && StringUtils.isNotEmpty(item.getGoodsSourceNo()))
+                {
+                    Long woId = workOrderMapper.selectWorkOrderIdByReceiveNo(item.getGoodsSourceNo());
+                    if (woId != null) { woIds.add(woId); }
+                }
+            }
+        }
+        int rows = outboundMapper.deleteByIds(ids);
+        for (Long woId : woIds) { workOrderService.refreshOutClearStatus(woId); }
+        return rows;
     }
 
     @Override
@@ -149,7 +186,7 @@ public class BrOutboundServiceImpl implements IBrOutboundService
                         + " 可出余额不足：可用 " + available + "，本次出库 " + out);
             }
             ledgerService.record(item.getMaterialId(), m.getMarkType(), "OUT", "br_outbound", id, h.getOutboundNo(),
-                    item.getGoodsSourceType(), item.getGoodsSourceNo(), null, h.getBatchNo(), out.negate());
+                    item.getGoodsSourceType(), item.getGoodsSourceNo(), null, null, out.negate());
         }
         // 审核通过；自动申报开关打开时同事务写入镜像库（退单重报自动走变更），关闭则滞留待申报由补报任务处理
         int rows = outboundMapper.updateDeclareResult(id, h.getLastUuid(), "03", h.getCustomsStatus(), "1");
@@ -234,8 +271,8 @@ public class BrOutboundServiceImpl implements IBrOutboundService
                 d.setReleaseno(h.getOutboundNo());
                 d.setMaterialCd(line.getMaterialCd());
                 d.setMaterialDesc("8".equals(m.getMarkType())
-                        ? line.getMaterialName() + BrMaterialServiceImpl.markSuffix("2", line.getIsBonded()) + "维修服务费"
-                        : line.getMaterialName() + BrMaterialServiceImpl.markSuffix(line.getMarkType(), line.getIsBonded()));
+                        ? BrMaterialServiceImpl.mirrorName(line.getMaterialName(), "2", line.getIsBonded(), "维修服务费")
+                        : BrMaterialServiceImpl.mirrorName(line.getMaterialName(), line.getMarkType(), line.getIsBonded()));
                 d.setVersion(BrInboundServiceImpl.parseVersion(line.getVersion(), line.getMaterialName()));
                 d.setSpecificationsModels(spec);
                 d.setDeliveryCnt(item.getDeliveryCnt());

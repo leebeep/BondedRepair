@@ -20,4 +20,13 @@ public interface BrDeclareLogMapper
 
     /** 看板汇总：按 biz_type + result_status 分组计数 */
     public List<java.util.Map<String, Object>> selectBoard();
+
+    /** 单据的全部申报日志（修改前清理未采集镜像行用） */
+    public List<BrDeclareLog> selectLogsByBiz(@Param("bizTable") String bizTable, @Param("bizId") Long bizId);
+
+    /** 删除单条申报日志 */
+    public int deleteLogById(@Param("id") Long id);
+
+    /** 删除镜像表行（mirrorTable 仅限白名单，由服务层校验） */
+    public int deleteMirrorRow(@Param("mirrorTable") String mirrorTable, @Param("mirrorRowId") Long mirrorRowId);
 }

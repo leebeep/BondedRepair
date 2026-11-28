@@ -10,7 +10,6 @@
         <result property="relaCustomsFormType" column="rela_customs_form_type"/>
         <result property="relaCustomsFormNum" column="rela_customs_form_num"/>
         <result property="calculatingRecordNo" column="calculating_record_no"/>
-        <result property="batchNo" column="batch_no"/>
         <result property="inOutTime" column="in_out_time"/>
         <result property="docStatus" column="doc_status"/>
         <result property="customsStatus" column="customs_status"/>
@@ -21,7 +20,7 @@
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
     </resultMap>
-    <sql id="selectVo">select id, outbound_no, rela_ent_nm, busi_type, busi_form_num, rela_customs_form_type, rela_customs_form_num, calculating_record_no, batch_no, in_out_time, doc_status, customs_status, execute_type, last_uuid, remark, del_flag, create_by, create_time from br_outbound</sql>
+    <sql id="selectVo">select id, outbound_no, rela_ent_nm, busi_type, busi_form_num, rela_customs_form_type, rela_customs_form_num, calculating_record_no, in_out_time, doc_status, customs_status, execute_type, last_uuid, remark, del_flag, create_by, create_time from br_outbound</sql>
     <select id="selectList" parameterType="BrOutbound" resultMap="OutboundResult">
         <include refid="selectVo"/>
         where del_flag = '0'
@@ -40,8 +39,8 @@
         where outbound_no like concat(#{prefix}, '%')
     </select>
     <insert id="insert" parameterType="BrOutbound" useGeneratedKeys="true" keyProperty="id">
-        insert into br_outbound (outbound_no, rela_ent_nm, busi_type, busi_form_num, rela_customs_form_type, rela_customs_form_num, calculating_record_no, batch_no, in_out_time, doc_status, customs_status, execute_type, remark, create_by, create_time)
-        values (#{outboundNo}, #{relaEntNm}, #{busiType}, #{busiFormNum}, #{relaCustomsFormType}, #{relaCustomsFormNum}, #{calculatingRecordNo}, #{batchNo}, #{inOutTime}, '01', '00', '1', #{remark}, #{createBy}, sysdate())
+        insert into br_outbound (outbound_no, rela_ent_nm, busi_type, busi_form_num, rela_customs_form_type, rela_customs_form_num, calculating_record_no, in_out_time, doc_status, customs_status, execute_type, remark, create_by, create_time)
+        values (#{outboundNo}, #{relaEntNm}, #{busiType}, #{busiFormNum}, #{relaCustomsFormType}, #{relaCustomsFormNum}, #{calculatingRecordNo}, #{inOutTime}, '01', '00', '1', #{remark}, #{createBy}, sysdate())
     </insert>
     <update id="update" parameterType="BrOutbound">
         update br_outbound
@@ -53,7 +52,6 @@
             <if test="relaCustomsFormType != null and relaCustomsFormType != ''">rela_customs_form_type = #{relaCustomsFormType},</if>
             <if test="relaCustomsFormNum != null">rela_customs_form_num = #{relaCustomsFormNum},</if>
             <if test="calculatingRecordNo != null">calculating_record_no = #{calculatingRecordNo},</if>
-            <if test="batchNo != null">batch_no = #{batchNo},</if>
             <if test="inOutTime != null">in_out_time = #{inOutTime},</if>
             <if test="remark != null">remark = #{remark},</if>
             update_by = #{updateBy}, update_time = sysdate()

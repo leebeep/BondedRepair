@@ -25,11 +25,15 @@ public class BrWorkOrder extends BaseEntity
     private String currency;
     /** 核销周期 */
     private String verifyCycle;
-    /** 01-立项 02-生产中 03-已收齐 04-已出清 05-已结案 */
+    /** 01-立项 02-维修中 03-已收齐 04-已出清 05-已结案 */
     private String orderStatus;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private Date finishDate;
     private String delFlag;
     /** 工单明细 */
     private List<BrWorkOrderItem> items;
+    /** 已发料合计（markType=1，列表展示用） */
+    private BigDecimal issuedQty;
+    /** 已收回合计（returnType 5/a，列表展示用） */
+    private BigDecimal receivedQty;
 }

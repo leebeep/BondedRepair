@@ -82,6 +82,14 @@ public class BrDeclareController extends BaseController
         return success("本次查询 " + n + " 条");
     }
 
+    /** 主动查询可用状态（未配置公服 url/appKey 时前端置灰按钮并提示） */
+    @PreAuthorize("@ss.hasPermi('bonded:declare:list')")
+    @GetMapping("/query-status")
+    public AjaxResult queryStatus()
+    {
+        return success(queryService.isConfigured());
+    }
+
     /** 回执结果看板：五类报文按回执状态计数 */
     @PreAuthorize("@ss.hasPermi('bonded:declare:list')")
     @GetMapping("/board")

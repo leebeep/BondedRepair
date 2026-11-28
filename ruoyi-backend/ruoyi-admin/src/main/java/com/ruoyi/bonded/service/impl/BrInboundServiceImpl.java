@@ -32,6 +32,7 @@ public class BrInboundServiceImpl implements IBrInboundService
     @Autowired private Pto2DataMapper pto2DataMapper;
     @Autowired private BrDeclareLogMapper declareLogMapper;
     @Autowired private BrLedgerService ledgerService;
+    @Autowired private com.ruoyi.bonded.service.BrDeclareSupport declareSupport;
     @Autowired private BrPushSwitch pushSwitch;
 
     /** 入库单号自动生成前缀参数（sys_config，可在 参数设置 中修改） */
@@ -84,6 +85,8 @@ public class BrInboundServiceImpl implements IBrInboundService
             item.setInboundId(inbound.getId());
             inboundMapper.insertItem(item);
         }
+        // 保存即生效（小企业单人作业，无独立审核环节）：同事务登记台账并按自动申报开关写镜像库，校验失败整体回滚
+        audit(inbound.getId());
         return 1;
     }
 
@@ -93,7 +96,17 @@ public class BrInboundServiceImpl implements IBrInboundService
     {
         BrInbound db = inboundMapper.selectById(inbound.getId());
         if (db == null) { throw new ServiceException("入库单不存在"); }
-        if (!"01".equals(db.getDocStatus()) && !"06".equals(db.getDocStatus())) { throw new ServiceException("仅草稿或退单状态可修改"); }
+        // 未采集可修改：草稿(01)、退单(06)、生效未申报(03/00)、待采集(03/10，客户端未取走镜像行)
+        boolean editable = "01".equals(db.getDocStatus()) || "06".equals(db.getDocStatus())
+                || ("03".equals(db.getDocStatus()) && ("00".equals(db.getCustomsStatus()) || "10".equals(db.getCustomsStatus())));
+        if (!editable) { throw new ServiceException("入库单【" + db.getInboundNo() + "】已被海关采集，不可直接修改，请走变更申报流程"); }
+        // 原 03 生效单修改：先冲销台账、清理未采集镜像行与待回执日志，按草稿口径重走审核并重写镜像
+        if ("03".equals(db.getDocStatus()))
+        {
+            ledgerService.reverseDoc("br_inbound", inbound.getId());
+            declareSupport.purgePending("br_inbound", inbound.getId(), db.getInboundNo());
+            inboundMapper.updateDeclareResult(inbound.getId(), null, "01", "00", "1");
+        }
         validate(inbound, inbound.getId());
         inbound.setUpdateBy(SecurityUtils.getUsername());
         inboundMapper.update(inbound);
@@ -103,21 +116,33 @@ public class BrInboundServiceImpl implements IBrInboundService
             item.setInboundId(inbound.getId());
             inboundMapper.insertItem(item);
         }
-        // 退单改单后回草稿，重新审核时以 executeType=2 变更重报（携带原 uuid）
+        // 退单改单后回草稿，重新生效时以 executeType=2 变更重报（携带原 uuid）
         if ("06".equals(db.getDocStatus()))
         {
             inboundMapper.updateDeclareResult(inbound.getId(), db.getLastUuid(), "01", "00", db.getExecuteType());
         }
+        audit(inbound.getId());
         return 1;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteByIds(Long[] ids)
     {
         for (Long id : ids)
         {
             BrInbound db = inboundMapper.selectById(id);
-            if (db != null && !"01".equals(db.getDocStatus())) { throw new ServiceException("入库单【" + db.getInboundNo() + "】非草稿状态，禁止删除"); }
+            if (db == null) { continue; }
+            // 可删除：草稿(01) 或 生效未申报(03/00，镜像表未写入)；已写镜像走变更/作废申报
+            boolean deletable = "01".equals(db.getDocStatus())
+                    || ("03".equals(db.getDocStatus()) && "00".equals(db.getCustomsStatus()));
+            if (!deletable) { throw new ServiceException("入库单【" + db.getInboundNo() + "】已写入海关镜像库，禁止删除，请走变更或作废申报"); }
+        }
+        // 生效单已登记台账：先冲销再删除
+        for (Long id : ids)
+        {
+            BrInbound db = inboundMapper.selectById(id);
+            if (db != null && "03".equals(db.getDocStatus())) { ledgerService.reverseDoc("br_inbound", id); }
         }
         return inboundMapper.deleteByIds(ids);
     }
@@ -129,6 +154,11 @@ public class BrInboundServiceImpl implements IBrInboundService
         BrInbound h = inboundMapper.selectById(id);
         if (h == null) { throw new ServiceException("入库单不存在"); }
         if (!"01".equals(h.getDocStatus())) { throw new ServiceException("入库单【" + h.getInboundNo() + "】已审核"); }
+        // 退单(06)重审：先冲销原 IN 流水（数量取反），再按当前明细重新记账，避免重复入账
+        if ("06".equals(h.getDocStatus()))
+        {
+            ledgerService.reverseDoc("br_inbound", id);
+        }
         List<BrInboundItem> items = inboundMapper.selectItemsByInboundId(id);
         if (items.isEmpty()) { throw new ServiceException("入库单明细为空"); }
         for (BrInboundItem item : items)
@@ -203,7 +233,7 @@ public class BrInboundServiceImpl implements IBrInboundService
                 d.setTakeOrderCd(h.getInboundNo());
                 d.setRelaEntNm(h.getRelaEntNm());
                 d.setMaterialCd(m.getMaterialCd());
-                d.setMaterialDesc(m.getMaterialName() + BrMaterialServiceImpl.markSuffix(m.getMarkType(), m.getIsBonded()));
+                d.setMaterialDesc(BrMaterialServiceImpl.mirrorName(m.getMaterialName(), m.getMarkType(), m.getIsBonded()));
                 d.setMaterialVersion(parseVersion(m.getVersion(), m.getMaterialName()));
                 d.setSpecificationsModels(spec);
                 d.setStorageCnt(item.getStorageCnt());

@@ -20,8 +20,6 @@ public class BrIssue extends BaseEntity
     private Long workOrderId;
     /** 工单号(表单录入，自动建档；列表为关联查询) */
     private String workNo;
-    /** 申报批次号(表单录入，写入工单) */
-    private String batchNo;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date issueTime;
     private String docStatus;

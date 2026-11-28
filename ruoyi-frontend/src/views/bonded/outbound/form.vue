@@ -22,7 +22,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12"><el-form-item label="申报批次号"><el-input v-model="form.batchNo" placeholder="如 B202611-001，用于台账与对账" /></el-form-item></el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
@@ -42,21 +41,21 @@
         </el-form-item>
         <el-form-item label="出库明细" required>
           <el-table :data="form.items" size="small" border empty-text="暂无明细，点击下方按钮添加" style="width: 100%">
-            <el-table-column label="序号" type="index" width="55" align="center" header-align="center" />
-            <el-table-column label="物料编号" width="120" header-align="center" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column>
-            <el-table-column label="物料名称" min-width="140" header-align="center" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column>
-            <el-table-column label="版本号" width="80" align="center" header-align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
-            <el-table-column label="规格型号" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column>
-            <el-table-column label="是否保税" width="90" align="center" header-align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
-            <el-table-column label="来源类型" width="110" align="center" header-align="center"><template #default="s">{{ sourceTypeLabel(s.row.goodsSourceType) }}</template></el-table-column>
-            <el-table-column label="来源单号" width="150" header-align="center" show-overflow-tooltip><template #default="s">{{ s.row.goodsSourceNo || '-' }}</template></el-table-column>
-            <el-table-column label="余额提示" width="150" header-align="center"><template #default="s"><span :class="balanceInsufficient(s.row) ? 'text-danger' : ''">{{ balanceTip(s.row) }}</span></template></el-table-column>
-            <el-table-column label="计量单位" width="100" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
-            <el-table-column label="出库数量" width="110" align="right" header-align="center"><template #default="s">{{ s.row.deliveryCnt ?? '-' }}</template></el-table-column>
-            <el-table-column label="单价" width="100" align="right" header-align="center"><template #default="s">{{ s.row.price ?? '-' }}</template></el-table-column>
-            <el-table-column label="币制" width="110" align="center" header-align="center"><template #default="s">{{ currencyLabel(s.row.currency) }}</template></el-table-column>
-            <el-table-column v-if="isBusi99" label="出库说明" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ s.row.busiDesc || '-' }}</template></el-table-column>
-            <el-table-column label="操作" width="110" align="center" header-align="center" fixed="right">
+            <el-table-column label="序号" type="index" width="55" align="center" />
+            <el-table-column label="物料编号" width="120" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column align="center">
+            <el-table-column label="物料名称" min-width="140" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column align="center">
+            <el-table-column label="版本号" width="80" align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
+            <el-table-column label="规格型号" width="130" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column align="center">
+            <el-table-column label="是否保税" width="90" align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
+            <el-table-column label="来源类型" width="110" align="center"><template #default="s">{{ sourceTypeLabel(s.row.goodsSourceType) }}</template></el-table-column>
+            <el-table-column label="来源单号" width="150" show-overflow-tooltip><template #default="s">{{ s.row.goodsSourceNo || '-' }}</template></el-table-column align="center">
+            <el-table-column label="余额提示" width="150"><template #default="s"><span :class="balanceInsufficient(s.row) ? 'text-danger' : ''">{{ balanceTip(s.row) }}</span></template></el-table-column align="center">
+            <el-table-column label="计量单位" width="100" align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
+            <el-table-column label="出库数量" width="110" align="center"><template #default="s">{{ s.row.deliveryCnt ?? '-' }}</template></el-table-column>
+            <el-table-column label="单价" width="100" align="center"><template #default="s">{{ s.row.price ?? '-' }}</template></el-table-column>
+            <el-table-column label="币制" width="110" align="center"><template #default="s">{{ currencyLabel(s.row.currency) }}</template></el-table-column>
+            <el-table-column v-if="isBusi99" label="出库说明" width="130" show-overflow-tooltip><template #default="s">{{ s.row.busiDesc || '-' }}</template></el-table-column align="center">
+            <el-table-column label="操作" width="110" align="center" fixed="right">
               <template #default="s">
                 <el-button link type="primary" @click="editItem(s.$index)">编辑</el-button>
                 <el-button link type="danger" @click="form.items.splice(s.$index,1)">删除</el-button>
@@ -78,8 +77,8 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="物料编号" prop="materialId">
-              <el-select v-model="itemForm.materialId" filterable style="width: 100%" @change="onMaterialChange(itemForm)">
-                <el-option v-for="m in materials" :key="m.id" :label="m.materialCd + '　' + materialNameWithMark(m.materialName, m.markType, m.isBonded)" :value="m.id" />
+              <el-select v-model="itemForm.materialId" filterable :filter-method="filterMaterial" @change="onMaterialChange(itemForm)" @visible-change="v => !v && (materialQuery = '')" style="width: 100%">
+                <el-option v-for="m in filteredMaterials" :key="m.id" :label="m.materialCd + '　' + materialNameWithMark(m.materialName, m.markType, m.isBonded)" :value="m.id" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -131,6 +130,7 @@
 <script setup name="OutboundForm">
 import { getOutbound, addOutbound, updOutbound, listStock, listInbound, listReceive, nextOutboundNo } from '@/api/bonded/biz'
 import { listMaterial } from '@/api/bonded/material'
+import { useMaterialCache } from '@/composables/useMaterialCache'
 import DeclarePreviewDialog from '../components/DeclarePreviewDialog.vue'
 import { outboundBusiTypes as busiTypes, materialNameWithMark } from '@/utils/bonded'
 import { currencies, currencyLabel } from '@/utils/customsDict'
@@ -140,11 +140,10 @@ const { proxy } = getCurrentInstance()
 const route = useRoute()
 const router = useRouter()
 
-const materials = ref([])
 const sourceDocsByType = ref({ g: [], i: [] })
 const sourceBalances = ref({})
 const sourceQtys = ref({})
-const form = ref({ outboundNo: null, busiType: null, relaCustomsFormType: null, relaCustomsFormNum: null, batchNo: null, calculatingRecordNo: null, inOutTime: null, items: [] })
+const form = ref({ outboundNo: null, busiType: null, relaCustomsFormType: null, relaCustomsFormNum: null, calculatingRecordNo: null, inOutTime: null, items: [] })
 const previewVisible = ref(false)
 const previewData = computed(() => form.value)
 
@@ -157,11 +156,31 @@ const itemRules = computed(() => ({
   materialId: [{ required: true, message: '请选择物料', trigger: 'change' }],
   goodsSourceType: [{ required: true, message: '请选择来源类型', trigger: 'change' }],
   goodsSourceNo: [{ required: true, message: '请选择来源单号', trigger: 'change' }],
-  deliveryCnt: [{ required: true, message: '出库数量必填', trigger: 'blur' }],
+  deliveryCnt: [
+    { required: true, message: '出库数量必填', trigger: 'blur' },
+    { validator: (rule, value, callback) => {
+      if (isServiceFeeLine(itemForm.value)) return callback()
+      // 余额台账未加载到该物料时不拦截（最终以保存生效校验为准）
+      const b = balanceOf(itemForm.value)
+      if (b == null) return callback()
+      if (Number(value) > b) callback(new Error('出库数量超过可用余额（可用 ' + parseFloat(Number(b).toFixed(6)) + '）'))
+      else callback()
+    }, trigger: ['blur', 'change'] }
+  ],
   price: [{ required: true, message: '单价必填', trigger: 'blur' }],
   ...(isBusi99.value ? { busiDesc: [{ required: true, message: '业务类型=99 其他时出库说明必填', trigger: 'blur' }] } : {})
 }))
 const pickedItemMaterial = computed(() => findMaterial(itemForm.value))
+// 物料选择：编号/名称双字段模糊搜索
+const materialQuery = ref('')
+function filterMaterial(q) { materialQuery.value = q }
+const filteredMaterials = computed(() => {
+  const q = materialQuery.value.trim().toLowerCase()
+  if (!q) return materials.value
+  return materials.value.filter(m =>
+    (m.materialCd || '').toLowerCase().includes(q) || (m.materialName || '').toLowerCase().includes(q)
+  )
+})
 function sourceTypeLabel(type) { return { g: 'g-入库清单', i: 'i-工单收料' }[type] || type || '-' }
 function addItem() {
   editingIndex.value = -1
@@ -262,7 +281,7 @@ function onMaterialChange(row) {
   }
 }
 
-// 来源单号：审核通过(03)及申报通过(05)的入库单/收料单；已选物料时仅显示该物料仍有余额的单号
+// 来源单号：已生效(03)及申报通过(05)的入库单/收料单；已选物料时仅显示该物料仍有余额的单号
 function buildSourceDocs(rows, type, noKey, qtyKey) {
   return (rows || []).filter(x => ['03', '05'].includes(x.docStatus)).map(x => {
     const doc = { no: x[noKey], docStatus: x.docStatus, items: x.items || [] }
@@ -303,7 +322,7 @@ function sourceOptionLabel(type, doc) {
   return doc.no + '（可用 ' + fmtQty(total) + '）'
 }
 
-// 来源余额提示：取库存台账净流水，供参考，不阻断提交（由后端审核校验）
+// 来源余额提示：取库存台账净流水，供参考，不阻断提交（由后端保存生效校验）
 const balanceKey = (type, no, materialId) => `${type}|${no}|${materialId}`
 function balanceOf(row) {
   if (!row.materialId || !row.goodsSourceNo) return null
@@ -329,14 +348,12 @@ if (id) {
   // 新增时自动生成出库单号（可修改），失败则留空由用户填写
   nextOutboundNo().then(r => { form.value.outboundNo = r.data }).catch(() => {})
 }
-// 备案通过的物料 + markType=8 服务费虚物料（虚物料未备案但出库允许作为台账载体）
-Promise.all([
-  listMaterial({ pageNum: 1, pageSize: 200, declareStatus: '2' }),
-  listMaterial({ pageNum: 1, pageSize: 200, markType: '8' })
-]).then(([r1, r2]) => {
-  const map = new Map()
-  ;[...(r1.rows || []), ...(r2.rows || [])].forEach(m => map.set(m.id, m))
-  materials.value = [...map.values()]
+// 备案通过的物料（全局缓存）+ markType=8 服务费虚物料（虚物料未备案但出库允许作为台账载体）
+const { load: loadMaterialCache, materials, byId } = useMaterialCache()
+loadMaterialCache()
+listMaterial({ pageNum: 1, pageSize: 200, markType: '8' }).then(r => {
+  const extra = (r.rows || []).filter(m => !byId(m.id))
+  materials.value = [...materials.value, ...extra]
 })
 Promise.all([
   listInbound({ pageNum: 1, pageSize: 200 }),
@@ -362,7 +379,7 @@ function submitForm() {
     if (!v) return
     if (!form.value.items.length || form.value.items.some(i => !i.materialId || !i.goodsSourceType || !i.goodsSourceNo || !i.deliveryCnt || i.price == null)) { proxy.$modal.msgError('请完善出库明细（来源/单号/物料/数量/单价必填）'); return }
     if (isBusi99.value && form.value.items.some(i => !i.busiDesc)) { proxy.$modal.msgError('业务类型=99 其他时出库说明必填'); return }
-    if (form.value.items.some(balanceInsufficient)) { proxy.$modal.msgWarning('部分明细来源余额不足，请核对；最终以审核校验为准') }
+    if (form.value.items.some(balanceInsufficient)) { proxy.$modal.msgWarning('部分明细来源余额不足，请核对；最终以保存生效校验为准') }
     ;(form.value.id ? updOutbound(form.value) : addOutbound(form.value)).then(() => {
       proxy.$modal.msgSuccess('保存成功')
       proxy.$tab.closeOpenPage({ path: '/bonded/outbound' })

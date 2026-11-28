@@ -63,6 +63,7 @@ public class BrReceiveServiceImpl implements IBrReceiveService
     @Autowired private Mso2DataMapper mso2DataMapper;
     @Autowired private BrDeclareLogMapper declareLogMapper;
     @Autowired private BrLedgerService ledgerService;
+    @Autowired private com.ruoyi.bonded.service.BrDeclareSupport declareSupport;
     @Autowired private BrPushSwitch pushSwitch;
     @Autowired private BrWorkOrderService workOrderService;
 
@@ -87,9 +88,9 @@ public class BrReceiveServiceImpl implements IBrReceiveService
     public int insert(BrReceive receive)
     {
         validate(receive, null);
-        // 工单号/批次号/服务费由表单录入：不存在自动建档并更新（非海关单证，仅供 MSO2 work_no 与服务费行）
-        com.ruoyi.bonded.domain.BrWorkOrder wo = workOrderService.getOrCreate(
-                receive.getWorkNo(), receive.getBatchNo(), receive.getServiceFee(), receive.getCurrency());
+        // 工单先行：必须选择已创建的维修工单；服务费/币制写入该工单（非海关单证，仅供 MSO2 work_no 与服务费行）
+        com.ruoyi.bonded.domain.BrWorkOrder wo = workOrderService.applyFee(
+                receive.getWorkNo(), receive.getServiceFee(), receive.getCurrency());
         receive.setWorkOrderId(wo.getId());
         autoAppendServiceFeeLine(receive);
         receive.setCreateBy(SecurityUtils.getUsername());
@@ -99,6 +100,8 @@ public class BrReceiveServiceImpl implements IBrReceiveService
             item.setReceiveId(receive.getId());
             receiveMapper.insertItem(item);
         }
+        // 保存即生效（小企业单人作业，无独立审核环节）：同事务收齐校验、登记台账并按开关写镜像库，失败整体回滚
+        audit(receive.getId());
         return 1;
     }
 
@@ -108,12 +111,22 @@ public class BrReceiveServiceImpl implements IBrReceiveService
     {
         BrReceive db = receiveMapper.selectById(receive.getId());
         if (db == null) { throw new ServiceException("收料单不存在"); }
-        if (!"01".equals(db.getDocStatus()) && !"06".equals(db.getDocStatus())) { throw new ServiceException("仅草稿或退单状态可修改"); }
+        // 未采集可修改：草稿(01)、退单(06)、生效未申报(03/00)、待采集(03/10，客户端未取走镜像行)
+        boolean editable = "01".equals(db.getDocStatus()) || "06".equals(db.getDocStatus())
+                || ("03".equals(db.getDocStatus()) && ("00".equals(db.getCustomsStatus()) || "10".equals(db.getCustomsStatus())));
+        if (!editable) { throw new ServiceException("收料单【" + db.getReceiveNo() + "】已被海关采集，不可直接修改，请走变更申报流程"); }
+        // 原 03 生效单修改：先冲销台账、清理未采集镜像行与待回执日志，按草稿口径重走审核并重写镜像
+        if ("03".equals(db.getDocStatus()))
+        {
+            ledgerService.reverseDoc("br_receive", receive.getId());
+            declareSupport.purgePending("br_receive", receive.getId(), db.getReceiveNo());
+            receiveMapper.updateDeclareResult(receive.getId(), null, "01", "00", "1");
+        }
         validate(receive, receive.getId());
         if (StringUtils.isNotEmpty(receive.getWorkNo()))
         {
-            com.ruoyi.bonded.domain.BrWorkOrder wo = workOrderService.getOrCreate(
-                    receive.getWorkNo(), receive.getBatchNo(), receive.getServiceFee(), receive.getCurrency());
+            com.ruoyi.bonded.domain.BrWorkOrder wo = workOrderService.applyFee(
+                    receive.getWorkNo(), receive.getServiceFee(), receive.getCurrency());
             receive.setWorkOrderId(wo.getId());
         }
         autoAppendServiceFeeLine(receive);
@@ -129,18 +142,37 @@ public class BrReceiveServiceImpl implements IBrReceiveService
         {
             receiveMapper.updateDeclareResult(receive.getId(), db.getLastUuid(), "01", "00", db.getExecuteType());
         }
+        audit(receive.getId());
         return 1;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteByIds(Long[] ids)
     {
+        java.util.Set<Long> woIds = new java.util.HashSet<>();
         for (Long id : ids)
         {
             BrReceive db = receiveMapper.selectById(id);
-            if (db != null && !"01".equals(db.getDocStatus())) { throw new ServiceException("收料单【" + db.getReceiveNo() + "】非草稿状态，禁止删除"); }
+            if (db == null) { continue; }
+            // 可删除：草稿(01) 或 生效未申报(03/00，镜像表未写入)；已写镜像走变更/作废申报
+            boolean deletable = "01".equals(db.getDocStatus())
+                    || ("03".equals(db.getDocStatus()) && "00".equals(db.getCustomsStatus()));
+            if (!deletable) { throw new ServiceException("收料单【" + db.getReceiveNo() + "】已写入海关镜像库，禁止删除，请走变更或作废申报"); }
+            if (db.getWorkOrderId() != null) { woIds.add(db.getWorkOrderId()); }
         }
-        return receiveMapper.deleteByIds(ids);
+        // 生效单已登记台账：先冲销再删除，并按剩余收料重建工单收齐状态
+        for (Long id : ids)
+        {
+            BrReceive db = receiveMapper.selectById(id);
+            if (db != null && "03".equals(db.getDocStatus())) { ledgerService.reverseDoc("br_receive", id); }
+        }
+        int rows = receiveMapper.deleteByIds(ids);
+        for (Long woId : woIds)
+        {
+            workOrderService.refreshWorkOrderStatus(woId);
+        }
+        return rows;
     }
 
     @Override
@@ -150,6 +182,11 @@ public class BrReceiveServiceImpl implements IBrReceiveService
         BrReceive h = receiveMapper.selectById(id);
         if (h == null) { throw new ServiceException("收料单不存在"); }
         if (!"01".equals(h.getDocStatus())) { throw new ServiceException("收料单【" + h.getReceiveNo() + "】已审核"); }
+        // 退单(06)重审：先冲销原 RCV 流水（数量取反），再按当前明细重新记账，避免重复入账
+        if ("06".equals(h.getDocStatus()))
+        {
+            ledgerService.reverseDoc("br_receive", id);
+        }
         BrWorkOrder wo = workOrderMapper.selectById(h.getWorkOrderId());
         if (wo == null) { throw new ServiceException("收料单关联的工单不存在"); }
         // 样例集 00 §0.2：已修复/残次品收料不得超过工单实际投入（发料 - 未使用收料）
@@ -265,9 +302,10 @@ public class BrReceiveServiceImpl implements IBrReceiveService
                 d.setWorkNo(wo.getWorkNo());
                 d.setMaterialCd(line.getMaterialCd());
                 d.setMaterialDesc("8".equals(m.getMarkType())
-                        ? line.getMaterialName() + BrMaterialServiceImpl.markSuffix("2", line.getIsBonded()) + "维修服务费"
-                        : line.getMaterialName() + BrMaterialServiceImpl.markSuffix(line.getMarkType(), line.getIsBonded()));
-                d.setMaterialVersion(new BigDecimal(StringUtils.defaultString(line.getVersion(), "1")));
+                        ? BrMaterialServiceImpl.mirrorName(line.getMaterialName(), "2", line.getIsBonded(), "维修服务费")
+                        : BrMaterialServiceImpl.mirrorName(line.getMaterialName(), line.getMarkType(), line.getIsBonded()));
+                d.setMaterialVersion(new BigDecimal(Integer.toString(
+                        BrInboundServiceImpl.parseVersion(line.getVersion(), line.getMaterialName()))));
                 d.setMaterialNum(item.getMaterialNum());
                 d.setCalcUnit(line.getCalcUnit());
                 d.setIsBonded(line.getIsBonded());

@@ -1,5 +1,5 @@
 -- M2 菜单与权限：入库管理/工单发料/工单收料/库存管理
--- （维修工单独立菜单已废弃：工单号/批次号由发料单、收料单表单录入自动建档）
+-- （注：维修工单独立菜单已恢复，见 br_m4_workorder.sql——工单先行立项，发料/收料表单选择关联）
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
 VALUES ('入库管理', 2000, 3, 'inbound', 'bonded/inbound/index', '', '', 1, 0, 'C', '0', '0', 'bonded:in:list', 'upload', 'admin', sysdate());
 SET @m := LAST_INSERT_ID();

@@ -10,7 +10,11 @@
         </div>
         <div class="switch-actions" v-if="canEdit">
           <el-button icon="Refresh" :loading="pushing" :disabled="!autoPush" :title="autoPush ? '将开关关闭期间滞留的待申报单据（审核通过但未写入镜像库）批量补报' : '自动申报已关闭，开关打开后才可补报'" @click="onPushPending">立即补报待申报</el-button>
-          <el-button icon="Search" :loading="querying" title="调海关公共服务接口查询未回执单据的最新状态，用于核对/刷新回执" @click="onQueryReceipt">立即主动查询</el-button>
+          <el-tooltip :disabled="queryReady" content="主动查询不可用：公服查询接口未配置完整。公服平台注册后，在 参数设置 填写 br.query.api.appKey 与 br.query.api.privateKey（接口地址已预置），保存后约 1 分钟内自动启用" placement="top">
+            <span style="margin-left: 12px; display: inline-block">
+              <el-button icon="Search" :loading="querying" :disabled="!queryReady || querying" @click="onQueryReceipt">立即主动查询</el-button>
+            </span>
+          </el-tooltip>
         </div>
       </div>
     </el-card>
@@ -25,7 +29,7 @@
     <el-row :gutter="10" class="mb8">
       <el-col :xs="12" :md="4" :lg="4" v-for="b in bizTypes" :key="b.value">
         <el-card shadow="hover" class="board-card">
-          <template #header><b>{{ b.value }}</b> {{ b.label }}</template>
+          <template #header><b>{{ b.value }}</b> {{ b.label }}<span class="flow-tag sync">→ 我方申报</span></template>
           <div v-if="syncBoard[b.value]">
             <div v-for="s in customsOrder" :key="s" class="board-line">
               <el-tag :type="customsType(s)" size="small">{{ customsLabel(s) }}</el-tag>
@@ -37,14 +41,14 @@
       </el-col>
     </el-row>
 
-    <!-- 回执结果看板（镜像回执） -->
+    <!-- 回执结果看板（镜像回执），点击状态行可跳到日志清单过滤 -->
     <el-row :gutter="10" class="mb8">
       <el-col :xs="12" :md="4" :lg="4" v-for="b in bizTypes" :key="'r' + b.value">
         <el-card shadow="hover" class="board-card">
-          <template #header>回执结果 <b>{{ b.value }}</b></template>
+          <template #header><b>{{ b.value }}</b><span class="flow-tag rcv">← 海关回执</span></template>
           <div v-if="board[b.value]">
-            <div v-for="(v, k) in board[b.value]" :key="k" class="board-line">
-              <el-tag :type="declResultType(k)" size="small">{{ declResultLabel(k) }}</el-tag>
+            <div v-for="(v, k) in board[b.value]" :key="k" class="board-line clickable" title="点击按该回执状态过滤日志清单" @click="filterLogsByStatus(k)">
+              <el-tag :type="declResultType(k)" :icon="declResultIcon(k)" size="small">{{ declResultLabel(k) }}</el-tag>
               <span class="board-cnt">{{ v }}</span>
             </div>
           </div>
@@ -91,7 +95,7 @@
       <el-table-column label="单证类型" width="110" align="center">
         <template #default="s">{{ bizLabel(s.row.bizType) }}</template>
       </el-table-column>
-      <el-table-column label="单证编号" min-width="170" header-align="center" show-overflow-tooltip>
+      <el-table-column label="单证编号" min-width="170" show-overflow-tooltip align="center">
         <template #default="s">
           <el-link v-if="s.row.bizId" type="primary" :underline="false" @click="goDoc(s.row)">{{ s.row.bizNo || (s.row.bizTable + ' #' + s.row.bizId) }}</el-link>
           <span v-else>{{ s.row.bizNo || '-' }}</span>
@@ -100,19 +104,23 @@
       <el-table-column label="执行类型" width="80" align="center">
         <template #default="s">{{ { '1': '备案', '2': '变更', '3': '作废' }[s.row.executeType] || s.row.executeType }}</template>
       </el-table-column>
-      <el-table-column label="预录入编号" prop="uuid" width="170" show-overflow-tooltip>
+      <el-table-column label="预录入编号" prop="uuid" width="170" show-overflow-tooltip align="center">
         <template #default="s">{{ s.row.uuid || '-' }}</template>
       </el-table-column>
-      <el-table-column label="申报时间" prop="createTime" width="160">
-        <template #default="s">{{ fmtTime(s.row.createTime) }}</template>
+      <el-table-column label="申报时间" width="110" align="center">
+        <template #default="s">
+          <el-tooltip :content="fmtTimeFull(s.row.createTime)" placement="top"><span>{{ fmtTimeShort(s.row.createTime) }}</span></el-tooltip>
+        </template>
       </el-table-column>
-      <el-table-column label="回执状态" width="100" align="center">
-        <template #default="s"><el-tag :type="declResultType(s.row.resultStatus || 'PENDING')">{{ declResultLabel(s.row.resultStatus || 'PENDING') }}</el-tag></template>
+      <el-table-column label="回执状态" width="120" align="center">
+        <template #default="s"><el-tag :type="declResultType(s.row.resultStatus || 'PENDING')" :icon="declResultIcon(s.row.resultStatus)">{{ declResultLabel(s.row.resultStatus || 'PENDING') }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="回执时间" prop="resultTime" width="160">
-        <template #default="s">{{ s.row.resultTime ? fmtTime(s.row.resultTime) : '-' }}</template>
+      <el-table-column label="回执时间" width="110" align="center">
+        <template #default="s">
+          <el-tooltip :content="fmtTimeFull(s.row.resultTime)" placement="top"><span>{{ s.row.resultTime ? fmtTimeShort(s.row.resultTime) : '-' }}</span></el-tooltip>
+        </template>
       </el-table-column>
-      <el-table-column label="回执消息" prop="msg" min-width="160" show-overflow-tooltip>
+      <el-table-column label="回执消息" prop="msg" min-width="160" show-overflow-tooltip align="center">
         <template #default="s">{{ s.row.msg || '-' }}</template>
       </el-table-column>
       <el-table-column label="操作" width="140" align="center" fixed="right">
@@ -144,8 +152,8 @@
 </template>
 
 <script setup name="DeclareBoard">
-import { declareBoard, listDeclareLog, getPushSwitch, setPushSwitch, pushPending, queryReceipt, syncBoard as fetchSyncBoard } from '@/api/bonded/biz'
-import { declareBizTypes as bizTypes, declResultLabel, declResultType } from '@/utils/bonded'
+import { declareBoard, listDeclareLog, getPushSwitch, setPushSwitch, pushPending, queryReceipt, queryStatus, syncBoard as fetchSyncBoard } from '@/api/bonded/biz'
+import { declareBizTypes as bizTypes, declResultLabel, declResultType, declResultIcon, fmtTimeShort, fmtTimeFull } from '@/utils/bonded'
 import useUserStore from '@/store/modules/user'
 import { ElMessage } from 'element-plus'
 
@@ -180,6 +188,11 @@ const autoPush = ref(false)
 const canEdit = ref(false)
 const pushing = ref(false)
 const querying = ref(false)
+// 主动查询可用性：公服 url/appKey 已配置才启用按钮
+const queryReady = ref(false)
+function getQueryStatus() {
+  queryStatus().then(r => { queryReady.value = !!r.data }).catch(() => { queryReady.value = false })
+}
 
 // 海关采集状态标签
 const customsMap = {
@@ -231,6 +244,14 @@ function getLogs() {
   listDeclareLog({ ...logQuery, beginTime: beginTime || null, endTime: endTime || null }).then(r => { logs.value = r.rows; logTotal.value = r.total; loading.value = false })
 }
 
+// 看板联动：点击回执结果状态 → 切到日志清单并按该状态过滤
+function filterLogsByStatus(k) {
+  activeTab.value = 'logs'
+  logQuery.resultStatus = k
+  logQuery.pageNum = 1
+  getLogs()
+}
+
 function initSwitch() {
   getPushSwitch().then(r => { autoPush.value = r.data === true })
   // 有编辑权限才显示开关操作（无权限时接口 403，按钮隐藏即可）
@@ -259,19 +280,24 @@ function onQueryReceipt() {
 }
 
 initSwitch()
-getBoard(); getSyncBoard(); getLogs()
+getBoard(); getSyncBoard(); getLogs(); getQueryStatus()
 // 60s 自动刷新看板
-setInterval(() => { getBoard(); getSyncBoard() }, 60000)
+setInterval(() => { getBoard(); getSyncBoard(); getQueryStatus() }, 60000)
 </script>
 
 <style scoped>
 .mb16 { margin-bottom: 16px; }
 .switch-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .switch-title { font-weight: 600; margin-right: 8px; }
-.switch-desc { color: var(--br-muted, #64748b); font-size: 12px; margin-left: 10px; }
+.switch-desc { color: var(--el-text-color-secondary); font-size: 12px; margin-left: 10px; }
 .board-line { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+.board-line.clickable { cursor: pointer; border-radius: 4px; padding: 3px 6px; transition: background-color 0.15s; }
+.board-line.clickable:hover { background: var(--el-fill-color-light); }
 .board-cnt { font-weight: bold; font-size: 15px; }
-.board-empty { color: #999; font-size: 13px; }
+.board-empty { color: var(--el-text-color-secondary); font-size: 13px; }
+.flow-tag { float: right; font-size: 11px; color: var(--el-text-color-secondary); font-weight: normal; }
+.flow-tag.sync { color: var(--el-color-primary); }
+.flow-tag.rcv { color: var(--el-color-success); margin-left: 8px; }
 .msg-title { font-weight: 600; margin: 12px 0 6px; }
-.msg-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 10px 12px; font-size: 13px; line-height: 1.6; word-break: break-all; white-space: pre-wrap; min-height: 48px; }
+.msg-box { background: var(--el-fill-color-light); border: 1px solid var(--el-border-color-lighter); border-radius: 4px; padding: 10px 12px; font-size: 13px; line-height: 1.6; word-break: break-all; white-space: pre-wrap; min-height: 48px; }
 </style>

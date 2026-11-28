@@ -13,15 +13,16 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="维修工单号" prop="workNo">
-              <el-input v-model="form.workNo" placeholder="如 WO-2026-001，不存在将自动建档" />
-              <div class="field-tip">维修工单是收发料的归集主体：同工单的发料/收料共同参与统计与收齐判断</div>
+            <el-form-item label="维修工单" prop="workNo">
+              <el-select v-model="form.workNo" filterable placeholder="请选择维修工单" style="width: 100%">
+                <el-option v-for="o in workOrders" :key="o.workNo" :label="o.workNo + '（' + woStatusLabel(o.orderStatus) + '）'" :value="o.workNo" />
+              </el-select>
+              <div class="field-tip">同一批维修业务的归组标识：这批收料与它对应的发料共同参与收齐判断，并作为海关报文(MSO2)的工单号上报；新批次请先到 维修工单 页面创建</div>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
           <el-col :span="12"><el-form-item label="收料日期" prop="receiveTime"><el-date-picker v-model="form.receiveTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="申报批次号"><el-input v-model="form.batchNo" placeholder="如 B202611-001，用于台账与对账" /></el-form-item></el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
@@ -37,17 +38,17 @@
         </el-row>
         <el-form-item label="收料明细" required>
           <el-table :data="form.items" size="small" border empty-text="暂无明细，点击下方按钮添加" style="width: 100%">
-            <el-table-column label="序号" type="index" width="55" align="center" header-align="center" />
-            <el-table-column label="收料类型" width="190" header-align="center" show-overflow-tooltip><template #default="s">{{ returnTypeLabel(s.row) }}</template></el-table-column>
-            <el-table-column label="物料编号" width="120" header-align="center" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column>
-            <el-table-column label="物料名称" min-width="140" header-align="center" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column>
-            <el-table-column label="版本号" width="80" align="center" header-align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
-            <el-table-column label="规格型号" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column>
-            <el-table-column label="是否保税" width="90" align="center" header-align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
-            <el-table-column label="计量单位" width="100" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
-            <el-table-column label="数量" width="110" align="right" header-align="center"><template #default="s">{{ s.row.materialNum ?? '-' }}</template></el-table-column>
-            <el-table-column label="说明" width="170" header-align="center" show-overflow-tooltip><template #default="s"><span v-if="isServiceFee(s.row)" class="text-muted">系统自动生成，数量 0.1</span></template></el-table-column>
-            <el-table-column label="操作" width="110" align="center" header-align="center" fixed="right">
+            <el-table-column label="序号" type="index" width="55" align="center" />
+            <el-table-column label="收料类型" width="190" show-overflow-tooltip><template #default="s">{{ returnTypeLabel(s.row) }}</template></el-table-column align="center">
+            <el-table-column label="物料编号" width="120" show-overflow-tooltip><template #default="s">{{ itemField(s.row, 'materialCd') }}</template></el-table-column align="center">
+            <el-table-column label="物料名称" min-width="140" show-overflow-tooltip><template #default="s">{{ materialNameWithMark(s.row.materialName, s.row.markType, s.row.isBonded) }}</template></el-table-column align="center">
+            <el-table-column label="版本号" width="80" align="center"><template #default="s">{{ itemField(s.row, 'version') }}</template></el-table-column>
+            <el-table-column label="规格型号" width="130" show-overflow-tooltip><template #default="s">{{ itemSpec(s.row) }}</template></el-table-column align="center">
+            <el-table-column label="是否保税" width="90" align="center"><template #default="s">{{ itemBonded(s.row) }}</template></el-table-column>
+            <el-table-column label="计量单位" width="100" align="center"><template #default="s">{{ itemUnit(s.row) }}</template></el-table-column>
+            <el-table-column label="数量" width="110" align="center"><template #default="s">{{ s.row.materialNum ?? '-' }}</template></el-table-column>
+            <el-table-column label="说明" width="170" show-overflow-tooltip><template #default="s"><span v-if="isServiceFee(s.row)" class="text-muted">系统自动生成，数量 0.1</span></template></el-table-column align="center">
+            <el-table-column label="操作" width="110" align="center" fixed="right">
               <template #default="s">
                 <el-button link type="primary" :disabled="isServiceFee(s.row)" @click="editItem(s.$index)">编辑</el-button>
                 <el-button link type="danger" :disabled="isServiceFee(s.row)" @click="form.items.splice(s.$index,1)">删除</el-button>
@@ -101,8 +102,9 @@
 </template>
 
 <script setup name="ReceiveForm">
-import { getReceive, addReceive, updReceive, nextReceiveNo, queryWorkOrder } from '@/api/bonded/biz'
-import { listMaterial } from '@/api/bonded/material'
+import { getReceive, addReceive, updReceive, nextReceiveNo } from '@/api/bonded/biz'
+import { listWorkOrderOptions } from '@/api/bonded/workorder'
+import { useMaterialCache } from '@/composables/useMaterialCache'
 import DeclarePreviewDialog from '../components/DeclarePreviewDialog.vue'
 import { returnTypes, materialNameWithMark } from '@/utils/bonded'
 import { currencies } from '@/utils/customsDict'
@@ -112,8 +114,16 @@ const { proxy } = getCurrentInstance()
 const route = useRoute()
 const router = useRouter()
 
-const materials = ref([])
-const form = ref({ receiveNo: null, workNo: null, batchNo: null, serviceFee: null, currency: null, receiveTime: null, items: [] })
+// 物料档案统一走全局缓存
+const { load: loadMaterialCache, materials } = useMaterialCache()
+loadMaterialCache()
+const form = ref({ receiveNo: null, workNo: null, serviceFee: null, currency: null, receiveTime: null, items: [] })
+
+// 维修工单下拉（工单先行：仅列未结案 01/02/03 工单）
+const workOrders = ref([])
+const woStatusMap = { '01': '立项', '02': '维修中', '03': '已收齐' }
+const woStatusLabel = s => woStatusMap[s] || s
+listWorkOrderOptions().then(r => { workOrders.value = r.data || [] }).catch(() => {})
 const previewVisible = ref(false)
 const previewData = computed(() => form.value)
 
@@ -152,7 +162,7 @@ function saveItem() {
 }
 const rules = {
   receiveNo: [{ required: true, message: '收料单号必填', trigger: 'blur' }],
-  workNo: [{ required: true, message: '维修工单号必填', trigger: 'blur' }],
+  workNo: [{ required: true, message: '请选择维修工单', trigger: 'change' }],
   receiveTime: [{ required: true, message: '收料日期必填', trigger: 'change' }]
 }
 // 服务费行 returnType=8 由后端自动生成，不允许手工选择
@@ -172,7 +182,9 @@ function applyWorkOrderFee(wo) {
 }
 watch(() => form.value.workNo, no => {
   if (id || !no) return
-  queryWorkOrder(no).then(r => { applyWorkOrderFee(r.data) }).catch(() => {})
+  // 工单已有服务费时自动勾选带出（工单下拉数据已含服务费/币制）
+  const wo = workOrders.value.find(x => x.workNo === no)
+  if (wo) { applyWorkOrderFee(wo) }
 })
 
 function isServiceFee(row) { return row?.returnType === '8' }
@@ -216,7 +228,6 @@ if (id) {
   // 新增时自动生成收料单号（可修改），失败则留空由用户填写
   nextReceiveNo().then(r => { form.value.receiveNo = r.data }).catch(() => {})
 }
-listMaterial({ pageNum: 1, pageSize: 200, declareStatus: '2' }).then(r => { materials.value = r.rows })
 
 function submitForm() {
   proxy.$refs.formRef.validate(v => {

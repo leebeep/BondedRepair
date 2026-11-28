@@ -108,13 +108,6 @@
       </span>
     </div>
 
-    <div class="drawer-item">
-      <span>底部版权</span>
-      <span class="comp-style">
-        <el-switch v-model="settingsStore.footerVisible" class="drawer-switch" />
-      </span>
-    </div>
-
     <el-divider />
 
     <el-button type="primary" plain icon="DocumentAdd" @click="saveSetting">保存配置</el-button>
@@ -199,7 +192,6 @@ function saveSetting() {
     "fixedHeader": storeSettings.value.fixedHeader,
     "sidebarLogo": storeSettings.value.sidebarLogo,
     "dynamicTitle": storeSettings.value.dynamicTitle,
-    "footerVisible": storeSettings.value.footerVisible,
     "sideTheme": storeSettings.value.sideTheme,
     "theme": storeSettings.value.theme
   }

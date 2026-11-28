@@ -1,3 +1,16 @@
+// ============================================================
+// 保税维修公共展示工具（字段与展示规范）
+// 1. 数量字段按单据语义命名：入库 storageCnt / 发料 issueQty /
+//    收料 materialNum / 出库 deliveryCnt；列名对应「数量/发料数量/数量/出库数量」
+// 2. 发料单不记币制（后端 BrIssueItem 无 currency 字段），其余单据金额列
+//    统一「单价 | 币制 | 总价」顺序并用 fmtThousand 千分位展示
+// 3. 空值规范：所有文本/数值列空值统一显示 '-'
+// 4. 时间列规范：列表用 fmtTimeShort（MM-dd HH:mm）+ tooltip 全量（fmtTimeFull）
+// 5. 表格密度：页面级表格标准密度，弹窗/嵌套子表用 size="small" 紧凑密度
+// 6. 物料档案统一经 composables/useMaterialCache 读取，禁止页面自行 listMaterial
+//    （出库表单的 markType='8' 服务费虚物料为例外）
+// ============================================================
+
 // 保税维修公共展示工具：海关状态映射（PRD §4.2）
 export const customsStatusMap = {
   '00': { label: '未申报', type: 'info' },
@@ -103,4 +116,52 @@ export function allowedExecTypes(row) {
   if (ds === '03' && !row.lastUuid) allowed.push('1')
   if (row.lastUuid && ['03', '05', '06'].includes(ds)) allowed.push('2', '3')
   return allowed
+}
+
+// ===== 展示辅助：状态图标 / 时间短格式 / 数字千分位 =====
+// 状态图标辅助色弱用户区分语义（颜色之外的第二编码）
+export const docStatusIconMap = {
+  '01': 'EditPen',
+  '03': 'Finished',
+  '05': 'CircleCheckFilled',
+  '06': 'CircleCloseFilled',
+  '07': 'CircleClose'
+}
+export function docStatusIcon(status, customsStatus) {
+  if (status === '03' && declaringCustomsStatus.includes(customsStatus)) return 'Loading'
+  return docStatusIconMap[status] || null
+}
+export const customsStatusIconMap = {
+  '00': 'EditPen',
+  '10': 'Clock',
+  '20': 'UploadFilled',
+  '90': 'Timer',
+  '21': 'Loading',
+  '2Y': 'CircleCheckFilled',
+  '22': 'CircleCheckFilled',
+  '2N': 'CircleCloseFilled',
+  '23': 'WarningFilled',
+  '24': 'RefreshLeft',
+  '29': 'CircleClose'
+}
+export function cstIcon(s) { return customsStatusIconMap[s] || null }
+// 申报回执结果图标
+export const declareResultIconMap = {
+  PENDING: 'Clock',
+  Y: 'CircleCheckFilled',
+  '1': 'CircleCheckFilled',
+  N: 'CircleCloseFilled',
+  '2': 'WarningFilled',
+  '3': 'RefreshLeft'
+}
+export function declResultIcon(s) { return declareResultIconMap[s || 'PENDING'] || null }
+
+/** 时间短格式 MM-dd HH:mm（完整时间用 fmtTimeFull 配 tooltip） */
+export function fmtTimeShort(t) { return t ? String(t).replace('T', ' ').slice(5, 16) : '-' }
+export function fmtTimeFull(t) { return t ? String(t).replace('T', ' ').slice(0, 19) : '-' }
+
+/** 数字千分位展示（最多保留 6 位小数） */
+export function fmtThousand(v) {
+  if (v === null || v === undefined || v === '' || isNaN(Number(v))) return '-'
+  return Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
 }

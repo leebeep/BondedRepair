@@ -12,6 +12,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,10 +29,11 @@ import com.ruoyi.common.utils.StringUtils;
  * 扫描已采集/申报中(20/21) 超 30 分钟无回执的 uuid，调公服查询接口，
  * 回执写回镜像表，再由 BrReceiptPollTask 统一回读更新业务单据。
  *
- * 配置（sys_config，未配置 url 时任务自动跳过，仅镜像轮询兜底）：
- *   br.query.api.url        公服查询接口地址
- *   br.query.api.appKey     x-app-key
- *   br.query.api.privateKey RSA 私钥（PKCS#8 PEM，可含头尾行）
+ * 配置（均为 sys_config 参数设置项；url/appKey 任一未配置则任务自动跳过，仅镜像轮询兜底）：
+ *   br.query.api.url        公服查询接口地址（规范 §2.3.2 固定值）
+ *   br.query.api.appKey     x-app-key（公服企业注册后分配）
+ *   br.query.api.privateKey RSA 私钥（PKCS#8 PEM；sys_config.config_value 已扩至 varchar(4000) 可存）
+ *   application.yml br.query.api.privateKey 为兜底读取（sys_config 优先）
  */
 @Service
 public class CustomsQueryService
@@ -46,7 +48,17 @@ public class CustomsQueryService
     @Autowired private BrSyncMapper syncMapper;
     @Autowired private CustomsMirrorMapper mirrorMapper;
 
+    @Value("${br.query.api.privateKey:}")
+    private String privateKeyFromYml;
+
     private final RestTemplate restTemplate = new RestTemplate();
+
+    /** 主动查询是否可用：url + appKey 均已配置（前端据此置灰"立即主动查询"按钮） */
+    public boolean isConfigured()
+    {
+        return StringUtils.isNotEmpty(configService.selectConfigByKey(CFG_URL))
+                && StringUtils.isNotEmpty(configService.selectConfigByKey(CFG_APP_KEY));
+    }
 
     /**
      * 自动触发：每天一次（默认凌晨 03:00，可用 br.query.cron 配置）；
@@ -65,6 +77,8 @@ public class CustomsQueryService
         String url = configService.selectConfigByKey(CFG_URL);
         String appKey = configService.selectConfigByKey(CFG_APP_KEY);
         String privateKey = configService.selectConfigByKey(CFG_PRIVATE_KEY);
+        // 私钥优先取参数设置，未配置时回退 application.yml（varchar(500) 存不下完整 PEM）
+        if (StringUtils.isEmpty(privateKey)) { privateKey = privateKeyFromYml; }
         if (StringUtils.isEmpty(url) || StringUtils.isEmpty(appKey))
         {
             return 0;

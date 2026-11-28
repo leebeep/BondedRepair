@@ -68,21 +68,15 @@
         </div>
       </el-form-item>
     </el-form>
-    <!--  底部  -->
-    <div class="el-register-footer">
-      <span>{{ footerContent }}</span>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ElMessageBox } from "element-plus"
 import { getCodeImg, register } from "@/api/login"
-import defaultSettings from '@/settings'
 import { usePasswordRule } from "@/utils/passwordRule"
 
 const title = import.meta.env.VITE_APP_TITLE
-const footerContent = defaultSettings.footerContent
 const router = useRouter()
 const { proxy } = getCurrentInstance()
 const { registerPwdValidator } = usePasswordRule()
@@ -199,18 +193,6 @@ getCode()
     cursor: pointer;
     vertical-align: middle;
   }
-}
-.el-register-footer {
-  height: 40px;
-  line-height: 40px;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  text-align: center;
-  color: #fff;
-  font-family: Arial;
-  font-size: 12px;
-  letter-spacing: 1px;
 }
 .register-code-img {
   height: 40px;

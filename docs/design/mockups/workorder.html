@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>效果图 · 维修工单（列表）</title>
+<style>
+:root {
+  --br-bg: #f6f8fb; --br-card: #fff; --br-border: #e8ecf1;
+  --br-text: #1e293b; --br-muted: #64748b; --br-hover: #f1f5f9;
+  --primary: #2563eb; --success: #16a34a; --warn: #d97706; --danger: #dc2626;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--br-bg); color: var(--br-text); font-size: 14px; }
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 200px; background: #1e3a5f; color: #cbd5e1; flex-shrink: 0; }
+.logo { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 18px; color: #fff; font-weight: 700; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.logo-dot { width: 26px; height: 26px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.menu { padding: 10px; }
+.menu-item { padding: 10px 12px; border-radius: 8px; margin-bottom: 2px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.menu-item.active { background: var(--primary); color: #fff; }
+.main { flex: 1; min-width: 0; }
+.navbar { height: 56px; background: var(--br-card); border-bottom: 1px solid var(--br-border); display: flex; align-items: center; padding: 0 20px; }
+.breadcrumb { color: var(--br-muted); font-size: 13px; }
+.breadcrumb b { color: var(--br-text); }
+.avatar { margin-left: auto; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.content { padding: 16px; }
+.card { background: var(--br-card); border: 1px solid var(--br-border); border-radius: 12px; margin-bottom: 16px; }
+.search { padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--br-muted); }
+.input { min-width: 150px; height: 32px; border: 1px solid #dcdfe6; border-radius: 6px; padding: 0 10px; font-size: 13px; display: inline-flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.input .ph { color: #a8abb2; }
+.input .arrow { color: #a8abb2; font-size: 11px; }
+.btn { height: 32px; padding: 0 15px; border-radius: 6px; border: 1px solid #dcdfe6; background: #fff; font-size: 13px; cursor: pointer; }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.toolbar { padding: 14px 20px; border-bottom: 1px solid var(--br-border); display: flex; align-items: center; gap: 10px; }
+.toolbar .title { font-size: 15px; font-weight: 600; }
+.count { font-size: 12px; color: var(--br-muted); background: var(--br-hover); padding: 2px 8px; border-radius: 10px; }
+.toolbar .spacer { flex: 1; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--br-hover); color: var(--br-muted); font-weight: 600; text-align: left; padding: 11px 16px; white-space: nowrap; }
+td { padding: 11px 16px; border-bottom: 1px solid var(--br-border); white-space: nowrap; }
+tr:hover td { background: rgba(37,99,235,.03); }
+tr:last-child td { border-bottom: none; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+th.num { text-align: right; }
+.cd { color: var(--primary); cursor: pointer; font-weight: 500; }
+.cd:hover { text-decoration: underline; }
+.tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.tag i { width: 6px; height: 6px; border-radius: 50%; }
+.tag-info { color: var(--br-muted); background: var(--br-hover); } .tag-info i { background: var(--br-muted); }
+.tag-success { color: var(--success); background: rgba(22,163,74,.08); } .tag-success i { background: var(--success); }
+.tag-warn { color: var(--warn); background: rgba(217,119,6,.08); } .tag-warn i { background: var(--warn); }
+.tag-violet { color: #7c3aed; background: rgba(124,58,237,.08); } .tag-violet i { background: #7c3aed; }
+.op { color: var(--primary); cursor: pointer; font-size: 13px; margin-right: 10px; }
+.op.danger { color: var(--danger); }
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 14px 20px; font-size: 13px; color: var(--br-muted); }
+.pg { min-width: 30px; height: 30px; border: 1px solid var(--br-border); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; background: #fff; }
+.pg.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.mask { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal { width: 480px; background: #fff; border-radius: 12px; box-shadow: 0 20px 50px rgba(15,23,42,.25); }
+.modal-head { padding: 16px 20px; border-bottom: 1px solid var(--br-border); display: flex; align-items: center; }
+.modal-head b { font-size: 15px; }
+.modal-head .x { margin-left: auto; color: var(--br-muted); cursor: pointer; }
+.modal-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.f { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.f label { color: var(--br-muted); font-size: 12px; }
+.f label em { color: var(--danger); font-style: normal; }
+.f .input { width: 100%; cursor: text; }
+.f .tip { font-size: 11px; color: var(--br-muted); }
+.f.full { grid-column: 1 / -1; }
+.modal-foot { padding: 14px 20px; border-top: 1px solid var(--br-border); display: flex; justify-content: flex-end; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-dot">保</div>保税维修平台</div>
+    <div class="menu">
+      <div class="menu-item">▦ 首页</div>
+      <div class="menu-item">📄 物料清单</div>
+      <div class="menu-item">⬇ 入库管理</div>
+      <div class="menu-item active">🗂 维修工单</div>
+      <div class="menu-item">⚙ 工单发料</div>
+      <div class="menu-item">▣ 工单收料</div>
+      <div class="menu-item">⬆ 出库管理</div>
+      <div class="menu-item">▤ 库存管理</div>
+      <div class="menu-item">✉ 申报管理</div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="navbar">
+      <span class="breadcrumb">保税维修工作台 / <b>维修工单</b></span>
+      <div class="avatar">Ad</div>
+    </div>
+    <div class="content">
+
+      <div class="card">
+        <div class="search">
+          <span class="field">工单号<span class="input"><span class="ph">请输入工单号</span></span></span>
+          <span class="field">状态<span class="input"><span class="ph">全部</span><span class="arrow">▼</span></span></span>
+          <button class="btn btn-primary">搜索</button>
+          <button class="btn">重置</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <span class="title">维修工单</span><span class="count">3 条</span>
+          <span class="spacer"></span>
+          <button class="btn btn-primary">＋ 新建工单</button>
+        </div>
+        <table>
+          <tr>
+            <th>工单号</th><th>状态</th>
+            <th class="num">发料合计</th><th class="num">收回合计</th><th class="num">服务费</th>
+            <th>计划完工日期</th><th width="130">操作</th>
+          </tr>
+          <tr>
+            <td><span class="cd">WO-20261128001</span></td>
+            <td><span class="tag tag-success"><i></i>03 已收齐</span></td>
+            <td class="num">60</td><td class="num">58</td>
+            <td class="num">46,000.00</td>
+            <td>2026-11-30</td>
+            <td><span class="op">详情</span><span class="op">编辑</span></td>
+          </tr>
+          <tr>
+            <td><span class="cd">WO-20261127002</span></td>
+            <td><span class="tag tag-info"><i></i>01 立项</span></td>
+            <td class="num">0</td><td class="num">0</td>
+            <td class="num">—</td>
+            <td>2026-12-15</td>
+            <td><span class="op">详情</span><span class="op danger">删除</span></td>
+          </tr>
+          <tr>
+            <td><span class="cd">WO-20261126001</span></td>
+            <td><span class="tag tag-violet"><i></i>04 已出清</span></td>
+            <td class="num">120</td><td class="num">120</td>
+            <td class="num">86,000.00</td>
+            <td>2026-11-25</td>
+            <td><span class="op">详情</span><span class="op">结案</span></td>
+          </tr>
+        </table>
+        <div class="pager">共 3 条<span class="pg">‹</span><span class="pg active">1</span><span class="pg">›</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mask">
+  <div class="modal">
+    <div class="modal-head"><b>新建维修工单</b><span class="x">✕</span></div>
+    <div class="modal-body">
+      <div class="f">
+        <label>工单号<em>*</em></label>
+        <div class="input">WO-20261128003</div>
+        <div class="tip">自动生成，可修改</div>
+      </div>
+      <div class="f">
+        <label>计划完工日期</label>
+        <div class="input"><span class="ph" style="color:#a8abb2">选填</span></div>
+      </div>
+      <div class="f full">
+        <label>备注</label>
+        <div class="input"><span class="ph" style="color:#a8abb2">选填</span></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn">取消</button><button class="btn btn-primary">保存</button></div>
+  </div>
+</div>
+</body>
+</html>

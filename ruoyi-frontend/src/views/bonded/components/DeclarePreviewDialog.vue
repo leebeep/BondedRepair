@@ -8,7 +8,7 @@
     <el-tabs type="border-card">
       <el-tab-pane label="表单视图">
         <el-table :data="rows" size="small" border empty-text="暂无明细">
-          <el-table-column v-for="col in columns" :key="col" :label="col" :prop="col" min-width="130" show-overflow-tooltip />
+          <el-table-column v-for="col in columns" :key="col" :label="col" :prop="col" min-width="130" show-overflow-tooltip align="center"/>
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="JSON 报文">

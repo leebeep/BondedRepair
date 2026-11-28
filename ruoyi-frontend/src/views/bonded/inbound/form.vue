@@ -16,7 +16,6 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="12"><el-form-item label="关联企业名称" prop="relaEntNm"><el-input v-model="form.relaEntNm" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="入库时间" prop="inOutTime"><el-date-picker v-model="form.inOutTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
@@ -32,29 +31,29 @@
         </el-row>
         <el-form-item label="物料明细" required>
           <el-table :data="form.items" size="small" border empty-text="暂无明细，点击下方按钮添加" style="width: 100%">
-            <el-table-column label="序号" type="index" width="55" align="center" header-align="center" />
-            <el-table-column label="物料编号" width="130" header-align="center" show-overflow-tooltip>
+            <el-table-column label="序号" type="index" width="55" align="center" />
+            <el-table-column label="物料编号" width="130" show-overflow-tooltip align="center">
               <template #default="s">{{ itemMaterialCode(s.row) }}</template>
             </el-table-column>
-            <el-table-column label="物料名称" min-width="150" header-align="center" show-overflow-tooltip>
+            <el-table-column label="物料名称" min-width="150" show-overflow-tooltip align="center">
               <template #default="s">{{ itemMaterialName(s.row) }}</template>
             </el-table-column>
-            <el-table-column label="规格型号" width="130" header-align="center" show-overflow-tooltip><template #default="s">{{ itemSpecification(s.row) }}</template></el-table-column>
-            <el-table-column label="数量" width="100" align="right" header-align="center"><template #default="s">{{ s.row.storageCnt }}</template></el-table-column>
-            <el-table-column label="计量单位" width="100" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row, 'calcUnit') }}</template></el-table-column>
-            <el-table-column label="单价" width="100" align="right" header-align="center"><template #default="s">{{ s.row.price }}</template></el-table-column>
-            <el-table-column label="币制" width="90" align="center" header-align="center"><template #default="s">{{ currencyLabel(s.row.currency) }}</template></el-table-column>
-            <el-table-column label="总价" width="110" align="right" header-align="center"><template #default="s">{{ itemTotal(s.row) }}</template></el-table-column>
-            <el-table-column label="法定计量单位1" width="120" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row, 'unit1') }}</template></el-table-column>
-            <el-table-column label="第一法定数量" prop="unit1Num" width="110" align="right" header-align="center" />
-            <el-table-column label="法定计量单位2" width="120" align="center" header-align="center"><template #default="s">{{ itemUnit(s.row, 'unit2') }}</template></el-table-column>
-            <el-table-column label="第二法定数量" prop="unit2Num" width="110" align="right" header-align="center" />
-            <el-table-column v-if="isDecl01" label="品牌类型" prop="brandType" width="100" header-align="center" show-overflow-tooltip />
-            <el-table-column v-if="isDecl01" label="监管方式" prop="tradeModeCd" width="100" header-align="center" show-overflow-tooltip />
-            <el-table-column v-if="isDecl01" label="启抵国" prop="arrivingCountryCode" width="90" header-align="center" show-overflow-tooltip />
-            <el-table-column v-if="isDecl01" label="原产国" prop="endCountryCode" width="90" header-align="center" show-overflow-tooltip />
-            <el-table-column v-if="isBusi99" label="入库说明" prop="busiDesc" width="140" header-align="center" show-overflow-tooltip />
-            <el-table-column label="操作" width="110" align="center" header-align="center" fixed="right">
+            <el-table-column label="规格型号" width="130" show-overflow-tooltip><template #default="s">{{ itemSpecification(s.row) }}</template></el-table-column align="center">
+            <el-table-column label="数量" width="100" align="center"><template #default="s">{{ s.row.storageCnt }}</template></el-table-column>
+            <el-table-column label="计量单位" width="100" align="center"><template #default="s">{{ itemUnit(s.row, 'calcUnit') }}</template></el-table-column>
+            <el-table-column label="单价" width="100" align="center"><template #default="s">{{ s.row.price }}</template></el-table-column>
+            <el-table-column label="币制" width="90" align="center"><template #default="s">{{ currencyLabel(s.row.currency) }}</template></el-table-column>
+            <el-table-column label="总价" width="110" align="center"><template #default="s">{{ itemTotal(s.row) }}</template></el-table-column>
+            <el-table-column label="法定计量单位1" width="120" align="center"><template #default="s">{{ itemUnit(s.row, 'unit1') }}</template></el-table-column>
+            <el-table-column label="第一法定数量" prop="unit1Num" width="110" align="center" />
+            <el-table-column label="法定计量单位2" width="120" align="center"><template #default="s">{{ itemUnit(s.row, 'unit2') }}</template></el-table-column>
+            <el-table-column label="第二法定数量" prop="unit2Num" width="110" align="center" />
+            <el-table-column v-if="isDecl01" label="品牌类型" prop="brandType" width="100" show-overflow-tooltip align="center"/>
+            <el-table-column v-if="isDecl01" label="监管方式" prop="tradeModeCd" width="100" show-overflow-tooltip align="center"/>
+            <el-table-column v-if="isDecl01" label="启抵国" prop="arrivingCountryCode" width="90" show-overflow-tooltip align="center"/>
+            <el-table-column v-if="isDecl01" label="原产国" prop="endCountryCode" width="90" show-overflow-tooltip align="center"/>
+            <el-table-column v-if="isBusi99" label="入库说明" prop="busiDesc" width="140" show-overflow-tooltip align="center"/>
+            <el-table-column label="操作" width="110" align="center" fixed="right">
               <template #default="s">
                 <el-button link type="primary" @click="editItem(s.$index)">编辑</el-button>
                 <el-button link type="danger" @click="form.items.splice(s.$index,1)">删除</el-button>
@@ -132,7 +131,7 @@
 
 <script setup name="InboundForm">
 import { getInbound, addInbound, updInbound, nextInboundNo } from '@/api/bonded/biz'
-import { listMaterial } from '@/api/bonded/material'
+import { useMaterialCache } from '@/composables/useMaterialCache'
 import { currencies } from '@/utils/customsDict'
 import { customsUnitLabel } from '@/utils/customsUnits'
 import { materialNameWithMark } from '@/utils/bonded'
@@ -142,8 +141,10 @@ const { proxy } = getCurrentInstance()
 const route = useRoute()
 const router = useRouter()
 
-const materials = ref([])
-const form = ref({ inboundNo: null, busiType: '04', relaEntNm: null, relaCustomsFormType: '03', relaCustomsFormNum: null, inOutTime: null, items: [] })
+// 物料档案统一走全局缓存
+const { load: loadMaterialCache, materials } = useMaterialCache()
+loadMaterialCache()
+const form = ref({ inboundNo: null, busiType: '04', relaCustomsFormType: '03', relaCustomsFormNum: null, inOutTime: null, items: [] })
 const rules = {
   inboundNo: [{ required: true, message: '入库单号必填', trigger: 'blur' }],
   busiType: [{ required: true, message: '请选择入库业务类型', trigger: 'change' }],
@@ -271,7 +272,6 @@ if (id) {
   // 新增时自动生成入库单号（可修改），失败则留空由用户填写
   nextInboundNo().then(r => { form.value.inboundNo = r.data }).catch(() => {})
 }
-listMaterial({ pageNum: 1, pageSize: 200, declareStatus: '2' }).then(r => { materials.value = r.rows })
 
 function submitForm() {
   proxy.$refs.formRef.validate(v => {

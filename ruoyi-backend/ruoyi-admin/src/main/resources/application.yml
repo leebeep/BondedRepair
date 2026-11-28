@@ -14,17 +14,16 @@ ruoyi:
   # 验证码类型 math 数字计算 char 字符验证
   captchaType: math
 
-# 保税维修工作台配置
+# 保税维修工作台配置（企业编号/企业名称/主管关区在 系统管理-参数设置 维护：br.enterpCd / br.enterpNm / br.masterCuscd）
 br:
-  # 企业海关编号（单企业部署）
-  enterpCd: 4600AA0001
-  # 企业名称
-  enterpNm: 演示保税维修企业
-  # 主管关区 6404-洋浦经开区 6411-海口高新区
-  masterCuscd: "6404"
   # 回执轮询间隔(毫秒)
   poll:
     intervalMs: 60000
+  # 公服主动查询接口 RSA 私钥（PKCS#8 PEM，可含头尾行）；敏感凭据不进库不进 UI，
+  # 也可改在 参数设置 配 br.query.api.privateKey（长度上限 500，存不下完整私钥，不推荐）
+  query:
+    api:
+      privateKey: ""
 
 # 开发环境配置
 server:

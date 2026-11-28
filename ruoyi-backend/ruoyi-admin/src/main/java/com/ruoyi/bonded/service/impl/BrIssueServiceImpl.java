@@ -36,6 +36,7 @@ public class BrIssueServiceImpl implements IBrIssueService
     @Autowired private Rrd2DataMapper rrd2DataMapper;
     @Autowired private BrDeclareLogMapper declareLogMapper;
     @Autowired private BrLedgerService ledgerService;
+    @Autowired private com.ruoyi.bonded.service.BrDeclareSupport declareSupport;
     @Autowired private BrWorkOrderService workOrderService;
     @Autowired private BrPushSwitch pushSwitch;
 
@@ -82,8 +83,8 @@ public class BrIssueServiceImpl implements IBrIssueService
     public int insert(BrIssue issue)
     {
         validate(issue, null);
-        // 工单号由表单录入：不存在自动建档（批次号一并维护），非海关单证、仅供 RRD2 work_no 与收齐校验
-        com.ruoyi.bonded.domain.BrWorkOrder wo = workOrderService.getOrCreate(issue.getWorkNo(), issue.getBatchNo(), null, null);
+        // 工单先行：必须选择已创建的维修工单（供 RRD2 work_no 与收齐校验）
+        com.ruoyi.bonded.domain.BrWorkOrder wo = workOrderService.requireByWorkNo(issue.getWorkNo());
         issue.setWorkOrderId(wo.getId());
         issue.setCreateBy(SecurityUtils.getUsername());
         issueMapper.insert(issue);
@@ -94,6 +95,8 @@ public class BrIssueServiceImpl implements IBrIssueService
         }
         workOrderService.rebuildRepairItems(wo.getId());
         workOrderMapper.updateOrderStatus(wo.getId(), "02");
+        // 保存即生效（小企业单人作业，无独立审核环节）：同事务校验来源余额、登记台账并按开关写镜像库，失败整体回滚
+        audit(issue.getId());
         return 1;
     }
 
@@ -103,11 +106,21 @@ public class BrIssueServiceImpl implements IBrIssueService
     {
         BrIssue db = issueMapper.selectById(issue.getId());
         if (db == null) { throw new ServiceException("发料单不存在"); }
-        if (!"01".equals(db.getDocStatus()) && !"06".equals(db.getDocStatus())) { throw new ServiceException("仅草稿或退单状态可修改"); }
+        // 未采集可修改：草稿(01)、退单(06)、生效未申报(03/00)、待采集(03/10，客户端未取走镜像行)
+        boolean editable = "01".equals(db.getDocStatus()) || "06".equals(db.getDocStatus())
+                || ("03".equals(db.getDocStatus()) && ("00".equals(db.getCustomsStatus()) || "10".equals(db.getCustomsStatus())));
+        if (!editable) { throw new ServiceException("发料单【" + db.getIssueNo() + "】已被海关采集，不可直接修改，请走变更申报流程"); }
+        // 原 03 生效单修改：先冲销台账、清理未采集镜像行与待回执日志，按草稿口径重走审核并重写镜像
+        if ("03".equals(db.getDocStatus()))
+        {
+            ledgerService.reverseDoc("br_issue", issue.getId());
+            declareSupport.purgePending("br_issue", issue.getId(), db.getIssueNo());
+            issueMapper.updateDeclareResult(issue.getId(), null, "01", "00", "1");
+        }
         validate(issue, issue.getId());
         if (StringUtils.isNotEmpty(issue.getWorkNo()))
         {
-            com.ruoyi.bonded.domain.BrWorkOrder wo = workOrderService.getOrCreate(issue.getWorkNo(), issue.getBatchNo(), null, null);
+            com.ruoyi.bonded.domain.BrWorkOrder wo = workOrderService.requireByWorkNo(issue.getWorkNo());
             issue.setWorkOrderId(wo.getId());
         }
         issue.setUpdateBy(SecurityUtils.getUsername());
@@ -128,6 +141,7 @@ public class BrIssueServiceImpl implements IBrIssueService
         {
             issueMapper.updateDeclareResult(issue.getId(), db.getLastUuid(), "01", "00", db.getExecuteType());
         }
+        audit(issue.getId());
         return 1;
     }
 
@@ -139,11 +153,21 @@ public class BrIssueServiceImpl implements IBrIssueService
         for (Long id : ids)
         {
             BrIssue db = issueMapper.selectById(id);
-            if (db != null && !"01".equals(db.getDocStatus())) { throw new ServiceException("发料单【" + db.getIssueNo() + "】非草稿状态，禁止删除"); }
-            if (db != null && db.getWorkOrderId() != null) { woIds.add(db.getWorkOrderId()); }
+            if (db == null) { continue; }
+            // 可删除：草稿(01) 或 生效未申报(03/00，镜像表未写入)；已写镜像走变更/作废申报
+            boolean deletable = "01".equals(db.getDocStatus())
+                    || ("03".equals(db.getDocStatus()) && "00".equals(db.getCustomsStatus()));
+            if (!deletable) { throw new ServiceException("发料单【" + db.getIssueNo() + "】已写入海关镜像库，禁止删除，请走变更或作废申报"); }
+            if (db.getWorkOrderId() != null) { woIds.add(db.getWorkOrderId()); }
+        }
+        // 生效单已登记台账：先冲销再删除
+        for (Long id : ids)
+        {
+            BrIssue db = issueMapper.selectById(id);
+            if (db != null && "03".equals(db.getDocStatus())) { ledgerService.reverseDoc("br_issue", id); }
         }
         int rows = issueMapper.deleteByIds(ids);
-        // 删除后同步重建工单投入明细并按剩余发料/收料重建工单状态（避免草稿删除后状态滞留 02）
+        // 删除后同步重建工单投入明细并按剩余发料/收料重建工单状态（避免删除后状态滞留 02）
         for (Long woId : woIds)
         {
             workOrderService.rebuildRepairItems(woId);
@@ -159,6 +183,11 @@ public class BrIssueServiceImpl implements IBrIssueService
         BrIssue h = issueMapper.selectById(id);
         if (h == null) { throw new ServiceException("发料单不存在"); }
         if (!"01".equals(h.getDocStatus())) { throw new ServiceException("发料单【" + h.getIssueNo() + "】已审核"); }
+        // 退单(06)重审：先冲销原 ISSUE 流水（数量取反），再按当前明细重新记账，避免重复入账
+        if ("06".equals(h.getDocStatus()))
+        {
+            ledgerService.reverseDoc("br_issue", id);
+        }
         BrWorkOrder wo = workOrderMapper.selectById(h.getWorkOrderId());
         List<BrIssueItem> items = issueMapper.selectItemsByIssueId(id);
         if (items.isEmpty()) { throw new ServiceException("发料单明细为空"); }
@@ -241,7 +270,7 @@ public class BrIssueServiceImpl implements IBrIssueService
                 d.setGoodsSourceNo(item.getGoodsSourceNo());
                 d.setPrice(item.getPrice());
                 d.setMaterialCd(m.getMaterialCd());
-                d.setMaterialDesc(m.getMaterialName() + BrMaterialServiceImpl.markSuffix(m.getMarkType(), m.getIsBonded()));
+                d.setMaterialDesc(BrMaterialServiceImpl.mirrorName(m.getMaterialName(), m.getMarkType(), m.getIsBonded()));
                 d.setMaterialVersion(BrInboundServiceImpl.parseVersion(m.getVersion(), m.getMaterialName()));
                 d.setIssueMaterialQty(item.getIssueQty());
                 d.setCalcUnit(m.getCalcUnit());

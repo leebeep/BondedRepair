@@ -16,6 +16,27 @@ public interface BrWorkOrderMapper
 
     public BrWorkOrder selectByWorkNo(@Param("workNo") String workNo);
 
+    /** 按工单号查工单（含已删除，编号占用校验用） */
+    public BrWorkOrder selectByWorkNoAny(@Param("workNo") String workNo);
+
+    /** 当日同前缀最大工单号（自动生成用） */
+    public String selectMaxWorkNoByPrefix(@Param("prefix") String prefix);
+
+    /** 未结案工单（01/02/03，发料/收料表单下拉用） */
+    public List<BrWorkOrder> selectOpenList();
+
+    /** 工单已关联的发料/收料单数量（删除保护用） */
+    public int countLinkedDocs(@Param("workOrderId") Long workOrderId);
+
+    /** 工单关联的发料单表头（详情页） */
+    public List<com.ruoyi.bonded.domain.BrIssue> selectIssueHeadsByWorkOrderId(@Param("workOrderId") Long workOrderId);
+
+    /** 工单关联的收料单表头（详情页） */
+    public List<com.ruoyi.bonded.domain.BrReceive> selectReceiveHeadsByWorkOrderId(@Param("workOrderId") Long workOrderId);
+
+    /** 工单关联的出库单表头（经 出库明细来源 i/收料单号 推导） */
+    public List<com.ruoyi.bonded.domain.BrOutbound> selectOutboundHeadsByWorkOrderId(@Param("workOrderId") Long workOrderId);
+
     public int insert(BrWorkOrder workOrder);
 
     public int update(BrWorkOrder workOrder);

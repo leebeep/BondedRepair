@@ -52,16 +52,6 @@ export default {
   /**
    * 是否显示动态标题
    */
-  dynamicTitle: false,
-
-  /**
-   * 是否显示底部版权
-   */
-  footerVisible: false,
-
-  /**
-   * 底部版权文本内容
-   */
-  footerContent: 'Copyright © 2018-2026 RuoYi. All Rights Reserved.'
+  dynamicTitle: false
 }
 

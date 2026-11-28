@@ -64,4 +64,16 @@
         from br_declare_log
         group by biz_type, ifnull(result_status, 'PENDING')
     </select>
+
+    <select id="selectLogsByBiz" resultMap="BrDeclareLogResult">
+        select * from br_declare_log where biz_table = #{bizTable} and biz_id = #{bizId} order by id
+    </select>
+
+    <delete id="deleteLogById">
+        delete from br_declare_log where id = #{id}
+    </delete>
+
+    <delete id="deleteMirrorRow">
+        delete from ${mirrorTable} where id = #{mirrorRowId}
+    </delete>
 </mapper>

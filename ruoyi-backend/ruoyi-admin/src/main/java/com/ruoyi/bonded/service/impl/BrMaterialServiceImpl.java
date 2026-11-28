@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.bonded.domain.BrDeclareLog;
@@ -70,14 +69,19 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         return prefix + String.format("%04d", seq);
     }
 
-    @Value("${br.enterpCd}")
-    private String enterpCd;
+    // 企业三项资料在【系统管理-参数设置】维护（sys_config），EPD101 镜像行必填
+    private String enterpCd() { return requireConfig("br.enterpCd", "企业编号"); }
 
-    @Value("${br.enterpNm}")
-    private String enterpNm;
+    private String enterpNm() { return requireConfig("br.enterpNm", "企业名称"); }
 
-    @Value("${br.masterCuscd}")
-    private String masterCuscd;
+    private String masterCuscd() { return requireConfig("br.masterCuscd", "主管关区代码"); }
+
+    private String requireConfig(String key, String label)
+    {
+        String v = configService.selectConfigByKey(key);
+        if (StringUtils.isEmpty(v)) { throw new ServiceException("请在【系统管理-参数设置】配置企业资料：" + label + "（" + key + "）"); }
+        return v;
+    }
 
     /** 货物类型（六类标记）→ 品名后缀（规范 v1.4 / 样例数据口径，如 新能源动力电池模组（无法修复）） */
     public static String markSuffix(String markType)
@@ -99,6 +103,27 @@ public class BrMaterialServiceImpl implements IBrMaterialService
             case "8": return "维修服务费";
             default: return "";
         }
+    }
+
+    /**
+     * 组装镜像品名（物料名称 + 货物类型后缀 [+ 附加后缀]），
+     * 并校验不超过镜像表 material_desc / int_product_name varchar(500)，超长即报错。
+     */
+    public static String mirrorName(String materialName, String markType, String isBonded, String extraSuffix)
+    {
+        String s = StringUtils.defaultString(materialName)
+                + markSuffix(markType, isBonded)
+                + StringUtils.defaultString(extraSuffix);
+        if (s.length() > 500)
+        {
+            throw new ServiceException("镜像品名超过规范长度 500（material_desc/int_product_name varchar(500)），请缩短物料名称：" + s);
+        }
+        return s;
+    }
+
+    public static String mirrorName(String materialName, String markType, String isBonded)
+    {
+        return mirrorName(materialName, markType, isBonded, "");
     }
 
     @Override
@@ -229,11 +254,11 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         Epd101Data d = new Epd101Data();
         d.setExecuteType(executeType);
         d.setDclTypecd(executeType);
-        d.setEnterpCd(enterpCd);
-        d.setEnterpNm(enterpNm);
-        d.setMasterCuscd(masterCuscd);
+        d.setEnterpCd(enterpCd());
+        d.setEnterpNm(enterpNm());
+        d.setMasterCuscd(masterCuscd());
         d.setIntProductNo(m.getMaterialCd());
-        d.setIntProductName(m.getMaterialName() + markSuffix(m.getMarkType(), m.getIsBonded()));
+        d.setIntProductName(mirrorName(m.getMaterialName(), m.getMarkType(), m.getIsBonded()));
         d.setVersion(m.getVersion());
         d.setgType(m.getgType());
         d.setgModel(StringUtils.defaultString(m.getgModel(), "无"));
@@ -285,6 +310,13 @@ public class BrMaterialServiceImpl implements IBrMaterialService
     /** 数据预检：复刻客户端校验规则，减少采集失败 */
     private void validate(BrMaterial m)
     {
+        if (StringUtils.isNotEmpty(m.getMaterialName()) && m.getMaterialName().length() > 485)
+        {
+            throw new ServiceException("物料名称不得超过 485 字符（镜像表 material_desc/int_product_name varchar(500)，需预留货物类型标记后缀）");
+        }
+        // 镜像表毛净重列为 decimal(19,5)，录入即校验数值格式，避免申报时插入失败
+        checkWeight("货物毛重", m.getTotalGrossWt());
+        checkWeight("货物净重", m.getTotalNetWt());
         if ("1".equals(m.getIsBonded()))
         {
             if (StringUtils.isEmpty(m.getCodeTs()))
@@ -307,6 +339,16 @@ public class BrMaterialServiceImpl implements IBrMaterialService
         if (StringUtils.isEmpty(m.getCalcUnit()))
         {
             throw new ServiceException("计量单位必填（联合业务主键）");
+        }
+    }
+
+    /** 毛净重必须可写入镜像表 decimal(19,5)：最多 14 位整数、5 位小数 */
+    private static void checkWeight(String label, String v)
+    {
+        if (StringUtils.isEmpty(v)) { return; }
+        if (!v.trim().matches("\\d{1,14}(\\.\\d{1,5})?"))
+        {
+            throw new ServiceException(label + "必须为数字（镜像表 decimal(19,5)：最多 14 位整数、5 位小数）：" + v);
         }
     }
 }

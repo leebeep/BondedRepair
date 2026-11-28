@@ -40,18 +40,22 @@
           <el-button icon="Refresh" @click="resetList">重置</el-button>
         </el-form-item>
       </el-form>
-      <el-table v-loading="listLoading" :data="rows" size="small">
+      <el-table v-loading="listLoading" :data="rows">
         <el-table-column type="index" label="序号" width="55" align="center" :index="indexMethod" />
         <el-table-column label="业务环节" width="110" align="center">
           <template #default="s"><el-tag size="small" :type="{ IN: 'success', ISSUE: 'warning', RCV: 'primary', OUT: 'danger' }[s.row.bizType]">{{ bizLabel[s.row.bizType] || s.row.bizType }}</el-tag></template>
         </el-table-column>
-        <el-table-column label="数量" min-width="120" align="right">
+        <el-table-column label="数量" min-width="120" align="center">
           <template #default="s"><span :class="Number(s.row.qty) >= 0 ? 'qty-plus' : 'qty-minus'">{{ fmtQty(s.row.qty) }}</span></template>
         </el-table-column>
         <el-table-column label="计量单位" width="90" align="center">
           <template #default="s">{{ customsUnitLabel(stock.calcUnit) }}</template>
         </el-table-column>
-        <el-table-column label="发生时间" prop="createTime" min-width="150" align="center" />
+        <el-table-column label="发生时间" width="110" align="center">
+          <template #default="s">
+            <el-tooltip :content="fmtTimeFull(s.row.createTime)" placement="top"><span>{{ fmtTimeShort(s.row.createTime) }}</span></el-tooltip>
+          </template>
+        </el-table-column>
       </el-table>
       <pagination v-show="total > 0" :total="total" v-model:page="listQuery.pageNum" v-model:limit="listQuery.pageSize" @pagination="getList" />
     </el-card>
@@ -63,7 +67,7 @@
 </template>
 
 <script setup name="StockDetail">
-import { materialNameWithMark } from '@/utils/bonded'
+import { materialNameWithMark, fmtTimeShort, fmtTimeFull } from '@/utils/bonded'
 import { listStock, getMaterialStock } from '@/api/bonded/biz'
 import { customsUnitLabel } from '@/utils/customsUnits'
 

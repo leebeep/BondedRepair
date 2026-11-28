@@ -9,14 +9,14 @@
       <el-table-column label="执行类型" width="90" align="center">
         <template #default="s">{{ { '1': '备案', '2': '变更', '3': '作废' }[s.row.executeType] || s.row.executeType }}</template>
       </el-table-column>
-      <el-table-column label="预录入编号" prop="uuid" width="180" show-overflow-tooltip />
-      <el-table-column label="镜像表" prop="mirrorTable" width="120" show-overflow-tooltip />
+      <el-table-column label="预录入编号" prop="uuid" width="180" show-overflow-tooltip align="center"/>
+      <el-table-column label="镜像表" prop="mirrorTable" width="120" show-overflow-tooltip align="center"/>
       <el-table-column label="回执状态" width="100" align="center">
         <template #default="s"><el-tag :type="declResultType(s.row.resultStatus || 'PENDING')">{{ declResultLabel(s.row.resultStatus || 'PENDING') }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="回执消息" prop="msg" min-width="160" show-overflow-tooltip />
-      <el-table-column label="回执时间" prop="resultTime" width="160" />
-      <el-table-column label="申报时间" prop="createTime" width="160" />
+      <el-table-column label="回执消息" prop="msg" min-width="160" show-overflow-tooltip align="center"/>
+      <el-table-column label="回执时间" prop="resultTime" width="160" align="center"/>
+      <el-table-column label="申报时间" prop="createTime" width="160" align="center"/>
     </el-table>
     <template #footer><el-button @click="emit('update:modelValue', false)">关 闭</el-button></template>
   </el-dialog>

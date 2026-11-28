@@ -277,6 +277,20 @@ export const dynamicRoutes = [
     ]
   },
   {
+    path: '/bonded/workorder-detail',
+    component: Layout,
+    hidden: true,
+    permissions: ['bonded:wo:query'],
+    children: [
+      {
+        path: 'index/:id(\\d+)',
+        component: () => import('@/views/bonded/workorder/detail'),
+        name: 'WorkOrderDetail',
+        meta: { title: '维修工单详情', activeMenu: '/bonded/workorder', noCache: true }
+      }
+    ]
+  },
+  {
     path: '/bonded/receive-form',
     component: Layout,
     hidden: true,

@@ -15,11 +15,20 @@
         <result property="delFlag" column="del_flag"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
+        <result property="issuedQty" column="issued_qty"/>
+        <result property="receivedQty" column="received_qty"/>
     </resultMap>
 
     <sql id="selectVo">
         select w.id, w.work_no, w.batch_no, w.service_fee, w.currency,
-               w.verify_cycle, w.order_status, w.finish_date, w.remark, w.del_flag, w.create_by, w.create_time
+               w.verify_cycle, w.order_status, w.finish_date, w.remark, w.del_flag, w.create_by, w.create_time,
+               (select ifnull(sum(i2.issue_qty), 0) from br_issue_item i2
+                  join br_issue h2 on h2.id = i2.issue_id and h2.del_flag = '0' and h2.doc_status in ('03', '05')
+                  join br_material m2 on m2.id = i2.material_id and m2.mark_type = '1'
+                 where h2.work_order_id = w.id) as issued_qty,
+               (select ifnull(sum(t2.material_num), 0) from br_receive_item t2
+                  join br_receive h3 on h3.id = t2.receive_id and h3.del_flag = '0' and h3.doc_status in ('03', '05')
+                 where h3.work_order_id = w.id and t2.return_type in ('5', 'a')) as received_qty
         from br_work_order w
     </sql>
 
@@ -40,6 +49,45 @@
     <select id="selectByWorkNo" resultMap="WorkOrderResult">
         <include refid="selectVo"/>
         where w.work_no = #{workNo} and w.del_flag = '0'
+    </select>
+
+    <select id="selectByWorkNoAny" resultMap="WorkOrderResult">
+        <include refid="selectVo"/>
+        where w.work_no = #{workNo}
+    </select>
+
+    <select id="selectMaxWorkNoByPrefix" parameterType="String" resultType="String">
+        select max(work_no) from br_work_order where work_no like concat(#{prefix}, '%')
+    </select>
+
+    <select id="selectOpenList" resultMap="WorkOrderResult">
+        <include refid="selectVo"/>
+        where w.del_flag = '0' and w.order_status in ('01', '02', '03')
+        order by w.id desc
+    </select>
+
+    <select id="countLinkedDocs" parameterType="Long" resultType="int">
+        select (select count(*) from br_issue where work_order_id = #{workOrderId} and del_flag = '0')
+             + (select count(*) from br_receive where work_order_id = #{workOrderId} and del_flag = '0')
+    </select>
+
+    <select id="selectIssueHeadsByWorkOrderId" parameterType="Long" resultType="BrIssue">
+        select id, issue_no, work_order_id, issue_time, doc_status, customs_status, execute_type, last_uuid
+        from br_issue where work_order_id = #{workOrderId} and del_flag = '0' order by id
+    </select>
+
+    <select id="selectReceiveHeadsByWorkOrderId" parameterType="Long" resultType="BrReceive">
+        select id, receive_no, work_order_id, receive_time, doc_status, customs_status, execute_type, last_uuid
+        from br_receive where work_order_id = #{workOrderId} and del_flag = '0' order by id
+    </select>
+
+    <select id="selectOutboundHeadsByWorkOrderId" parameterType="Long" resultType="BrOutbound">
+        select distinct h.id, h.outbound_no, h.busi_type, h.in_out_time, h.doc_status, h.customs_status, h.execute_type, h.last_uuid
+        from br_outbound h
+        join br_outbound_item i on i.outbound_id = h.id
+        where h.del_flag = '0' and i.goods_source_type = 'i'
+          and i.goods_source_no in (select receive_no from br_receive where work_order_id = #{workOrderId} and del_flag = '0')
+        order by h.id
     </select>
 
     <insert id="insert" parameterType="BrWorkOrder" useGeneratedKeys="true" keyProperty="id">

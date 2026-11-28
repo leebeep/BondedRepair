@@ -36,17 +36,17 @@
     </el-row>
 
     <el-table v-loading="loading" :data="materialList">
-      <el-table-column label="物料编号" prop="materialCd" width="140" show-overflow-tooltip />
-      <el-table-column label="物料名称" show-overflow-tooltip min-width="160">
+      <el-table-column label="物料编号" prop="materialCd" width="140" show-overflow-tooltip align="center"/>
+      <el-table-column label="物料名称" show-overflow-tooltip min-width="160" align="center">
         <template #default="scope">{{ materialNameWithMark(scope.row.materialName, scope.row.markType, scope.row.isBonded) }}</template>
       </el-table-column>
-      <el-table-column label="物料属性" width="170">
+      <el-table-column label="物料属性" width="170" align="center">
         <template #default="scope">{{ markLabel(scope.row.markType) }}</template>
       </el-table-column>
       <el-table-column label="料件成品标志" prop="gType" width="110" align="center">
         <template #default="scope">{{ { I: '料件', E: '成品', S: '半成品' }[scope.row.gType] }}</template>
       </el-table-column>
-      <el-table-column label="HS编码" prop="codeTs" width="120" />
+      <el-table-column label="HS编码" prop="codeTs" width="120" align="center"/>
       <el-table-column label="计量单位" width="120" align="center">
         <template #default="scope">{{ customsUnitLabel(scope.row.calcUnit) }}</template>
       </el-table-column>
@@ -55,28 +55,29 @@
           <el-tag :type="scope.row.isBonded === '1' ? 'primary' : 'info'">{{ scope.row.isBonded === '1' ? '保税' : '非保税' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="备案状态" width="90" align="center">
+      <el-table-column label="备案状态" width="100" align="center">
         <template #default="scope">
-          <el-tag :type="['0', '1', '2', '3'][scope.row.declareStatus] === undefined ? 'info' : ['info', 'warning', 'success', 'danger'][scope.row.declareStatus]">
+          <el-tag :type="['0', '1', '2', '3'][scope.row.declareStatus] === undefined ? 'info' : ['info', 'warning', 'success', 'danger'][scope.row.declareStatus]"
+                  :icon="{ '0': 'EditPen', '1': 'Clock', '2': 'CircleCheckFilled', '3': 'CircleCloseFilled' }[scope.row.declareStatus]">
             {{ { '0': '未申报', '1': '已申报', '2': '通过', '3': '退单' }[scope.row.declareStatus] }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="海关状态" width="110" align="center">
         <template #default="scope">
-          <el-tag :type="customsStatusMap[scope.row.customsStatus]?.type || 'info'">
+          <el-tag :type="customsStatusMap[scope.row.customsStatus]?.type || 'info'" :icon="cstIcon(scope.row.customsStatus)">
             {{ customsStatusMap[scope.row.customsStatus]?.label || scope.row.customsStatus }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="预录入编号" prop="uuid" width="180" show-overflow-tooltip />
-      <el-table-column label="操作" width="300" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="预录入编号" prop="uuid" width="180" show-overflow-tooltip align="center"/>
+      <el-table-column label="操作" width="280" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="View" v-hasPermi="['bonded:material:query']" @click="handleDetail(scope.row)">详情</el-button>
-          <el-button link type="primary" icon="Edit" v-hasPermi="['bonded:material:edit']" :disabled="scope.row.declareStatus === '2'" @click="handleUpdate(scope.row)">修改</el-button>
           <el-button v-if="canExec(scope.row, '1')" link type="success" icon="Stamp" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('1', scope.row)">备案</el-button>
           <el-button v-if="canExec(scope.row, '2')" link type="warning" icon="EditPen" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('2', scope.row)">变更</el-button>
           <el-button v-if="canExec(scope.row, '3')" link type="danger" icon="Delete" v-hasPermi="['bonded:material:declare']" @click="handleDeclare('3', scope.row)">作废</el-button>
+          <el-button link type="primary" icon="Edit" v-hasPermi="['bonded:material:edit']" :disabled="scope.row.declareStatus === '2'" @click="handleUpdate(scope.row)">修改</el-button>
           <el-button link type="danger" icon="Delete" v-hasPermi="['bonded:material:remove']" :disabled="scope.row.declareStatus === '2'" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -88,7 +89,7 @@
 <script setup name="Material">
 import { listMaterial, delMaterial, declareMaterial } from '@/api/bonded/material'
 import { customsUnitLabel } from '@/utils/customsUnits'
-import { materialMarkTypes as markTypeOptions, materialNameWithMark } from '@/utils/bonded'
+import { materialMarkTypes as markTypeOptions, materialNameWithMark, cstIcon } from '@/utils/bonded'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -177,7 +178,8 @@ function handleDetail(row) {
 }
 
 function handleDelete(row) {
-  proxy.$modal.confirm('是否确认删除该物料？').then(() => delMaterial(row.id)).then(() => { getList(); proxy.$modal.msgSuccess('删除成功') }).catch(() => {})
+  if (row.declareStatus === '2') return proxy.$modal.msgError('备案通过的物料不可删除，如需调整请走变更或作废申报')
+  proxy.$modal.confirm(`确认删除物料【${row.materialCd}】？删除后不可恢复，需重新备案。`).then(() => delMaterial(row.id)).then(() => { getList(); proxy.$modal.msgSuccess('删除成功') }).catch(() => {})
 }
 
 function handleExport() {
